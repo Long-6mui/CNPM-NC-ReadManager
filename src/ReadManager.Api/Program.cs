@@ -1,4 +1,20 @@
+﻿using Microsoft.EntityFrameworkCore;
+using ReadManager.Api.Data;
+
+
 var builder = WebApplication.CreateBuilder(args);
+
+
+var connectionString =
+    builder.Configuration.GetConnectionString("DefaultConnection")
+    ?? throw new InvalidOperationException(
+        "Chưa cấu hình ConnectionStrings:DefaultConnection.");
+
+builder.Services.AddDbContext<AppDbContext>(options =>
+    options.UseMySql(
+        connectionString,
+        ServerVersion.AutoDetect(connectionString)));
+
 
 // Add services to the container.
 
