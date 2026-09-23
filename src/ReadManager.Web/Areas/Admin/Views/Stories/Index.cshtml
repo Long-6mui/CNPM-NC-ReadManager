@@ -1,0 +1,52 @@
+@model List<Story>
+@{
+    ViewData["Title"] = "Quản lý truyện";
+    ViewBag.ActiveNav = "stories";
+    var chapterCounts = ViewBag.ChapterCounts as Dictionary<int, int> ?? new();
+}
+<div class="container section">
+    <div class="section-head"><h2>Trang quản trị</h2><span class="badge badge-gold">Xem trước · chưa lưu DB</span></div>
+    <div class="admin-shell">
+        <partial name="_AdminNav" />
+        <div>
+            <div class="flexbar" style="margin-bottom:14px;">
+                <div class="section-sub">@Model.Count truyện</div>
+                <a class="btn btn-brass btn-sm" asp-action="Create">+ Thêm truyện</a>
+            </div>
+            <div class="table-wrap">
+                <table class="data">
+                    <thead><tr><th></th><th>Tên truyện</th><th>Tác giả</th><th>Hình thức</th><th>Tình trạng</th><th>Chương</th><th>Cập nhật</th><th></th></tr></thead>
+                    <tbody>
+                        @foreach (var s in Model)
+                        {
+                            <tr>
+                                <td>
+                                    <div class="mini-cover">
+                                        @if (!string.IsNullOrEmpty(s.CoverUrl)) { <img src="@s.CoverUrl" alt="@s.Title"> }
+                                        else { <div class="gen-cover" style="height:100%;"><span style="font-size:9px;">@s.Title</span></div> }
+                                    </div>
+                                </td>
+                                <td><a asp-action="Edit" asp-route-id="@s.Id" style="font-weight:600;">@s.Title</a></td>
+                                <td>@s.Author</td>
+                                <td>@(s.Access == AccessPolicy.Free ? "Miễn phí" : s.Access == AccessPolicy.Paid ? "Trả phí" : "Kết hợp")</td>
+                                <td>@(s.Status == StoryStatus.Ongoing ? "Đang ra" : s.Status == StoryStatus.Completed ? "Hoàn thành" : "Tạm ngừng")</td>
+                                <td>@(chapterCounts.GetValueOrDefault(s.Id))</td>
+                                <td>@s.UpdatedAt.ToLocalTime().ToString("dd/MM/yyyy")</td>
+                                <td class="row-actions">
+                                    <a class="btn btn-outline btn-sm" asp-action="Edit" asp-route-id="@s.Id">Sửa</a>
+                                    <form asp-action="Delete" asp-route-id="@s.Id" method="post" onsubmit="return confirm('Xóa hẳn truyện này cùng toàn bộ chương?');" style="display:inline;">
+                                        <button type="submit" class="btn btn-danger-outline btn-sm">Xóa</button>
+                                    </form>
+                                </td>
+                            </tr>
+                        }
+                        @if (!Model.Any())
+                        {
+                            <tr><td colspan="8" style="text-align:center; color:var(--muted); padding:30px;">Chưa có truyện nào.</td></tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>

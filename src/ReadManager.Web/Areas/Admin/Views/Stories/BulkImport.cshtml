@@ -1,0 +1,31 @@
+@model BulkImportVm
+@{
+    ViewData["Title"] = "Dán nhiều chương";
+    ViewBag.ActiveNav = "stories";
+}
+<div class="container section">
+    <div class="section-head"><h2>Trang quản trị</h2><span class="badge badge-gold">Xem trước · chưa lưu DB</span></div>
+    <div class="admin-shell">
+        <partial name="_AdminNav" />
+        <div>
+            <div class="flexbar" style="margin-bottom:14px;">
+                <a asp-action="Edit" asp-route-id="@Model.StoryId" style="font-size:13px; color:var(--muted);">← @Model.StoryTitle</a>
+            </div>
+            <form class="panel" asp-action="BulkImportSave" method="post">
+                <input type="hidden" asp-for="StoryId" />
+                <input type="hidden" asp-for="StoryTitle" />
+                <div asp-validation-summary="ModelOnly" class="validation-summary-errors"></div>
+                <p class="hint" style="margin-bottom:12px;">
+                    Dán nội dung nhiều chương liền nhau. Mỗi chương cần bắt đầu bằng một dòng dạng <b>"Chương 3: Tên chương"</b>
+                    (không phân biệt hoa/thường). Bản xem trước chỉ kiểm tra và đếm chương, chưa tạo hay cập nhật dữ liệu.
+                </p>
+                <textarea asp-for="RawText" rows="16" placeholder="Chương 1: Mở đầu&#10;Nội dung chương 1…&#10;&#10;Chương 2: Tiếp theo&#10;Nội dung chương 2…"></textarea>
+                <span asp-validation-for="RawText" class="text-danger"></span>
+                <label class="checkline" style="margin-top:12px; margin-bottom:16px;">
+                    <input asp-for="MarkFree" type="checkbox" style="width:auto;" /> Đánh dấu tất cả chương vừa nhập là miễn phí
+                </label>
+                <button type="submit" class="btn btn-brass">Kiểm tra nội dung</button>
+            </form>
+        </div>
+    </div>
+</div>

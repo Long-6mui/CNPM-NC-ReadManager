@@ -1,0 +1,53 @@
+@model ReadVm
+@{
+    ViewData["Title"] = $"Chương {Model.Chapter.No}: {Model.Chapter.Title}";
+    var paragraphs = (Model.Chapter.Content ?? "").Replace("\r\n", "\n").Split("\n\n", StringSplitOptions.RemoveEmptyEntries);
+}
+<div class="reader-bar">
+    <div class="container reader-bar-inner">
+        <a class="btn btn-ghost btn-sm" asp-action="Details" asp-route-id="@Model.Story.Id">← @Model.Story.Title</a>
+        <span class="rb-title">Chương @Model.Chapter.No: @Model.Chapter.Title</span>
+        <div style="display:flex; gap:6px;">
+            <button class="size-btn" id="fontSmaller" type="button">A-</button>
+            <button class="size-btn" id="fontBigger" type="button">A+</button>
+        </div>
+    </div>
+</div>
+<div class="reader-wrap">
+    @if (Model.NotYetPublicPreview)
+    {
+        <div class="banner banner-warn" style="margin-bottom:18px;">Bạn đang xem trước với quyền quản trị — độc giả thường chưa thấy chương này.</div>
+    }
+    <h1>Chương @Model.Chapter.No: @Model.Chapter.Title</h1>
+
+    @if (Model.Locked)
+    {
+        <div class="locked-box">
+            <h3>Chương này dành cho độc giả đã mở khóa</h3>
+            <p>Nội dung trả phí đang khóa. Chức năng mua và cấp quyền chưa được tích hợp.</p>
+        </div>
+    }
+    else
+    {
+        <div class="reader-content" id="readerContent">
+            @foreach (var p in paragraphs)
+            {
+                <p>@Html.Raw(Html.Encode(p).Replace("\n", "<br>"))</p>
+            }
+        </div>
+    }
+
+    <div class="reader-toolbar">
+        @if (Model.PrevNo.HasValue)
+        {
+            <a class="btn btn-outline btn-sm" asp-action="Read" asp-route-storyId="@Model.Story.Id" asp-route-no="@Model.PrevNo">← Chương trước</a>
+        }
+        else { <span></span> }
+        <a class="btn btn-outline btn-sm" asp-action="Details" asp-route-id="@Model.Story.Id">Danh sách chương</a>
+        @if (Model.NextNo.HasValue)
+        {
+            <a class="btn btn-outline btn-sm" asp-action="Read" asp-route-storyId="@Model.Story.Id" asp-route-no="@Model.NextNo">Chương sau →</a>
+        }
+        else { <span></span> }
+    </div>
+</div>

@@ -1,8 +1,50 @@
-﻿@{
-    ViewData["Title"] = "Home Page";
-}
-
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+@model HomeVm
+@{ ViewData["Title"] = "Trang chủ"; }
+<div class="hero">
+    <div class="container hero-inner"><div>
+        <div class="hero-eyebrow">Thư viện đọc truyện trực tuyến</div>
+        <h1>Mỗi trang sách, một mái hiên để trú mưa.</h1>
+        <p class="lead">Khám phá những câu chuyện mới, từ hành trình kỳ ảo đến những điều bình dị mỗi ngày.</p>
+        <div class="hero-actions"><a class="btn btn-brass" href="#library">Khám phá thư viện</a></div>
+        <div class="hero-stats">
+            <div class="hero-stat"><b>@Model.TotalStories</b><span>Bộ truyện mẫu</span></div>
+            <div class="hero-stat"><b>@Model.TotalGenres</b><span>Thể loại</span></div>
+            <div class="hero-stat"><b>@Model.TotalChapters</b><span>Chương minh họa</span></div>
+        </div>
+    </div></div>
+</div>
+<div class="container" id="library">
+    <div class="section"><nav class="pillbar" aria-label="Lọc thể loại">
+        <a class="pill @(!Model.GenreId.HasValue ? "active" : "")" asp-action="Index" asp-route-q="@Model.Query" asp-fragment="library">Tất cả</a>
+        @foreach (var genre in Model.Genres)
+        {
+            <a class="pill @(Model.GenreId == genre.Id ? "active" : "")" asp-action="Index" asp-route-genre="@genre.Id" asp-route-q="@Model.Query" asp-fragment="library">@genre.Name</a>
+        }
+    </nav></div>
+    @if (!string.IsNullOrWhiteSpace(Model.Query))
+    {
+        <p>Kết quả cho “@Model.Query” · <a asp-action="Index">Xóa bộ lọc</a></p>
+    }
+    @if (Model.Updated.Count == 0)
+    {
+        <div class="empty-state"><h2>Không tìm thấy truyện phù hợp</h2><p>Thử tên truyện khác hoặc bỏ bộ lọc.</p><a asp-action="Index">Xem tất cả truyện</a></div>
+    }
+    else
+    {
+        <section class="section" style="padding-top:0">
+            <div class="section-head"><h2>Mới cập nhật</h2></div>
+            <div class="rail">@foreach (var story in Model.Updated) { <partial name="_StoryCard" model="story" /> }</div>
+        </section>
+        <section class="section" style="padding-top:0">
+            <div class="section-head"><h2>Vừa đăng</h2></div>
+            <div class="rail">@foreach (var story in Model.Newest) { <partial name="_StoryCard" model="story" /> }</div>
+        </section>
+        @if (Model.Free.Count > 0)
+        {
+            <section class="section" style="padding-top:0">
+                <div class="section-head"><h2>Đọc miễn phí</h2></div>
+                <div class="rail">@foreach (var story in Model.Free) { <partial name="_StoryCard" model="story" /> }</div>
+            </section>
+        }
+    }
 </div>

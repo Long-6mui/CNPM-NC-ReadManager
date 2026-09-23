@@ -1,0 +1,52 @@
+@model ChapterFormVm
+@{
+    ViewData["Title"] = Model.Id == 0 ? "Thêm chương" : "Sửa chương";
+    ViewBag.ActiveNav = "stories";
+}
+<div class="container section">
+    <div class="section-head"><h2>Trang quản trị</h2><span class="badge badge-gold">Xem trước · chưa lưu DB</span></div>
+    <div class="admin-shell">
+        <partial name="_AdminNav" />
+        <div>
+            <div class="flexbar" style="margin-bottom:14px;">
+                <a asp-action="Edit" asp-route-id="@Model.StoryId" style="font-size:13px; color:var(--muted);">← @Model.StoryTitle</a>
+            </div>
+            <form class="panel" asp-action="ChapterSave" method="post">
+                <input type="hidden" asp-for="Id" />
+                <input type="hidden" asp-for="StoryId" />
+                <input type="hidden" asp-for="StoryTitle" />
+                <div asp-validation-summary="ModelOnly" class="validation-summary-errors"></div>
+
+                <div class="field-row">
+                    <div class="field">
+                        <label asp-for="No"></label>
+                        <input asp-for="No" type="number" min="1" />
+                        <span asp-validation-for="No" class="text-danger"></span>
+                    </div>
+                    <div class="field">
+                        <label asp-for="Title"></label>
+                        <input asp-for="Title" type="text" />
+                        <span asp-validation-for="Title" class="text-danger"></span>
+                    </div>
+                </div>
+                <div class="field">
+                    <label asp-for="Content"></label>
+                    <textarea asp-for="Content" rows="14" placeholder="Dán nội dung chương tại đây. Để trống dòng giữa các đoạn văn."></textarea>
+                    <span asp-validation-for="Content" class="text-danger"></span>
+                </div>
+                <label class="checkline" style="margin-bottom:14px;">
+                    <input asp-for="IsFree" type="checkbox" style="width:auto;" /> Cho đọc miễn phí (bỏ qua kiểm tra quyền đọc)
+                </label>
+                <div class="divider"></div>
+                <div class="field">
+                    <label asp-for="Status">Kiểm duyệt</label>
+                    <select asp-for="Status" id="chStatusSelect">
+                        <option value="Draft">Nháp — chưa duyệt, độc giả không thấy</option>
+                        <option value="Reviewed">Đã kiểm duyệt</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-brass" style="margin-top:16px;">Lưu chương</button>
+            </form>
+        </div>
+    </div>
+</div>

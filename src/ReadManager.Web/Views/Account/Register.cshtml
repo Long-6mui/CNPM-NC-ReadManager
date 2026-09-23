@@ -1,0 +1,38 @@
+@model RegisterVm
+@{ ViewData["Title"] = "Đăng ký"; }
+<div class="auth-wrap">
+    <div class="panel">
+        <h2 style="font-size:20px; margin-bottom:6px;">Tạo tài khoản</h2>
+        <p style="font-size:13px; color:var(--muted); margin-bottom:18px;">Bản xem trước biểu mẫu — chưa tạo tài khoản thật.</p>
+        <form asp-action="Register" method="post">
+            <input type="hidden" asp-for="ReturnUrl" />
+            <div asp-validation-summary="ModelOnly" class="validation-summary-errors"></div>
+            <div class="field">
+                <label asp-for="DisplayName"></label>
+                <input asp-for="DisplayName" type="text" />
+                <span asp-validation-for="DisplayName" class="text-danger"></span>
+            </div>
+            <div class="field">
+                <label asp-for="Email"></label>
+                <input asp-for="Email" type="text" autocomplete="email" />
+                <span asp-validation-for="Email" class="text-danger"></span>
+            </div>
+            <div class="field-row">
+                <div class="field">
+                    <label asp-for="Password"></label>
+                    <input asp-for="Password" type="password" autocomplete="new-password" />
+                    <span asp-validation-for="Password" class="text-danger"></span>
+                </div>
+                <div class="field">
+                    <label asp-for="ConfirmPassword"></label>
+                    <input asp-for="ConfirmPassword" type="password" />
+                    <span asp-validation-for="ConfirmPassword" class="text-danger"></span>
+                </div>
+            </div>
+            <button type="submit" class="btn btn-brass btn-block">Tạo tài khoản</button>
+        </form>
+        <p style="font-size:12.5px; color:var(--muted); margin-top:14px; text-align:center;">
+            Đã có tài khoản? <a asp-action="Login" style="color:var(--brass-2); font-weight:600;">Đăng nhập</a>
+        </p>
+    </div>
+</div>
