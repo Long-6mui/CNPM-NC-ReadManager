@@ -1,0 +1,96 @@
+@model StoryDetailVm
+@{
+    ViewData["Title"] = Model.Story.Title;
+    var story = Model.Story;
+    string chipClass = story.Access == AccessPolicy.Free ? "chip-free" : story.Access == AccessPolicy.Paid ? "chip-paid" : "chip-mixed";
+    string chipLabel = story.Access == AccessPolicy.Free ? "Miễn phí" : story.Access == AccessPolicy.Paid ? "Trả phí" : "Kết hợp";
+    string statusLabel = story.Status == StoryStatus.Ongoing ? "Đang ra" : story.Status == StoryStatus.Completed ? "Hoàn thành" : "Tạm ngừng";
+    int? readNo = Model.ContinueChapterNo ?? Model.FirstVisibleChapterNo;
+}
+<div class="story-hero">
+    <div class="container story-hero-inner">
+        <div class="story-cover">
+            @if (!string.IsNullOrEmpty(story.CoverUrl))
+            {
+                <img src="@story.CoverUrl" alt="Bìa truyện @story.Title">
+            }
+            else
+            {
+                <div class="gen-cover"><span>@story.Title</span></div>
+            }
+            <span class="chip @chipClass">@chipLabel</span>
+        </div>
+        <div>
+            <div class="tag-row">
+                @foreach (var g in Model.GenreNames) { <span class="tag">@g</span> }
+                <span class="tag">@statusLabel</span>
+            </div>
+            <h1>@story.Title</h1>
+            <div class="author">@(string.IsNullOrEmpty(story.Author) ? "Khuyết danh" : story.Author)</div>
+            <p class="desc">@story.Description</p>
+            <div class="actions">
+                @if (readNo.HasValue)
+                {
+                    <a class="btn btn-brass" asp-action="Read" asp-route-storyId="@story.Id" asp-route-no="@readNo">
+                        @(Model.ContinueChapterNo.HasValue ? $"Đọc tiếp — Chương {Model.ContinueChapterNo}" : "Đọc từ đầu")
+                    </a>
+                }
+                else
+                {
+                    <span class="btn btn-outline" style="opacity:.6;">Chưa có chương</span>
+                }
+
+            </div>
+            <div class="stat-row">
+                <div><b>@Model.Chapters.Count</b><span>Chương</span></div>
+                <div><b>@story.Price.ToString("N0")₫</b><span>@(story.Access == AccessPolicy.Paid ? "Giá trọn bộ" : "Mua trọn bộ")</span></div>
+                <div><b>@(story.FreeChapterCount >= 999 ? "Tất cả" : story.FreeChapterCount.ToString())</b><span>Chương đọc miễn phí</span></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container section">
+    <div class="two-col">
+        <div>
+            <div class="section-head" style="margin-bottom:14px;"><h2 style="font-size:18px;">Danh sách chương</h2></div>
+            @if (Model.Chapters.Any())
+            {
+                <div class="chapter-list">
+                    @foreach (var c in Model.Chapters)
+                    {
+                        <a class="chapter-row" asp-action="Read" asp-route-storyId="@story.Id" asp-route-no="@c.No">
+                            <span class="no">#@c.No</span>
+                            <span class="title">@c.Title</span>
+                            @if (c.NotYetPublicPreview)
+                            {
+                                <span class="badge badge-gold">@c.StatusLabel</span>
+                            }
+                            else if (c.Locked)
+                            {
+                                <span title="Cần mở khóa">🔒</span>
+                            }
+                            <span class="date">@c.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy")</span>
+                        </a>
+                    }
+                </div>
+            }
+            else
+            {
+                <div class="empty-state"><h3>Chưa có chương nào</h3><p>Quản trị viên sẽ sớm đăng nội dung đầu tiên.</p></div>
+            }
+        </div>
+        <div>
+            <div class="panel">
+                <h3 style="font-size:15px; margin-bottom:10px;">Giới thiệu</h3>
+                <p style="font-size:13.5px; color:var(--muted);">@story.Description</p>
+                <div class="divider"></div>
+                <div style="font-size:13px; display:flex; flex-direction:column; gap:6px;">
+                    <div class="flexbar"><span style="color:var(--muted)">Tác giả</span><b>@story.Author</b></div>
+                    <div class="flexbar"><span style="color:var(--muted)">Tình trạng</span><b>@statusLabel</b></div>
+                    <div class="flexbar"><span style="color:var(--muted)">Cập nhật</span><b>@story.UpdatedAt.ToLocalTime().ToString("dd/MM/yyyy")</b></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

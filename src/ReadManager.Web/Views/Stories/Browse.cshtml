@@ -1,0 +1,48 @@
+@model BrowseVm
+@{ ViewData["Title"] = "Khám phá"; }
+<div class="container section">
+    <div class="section-head">
+        <h2>@(string.IsNullOrEmpty(Model.Q) ? "Khám phá thư viện" : $"Kết quả cho “{Model.Q}”")</h2>
+        <span class="section-sub">@Model.Stories.Count truyện</span>
+    </div>
+
+    <form method="get" asp-action="Browse" class="filter-row">
+        <input type="hidden" name="q" value="@Model.Q" />
+        <select name="genre" class="select" onchange="this.form.submit()">
+            <option value="">Tất cả thể loại</option>
+            @foreach (var g in Model.Genres)
+            {
+                <option value="@g.Id" selected="@(Model.GenreId == g.Id)">@g.Name</option>
+            }
+        </select>
+        <select name="access" class="select" onchange="this.form.submit()">
+            <option value="">Mọi hình thức</option>
+            <option value="Free" selected="@(Model.Access == AccessPolicy.Free)">Miễn phí</option>
+            <option value="Mixed" selected="@(Model.Access == AccessPolicy.Mixed)">Kết hợp</option>
+            <option value="Paid" selected="@(Model.Access == AccessPolicy.Paid)">Trả phí</option>
+        </select>
+        <select name="status" class="select" onchange="this.form.submit()">
+            <option value="">Mọi tình trạng</option>
+            <option value="Ongoing" selected="@(Model.Status == StoryStatus.Ongoing)">Đang ra</option>
+            <option value="Completed" selected="@(Model.Status == StoryStatus.Completed)">Hoàn thành</option>
+            <option value="Paused" selected="@(Model.Status == StoryStatus.Paused)">Tạm ngừng</option>
+        </select>
+        <select name="sort" class="select" onchange="this.form.submit()">
+            <option value="updated" selected="@(Model.Sort == "updated")">Mới cập nhật</option>
+            <option value="newest" selected="@(Model.Sort == "newest")">Mới đăng</option>
+            <option value="title" selected="@(Model.Sort == "title")">Tên A–Z</option>
+        </select>
+        <a class="btn btn-ghost btn-sm" asp-action="Browse">Xóa lọc</a>
+    </form>
+
+    @if (Model.Stories.Any())
+    {
+        <div class="grid-cards">
+            @foreach (var s in Model.Stories) { <partial name="_StoryCard" model="s" /> }
+        </div>
+    }
+    else
+    {
+        <div class="empty-state"><h3>Không tìm thấy truyện phù hợp</h3><p>Thử đổi từ khóa hoặc bộ lọc khác.</p></div>
+    }
+</div>

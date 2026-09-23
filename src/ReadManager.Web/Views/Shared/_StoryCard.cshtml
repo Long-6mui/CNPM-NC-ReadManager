@@ -1,0 +1,28 @@
+@model StoryCardVm
+@{
+    string chipClass = Model.Access == AccessPolicy.Free ? "chip-free" : Model.Access == AccessPolicy.Paid ? "chip-paid" : "chip-mixed";
+    string chipLabel = Model.Access == AccessPolicy.Free ? "Miễn phí" : Model.Access == AccessPolicy.Paid ? "Trả phí" : "Kết hợp";
+    string statusLabel = Model.Status == StoryStatus.Ongoing ? "Đang ra" : Model.Status == StoryStatus.Completed ? "Hoàn thành" : "Tạm ngừng";
+}
+<a class="story-card" asp-controller="Stories" asp-action="Details" asp-route-id="@Model.Id">
+    <div class="story-cover">
+        @if (!string.IsNullOrEmpty(Model.CoverUrl))
+        {
+            <img src="@Model.CoverUrl" alt="Bìa truyện @Model.Title" loading="lazy">
+        }
+        else
+        {
+            <div class="gen-cover"><span>@Model.Title</span></div>
+        }
+        <span class="chip @chipClass">@chipLabel</span>
+        <span class="status-dot">@statusLabel</span>
+    </div>
+    <div class="story-title">@Model.Title</div>
+    <div class="story-meta">
+        <span>@Model.Author</span>
+        @if (Model.PublishedChapterCount > 0)
+        {
+            <span> · @Model.PublishedChapterCount chương</span>
+        }
+    </div>
+</a>

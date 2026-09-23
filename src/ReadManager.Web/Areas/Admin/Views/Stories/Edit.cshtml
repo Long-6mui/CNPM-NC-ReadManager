@@ -1,0 +1,134 @@
+@model StoryFormVm
+@{
+    ViewData["Title"] = Model.Id == 0 ? "Thêm truyện" : "Sửa truyện";
+    ViewBag.ActiveNav = "stories";
+    bool isNew = Model.Id == 0;
+}
+<div class="container section">
+    <div class="section-head"><h2>Trang quản trị</h2><span class="badge badge-gold">Xem trước · chưa lưu DB</span></div>
+    <div class="admin-shell">
+        <partial name="_AdminNav" />
+        <div>
+            <div class="flexbar" style="margin-bottom:14px;">
+                <a asp-action="Index" style="font-size:13px; color:var(--muted);">← Danh sách truyện</a>
+                @if (!isNew)
+                {
+                    <a class="btn btn-ghost btn-sm" asp-controller="Stories" asp-action="Details" asp-route-id="@Model.Id" asp-area="" target="_blank" rel="noopener">Xem như khách hàng ↗</a>
+                }
+            </div>
+            <div class="two-col">
+                <div>
+                    <form class="panel" asp-action="Save" method="post">
+                        <input type="hidden" asp-for="Id" />
+                        <div asp-validation-summary="ModelOnly" class="validation-summary-errors"></div>
+
+                        <div class="field">
+                            <label asp-for="Title"></label>
+                            <input asp-for="Title" type="text" />
+                            <span asp-validation-for="Title" class="text-danger"></span>
+                        </div>
+                        <div class="field-row">
+                            <div class="field">
+                                <label asp-for="Author"></label>
+                                <input asp-for="Author" type="text" />
+                            </div>
+                            <div class="field">
+                                <label asp-for="Status"></label>
+                                <select asp-for="Status">
+                                    <option value="Ongoing">Đang ra</option>
+                                    <option value="Completed">Hoàn thành</option>
+                                    <option value="Paused">Tạm ngừng</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="field">
+                            <label asp-for="Description"></label>
+                            <textarea asp-for="Description" rows="4"></textarea>
+                        </div>
+                        <div class="field">
+                            <label>Thể loại</label>
+                            @if (Model.AllGenres.Any())
+                            {
+                                <div class="genre-check-list">
+                                    @foreach (var g in Model.AllGenres)
+                                    {
+                                        <label>
+                                            <input type="checkbox" name="SelectedGenreIds" value="@g.Id"
+                                                   checked="@Model.SelectedGenreIds.Contains(g.Id)" />
+                                            @g.Name
+                                        </label>
+                                    }
+                                </div>
+                            }
+                            else
+                            {
+                                <span class="hint">Chưa có thể loại nào — tạo ở mục <a asp-controller="Genres" asp-action="Index">Thể loại</a>.</span>
+                            }
+                        </div>
+                        <div class="divider"></div>
+                        <div class="field">
+                            <label asp-for="Access">Chính sách truy cập</label>
+                            <select asp-for="Access">
+                                <option value="Free">Miễn phí toàn bộ</option>
+                                <option value="Mixed">Kết hợp (một số chương đầu miễn phí)</option>
+                                <option value="Paid">Trả phí</option>
+                            </select>
+                        </div>
+<div class="field"><label asp-for="Visibility">Hiển thị</label><select asp-for="Visibility"><option value="Draft">Nháp</option><option value="Public">Công khai</option><option value="Hidden">Ẩn</option></select></div><p class="hint">Quyền đọc miễn phí được thiết lập ở từng chương. Biểu mẫu hiện chưa lưu vào DB.</p>
+                        <div class="divider"></div>
+                        <div class="field">
+                            <label asp-for="CoverUrl">Ảnh bìa (URL, tùy chọn)</label>
+                            <input asp-for="CoverUrl" type="text" placeholder="https://…" />
+                            <div class="hint">Để trống sẽ dùng bìa tự sinh theo tên truyện.</div>
+                        </div>
+                        <button type="submit" class="btn btn-brass" style="margin-top:8px;">@(isNew ? "Tạo truyện" : "Lưu thay đổi")</button>
+                    </form>
+                </div>
+                <div>
+                    @if (isNew)
+                    {
+                        <div class="panel"><p style="font-size:13px; color:var(--muted);">Lưu truyện trước, sau đó bạn có thể thêm chương ở đây.</p></div>
+                    }
+                    else
+                    {
+                        <div class="panel">
+                            <div class="flexbar" style="margin-bottom:10px;">
+                                <h3 style="font-size:15px;">Chương (@Model.Chapters.Count)</h3>
+                                <a class="btn btn-outline btn-sm" asp-action="BulkImport" asp-route-storyId="@Model.Id">Dán nhiều chương</a>
+                            </div>
+                            <div class="table-wrap" style="margin-bottom:14px;">
+                                <table class="data">
+                                    <thead><tr><th>#</th><th>Tiêu đề</th><th>Miễn phí</th><th>Trạng thái</th><th></th></tr></thead>
+                                    <tbody>
+                                        @foreach (var c in Model.Chapters)
+                                        {
+                                            var now = DateTime.UtcNow;
+                                            string badgeClass = c.Status == ChapterStatus.Draft ? "badge-gray" : (c.PublishAt.HasValue && now < c.PublishAt.Value) ? "badge-gold" : "badge-green";
+                                            <tr>
+                                                <td>@c.No</td>
+                                                <td>@c.Title</td>
+                                                <td>@(c.IsFree ? "Có" : "Không")</td>
+                                                <td><span class="badge @badgeClass">@c.StatusLabel(now)</span></td>
+                                                <td class="row-actions">
+                                                    <a class="btn btn-outline btn-sm" asp-action="ChapterEdit" asp-route-storyId="@Model.Id" asp-route-no="@c.No">Sửa</a>
+                                                    <form asp-action="ChapterDelete" asp-route-storyId="@Model.Id" asp-route-no="@c.No" method="post" onsubmit="return confirm('Xóa chương @c.No?');" style="display:inline;">
+                                                        <button type="submit" class="btn btn-danger-outline btn-sm">Xóa</button>
+                                                    </form>
+                                                </td>
+                                            </tr>
+                                        }
+                                        @if (!Model.Chapters.Any())
+                                        {
+                                            <tr><td colspan="5" style="text-align:center; color:var(--muted); padding:20px;">Chưa có chương nào.</td></tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                            <a class="btn btn-brass btn-sm btn-block" asp-action="ChapterEdit" asp-route-storyId="@Model.Id">+ Thêm chương mới</a>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

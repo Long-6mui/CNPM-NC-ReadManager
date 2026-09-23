@@ -1,0 +1,46 @@
+@model List<GenreVm>
+@{
+    ViewData["Title"] = "Thể loại";
+    ViewBag.ActiveNav = "genres";
+    var counts = ViewBag.Counts as Dictionary<int, int> ?? new();
+}
+<div class="container section">
+    <div class="section-head"><h2>Trang quản trị</h2><span class="badge badge-gold">Xem trước · chưa lưu DB</span></div>
+    <div class="admin-shell">
+        <partial name="_AdminNav" />
+        <div>
+            <div class="panel" style="margin-bottom:16px;">
+                <form asp-action="Create" method="post" class="field-row" style="align-items:end; margin-bottom:0;">
+                    <div class="field" style="margin-bottom:0;">
+                        <label>Tên thể loại mới</label>
+                        <input type="text" name="name" required placeholder="Vd: Kiếm hiệp" />
+                    </div>
+                    <div class="field" style="margin-bottom:0;"><button class="btn btn-brass" type="submit">+ Thêm thể loại</button></div>
+                </form>
+            </div>
+            <div class="table-wrap">
+                <table class="data">
+                    <thead><tr><th>Tên</th><th>Số truyện</th><th></th></tr></thead>
+                    <tbody>
+                        @foreach (var g in Model)
+                        {
+                            <tr>
+                                <td>@g.Name</td>
+                                <td>@(counts.GetValueOrDefault(g.Id))</td>
+                                <td class="row-actions">
+                                    <form asp-action="Delete" asp-route-id="@g.Id" method="post" onsubmit="return confirm('Xóa thể loại này?');" style="display:inline;">
+                                        <button type="submit" class="btn btn-danger-outline btn-sm">Xóa</button>
+                                    </form>
+                                </td>
+                            </tr>
+                        }
+                        @if (!Model.Any())
+                        {
+                            <tr><td colspan="3" style="text-align:center; color:var(--muted); padding:20px;">Chưa có thể loại nào.</td></tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,30 @@
+@model LoginVm
+@{ ViewData["Title"] = "Đăng nhập"; }
+<div class="auth-wrap">
+    <div class="panel">
+        <h2 style="font-size:20px; margin-bottom:6px;">Đăng nhập</h2>
+        <p style="font-size:13px; color:var(--muted); margin-bottom:18px;">Chào mừng bạn quay lại Chữ &amp; Đêm.</p>
+        <form asp-action="Login" method="post">
+            <input type="hidden" asp-for="ReturnUrl" />
+            <div asp-validation-summary="ModelOnly" class="validation-summary-errors"></div>
+            <div class="field">
+                <label asp-for="Email"></label>
+                <input asp-for="Email" type="text" autocomplete="email" />
+                <span asp-validation-for="Email" class="text-danger"></span>
+            </div>
+            <div class="field">
+                <label asp-for="Password"></label>
+                <input asp-for="Password" type="password" autocomplete="current-password" />
+                <span asp-validation-for="Password" class="text-danger"></span>
+            </div>
+            <label class="checkline" style="margin-bottom:16px;">
+                <input asp-for="RememberMe" type="checkbox" style="width:auto;" /> Ghi nhớ đăng nhập
+            </label>
+            <button type="submit" class="btn btn-brass btn-block">Đăng nhập</button>
+        </form>
+        <p style="font-size:12.5px; color:var(--muted); margin-top:14px; text-align:center;">
+            Chưa có tài khoản? <a asp-action="Register" style="color:var(--brass-2); font-weight:600;">Đăng ký ngay</a>
+        </p>
+
+    </div>
+</div>
