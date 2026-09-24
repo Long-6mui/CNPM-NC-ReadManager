@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:ReadManager.Mobile.ViewModels"
+             xmlns:models="clr-namespace:ReadManager.Mobile.Models"
+             x:DataType="vm:StoryListViewModel"
+             x:Class="ReadManager.Mobile.Views.StoryListPage"
+             Title="Trang chủ">
+
+    <Grid RowDefinitions="Auto,Auto,*" Padding="16" RowSpacing="10">
+
+        <SearchBar Grid.Row="0"
+                   Placeholder="Tìm truyện..."
+                   Text="{Binding SearchText}"
+                   SearchCommand="{Binding SearchCommand}" />
+
+        <CollectionView Grid.Row="1"
+                         ItemsSource="{Binding Genres}"
+                         ItemsLayout="HorizontalList"
+                         SelectionMode="None"
+                         HeightRequest="44">
+            <CollectionView.ItemTemplate>
+                <DataTemplate x:DataType="models:Genre">
+                    <Button Text="{Binding Name}"
+                            Padding="12,0"
+                            CornerRadius="16"
+                            Command="{Binding Source={RelativeSource AncestorType={x:Type vm:StoryListViewModel}}, Path=FilterByGenreCommand}"
+                            CommandParameter="{Binding .}" />
+                </DataTemplate>
+            </CollectionView.ItemTemplate>
+        </CollectionView>
+
+        <RefreshView Grid.Row="2"
+                     IsRefreshing="{Binding IsRefreshing}"
+                     Command="{Binding RefreshCommand}">
+            <CollectionView ItemsSource="{Binding Stories}"
+                             RemainingItemsThreshold="3"
+                             RemainingItemsThresholdReachedCommand="{Binding LoadMoreCommand}">
+                <CollectionView.ItemTemplate>
+                    <DataTemplate x:DataType="models:StorySummary">
+                        <Grid Padding="0,8" ColumnDefinitions="80,*" ColumnSpacing="12">
+                            <Grid.GestureRecognizers>
+                                <TapGestureRecognizer
+                                    Command="{Binding Source={RelativeSource AncestorType={x:Type vm:StoryListViewModel}}, Path=GoToDetailCommand}"
+                                    CommandParameter="{Binding .}" />
+                            </Grid.GestureRecognizers>
+
+                            <Image Grid.Column="0" Source="{Binding CoverUrl}" Aspect="AspectFill" HeightRequest="100" WidthRequest="80" />
+
+                            <VerticalStackLayout Grid.Column="1" VerticalOptions="Center" Spacing="4">
+                                <Label Text="{Binding Title}" FontAttributes="Bold" FontSize="16" LineBreakMode="TailTruncation" />
+                                <Label Text="{Binding AuthorName}" FontSize="13" TextColor="Gray" />
+                                <Label Text="{Binding PublicationStatus}" FontSize="12" TextColor="{StaticResource Primary}" />
+                            </VerticalStackLayout>
+                        </Grid>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+            </CollectionView>
+        </RefreshView>
+
+        <ActivityIndicator Grid.Row="2" IsRunning="{Binding IsBusy}" IsVisible="{Binding IsBusy}" VerticalOptions="Start" />
+
+    </Grid>
+</ContentPage>
