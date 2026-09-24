@@ -1,4 +1,4 @@
-@inject Microsoft.AspNetCore.Hosting.IWebHostEnvironment HostEnvironment
+
 <!DOCTYPE html>
 <html lang="vi">
 <head>
@@ -15,7 +15,7 @@
             <nav class="nav-main" aria-label="Điều hướng chính">
                 <a class="nav-link" asp-area="" asp-controller="Home" asp-action="Index">Trang chủ</a>
                 <a class="nav-link" asp-area="" asp-controller="Stories" asp-action="Browse">Khám phá</a>
-@if (User.Identity?.IsAuthenticated == true && User.IsInRole("Admin")) { <a class="nav-link" asp-area="Admin" asp-controller="Stories" asp-action="Index">Quản trị mẫu</a> }
+@if (User.Identity?.IsAuthenticated == true && User.IsInRole("Admin")) { <a class="nav-link" asp-area="Admin" asp-controller="Stories" asp-action="Index">Quản trị</a> }
             </nav>
             <form class="nav-search" asp-area="" asp-controller="Home" asp-action="Index" method="get">
                 <input type="search" name="q" aria-label="Tìm truyện hoặc tác giả" placeholder="Tìm truyện, tác giả…" value="@Context.Request.Query["q"]" />
@@ -23,7 +23,10 @@
             </form>
             <div class="nav-right">
                 <button type="button" class="btn btn-ghost" id="themeToggle" style="color:#EFE9D6" aria-label="Đổi giao diện sáng/tối">◐</button>
-                <a class="btn btn-brass btn-sm" asp-area="" asp-controller="Account" asp-action="Login">Đăng nhập</a>
+                @if(User.Identity?.IsAuthenticated == true) {
+ <span>Xin chào, @User.Identity.Name</span>
+ <form asp-area="" asp-controller="Account" asp-action="Logout" method="post"><button class="btn btn-brass btn-sm" type="submit">Đăng xuất</button></form>
+} else { <a class="btn btn-brass btn-sm" asp-area="" asp-controller="Account" asp-action="Login">Đăng nhập</a> }
             </div>
         </div>
     </header>
