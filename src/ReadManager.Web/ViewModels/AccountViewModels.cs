@@ -28,7 +28,7 @@ public class RegisterVm
 public class LoginVm
 {
     [Required(ErrorMessage = "Vui lòng nhập email.")]
-    [EmailAddress]
+    [EmailAddress(ErrorMessage = "Vui lòng nhập địa chỉ email đầy đủ.")]
     public string Email { get; set; } = "";
 
     [Required(ErrorMessage = "Vui lòng nhập mật khẩu.")]
