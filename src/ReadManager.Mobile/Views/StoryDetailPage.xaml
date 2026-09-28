@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:ReadManager.Mobile.ViewModels"
+             x:DataType="vm:StoryDetailViewModel"
+             x:Class="ReadManager.Mobile.Views.StoryDetailPage"
+             Title="Chi tiết truyện">
+
+    <ScrollView>
+        <VerticalStackLayout Padding="16" Spacing="12">
+
+            <ActivityIndicator IsRunning="{Binding IsBusy}" IsVisible="{Binding IsBusy}" />
+
+            <VerticalStackLayout IsVisible="{Binding Story, Converter={StaticResource StringToBoolConverter}}" Spacing="12">
+
+                <Image Source="{Binding Story.CoverUrl}" Aspect="AspectFit" HeightRequest="220" />
+
+                <Label Text="{Binding Story.Title}" FontSize="22" FontAttributes="Bold" />
+                <Label Text="{Binding Story.AuthorName}" FontSize="14" TextColor="Gray" />
+
+                <FlexLayout Wrap="Wrap" JustifyContent="Start">
+                    <Label Text="{Binding Story.PublicationStatus}" BackgroundColor="{StaticResource Primary}" TextColor="White" Padding="8,4" Margin="0,0,6,6" />
+                    <Label Text="{Binding Story.AccessPolicy}" BackgroundColor="Gray" TextColor="White" Padding="8,4" Margin="0,0,6,6" />
+                </FlexLayout>
+
+                <Label Text="Giới thiệu" FontAttributes="Bold" FontSize="16" />
+                <Label Text="{Binding Story.Synopsis}" FontSize="14" />
+
+                <Button Text="Xem danh sách chương" Command="{Binding GoToChaptersCommand}" />
+
+            </VerticalStackLayout>
+
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

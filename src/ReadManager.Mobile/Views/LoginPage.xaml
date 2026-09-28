@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:ReadManager.Mobile.ViewModels"
+             x:DataType="vm:LoginViewModel"
+             x:Class="ReadManager.Mobile.Views.LoginPage"
+             Title="Đăng nhập">
+
+    <ScrollView>
+        <VerticalStackLayout Padding="30" Spacing="16" VerticalOptions="Center">
+
+            <Label Text="ReadManager" FontSize="28" FontAttributes="Bold" HorizontalOptions="Center" />
+            <Label Text="Đăng nhập để tiếp tục đọc truyện" FontSize="14" TextColor="Gray" HorizontalOptions="Center" />
+
+            <Entry Placeholder="Tên đăng nhập hoặc email"
+                   Text="{Binding UsernameOrEmail}"
+                   Keyboard="Email" />
+
+            <Entry Placeholder="Mật khẩu"
+                   Text="{Binding Password}"
+                   IsPassword="True" />
+
+            <Label Text="{Binding ErrorMessage}"
+                   TextColor="Red"
+                   IsVisible="{Binding ErrorMessage, Converter={StaticResource StringToBoolConverter}}" />
+
+            <ActivityIndicator IsRunning="{Binding IsBusy}" IsVisible="{Binding IsBusy}" />
+
+            <Button Text="Đăng nhập"
+                    Command="{Binding LoginCommand}"
+                    IsEnabled="{Binding IsBusy, Converter={StaticResource InvertedBoolConverter}}" />
+
+            <Button Text="Chưa có tài khoản? Đăng ký"
+                    Command="{Binding GoToRegisterCommand}"
+                    BackgroundColor="Transparent"
+                    TextColor="{StaticResource Primary}" />
+
+            <!-- CHỈ DÙNG ĐỂ DEMO/XEM GIAO DIỆN — xoá nút này trước khi nộp bài -->
+            <Button Text="⏩ Xem thử giao diện (bỏ qua đăng nhập)"
+                    Command="{Binding SkipLoginCommand}"
+                    BackgroundColor="Transparent"
+                    TextColor="Gray"
+                    FontSize="12" />
+
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

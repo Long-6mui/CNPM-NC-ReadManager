@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:ReadManager.Mobile.ViewModels"
+             xmlns:models="clr-namespace:ReadManager.Mobile.Models"
+             x:DataType="vm:ChapterListViewModel"
+             x:Class="ReadManager.Mobile.Views.ChapterListPage"
+             Title="{Binding StoryTitle}">
+
+    <Grid RowDefinitions="Auto,*" Padding="16">
+
+        <ActivityIndicator Grid.Row="0" IsRunning="{Binding IsBusy}" IsVisible="{Binding IsBusy}" />
+
+        <CollectionView Grid.Row="1" ItemsSource="{Binding Chapters}">
+            <CollectionView.ItemTemplate>
+                <DataTemplate x:DataType="models:ChapterSummary">
+                    <Grid Padding="0,10" ColumnDefinitions="*,Auto">
+                        <Grid.GestureRecognizers>
+                            <TapGestureRecognizer
+                                Command="{Binding Source={RelativeSource AncestorType={x:Type vm:ChapterListViewModel}}, Path=OpenChapterCommand}"
+                                CommandParameter="{Binding .}" />
+                        </Grid.GestureRecognizers>
+
+                        <VerticalStackLayout Grid.Column="0">
+                            <Label Text="{Binding ChapterNumber, StringFormat='Chương {0}'}" FontAttributes="Bold" FontSize="15" />
+                            <Label Text="{Binding Title}" FontSize="13" TextColor="Gray" />
+                        </VerticalStackLayout>
+
+                        <Label Grid.Column="1"
+                               Text="{Binding AccessLevel}"
+                               FontSize="12"
+                               TextColor="Gray"
+                               VerticalOptions="Center" />
+                    </Grid>
+                </DataTemplate>
+            </CollectionView.ItemTemplate>
+        </CollectionView>
+
+    </Grid>
+</ContentPage>
