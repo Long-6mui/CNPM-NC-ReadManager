@@ -1,50 +1,125 @@
 @model HomeVm
-@{ ViewData["Title"] = "Trang chủ"; }
-<div class="hero">
-    <div class="container hero-inner"><div>
-        <div class="hero-eyebrow">Thư viện đọc truyện trực tuyến</div>
-        <h1>Mỗi trang sách, một mái hiên để trú mưa.</h1>
-        <p class="lead">Khám phá những câu chuyện mới, từ hành trình kỳ ảo đến những điều bình dị mỗi ngày.</p>
-        <div class="hero-actions"><a class="btn btn-brass" href="#library">Khám phá thư viện</a></div>
-        <div class="hero-stats">
-            <div class="hero-stat"><b>@Model.TotalStories</b><span>Bộ truyện</span></div>
-            <div class="hero-stat"><b>@Model.TotalGenres</b><span>Thể loại</span></div>
-            <div class="hero-stat"><b>@Model.TotalChapters</b><span>Chương</span></div>
+@{
+    ViewData["Title"] = "Trang chủ";
+    var fan = new[] { 1, 0, 2 }.Where(i => i < Model.Updated.Count).Select(i => Model.Updated[i]).ToList();
+}
+@functions {
+    static string Ago(DateTime t)
+    {
+        var s = DateTime.UtcNow - t;
+        if (s.TotalMinutes < 1) return "vừa xong";
+        if (s.TotalHours < 1) return $"{(int)s.TotalMinutes} phút trước";
+        if (s.TotalDays < 1) return $"{(int)s.TotalHours} giờ trước";
+        if (s.TotalDays < 30) return $"{(int)s.TotalDays} ngày trước";
+        return t.ToLocalTime().ToString("dd/MM/yyyy");
+    }
+}
+<link rel="stylesheet" href="~/css/home.css" asp-append-version="true" />
+@if (Model.Updated.Count == 0)
+{
+    <div class="container"><div class="empty-state"><h2>Không tìm thấy truyện phù hợp</h2><p>Thử tên truyện khác hoặc bỏ bộ lọc.</p><a asp-action="Index">Xem tất cả truyện</a></div></div>
+}
+else
+{
+    <section class="hp-hero">
+        <div class="container hp-hero-in">
+            <div>
+                <div class="hp-eyebrow">Thư viện đọc truyện trực tuyến</div>
+                <h1>Mỗi trang sách, một chân trời mới.</h1>
+                <p>Khám phá những câu chuyện mới, từ hành trình kỳ ảo đến những điều bình dị mỗi ngày.</p>
+                <div class="hp-btns">
+                    <a class="btn btn-brass" asp-controller="Stories" asp-action="Browse">Khám phá thư viện</a>
+                    <a class="btn btn-light" asp-controller="Stories" asp-action="Browse" asp-route-access="Free">Đọc miễn phí</a>
+                </div>
+            </div>
+            <div class="hp-fan">
+                @foreach (var s in fan)
+                {
+                    <a asp-controller="Stories" asp-action="Details" asp-route-id="@s.Id" title="@s.Title">
+                        <div class="story-cover">
+                            @if (!string.IsNullOrEmpty(s.CoverUrl))
+                            {
+                                <img src="@s.CoverUrl" alt="Bìa truyện @s.Title">
+                            }
+                            else
+                            {
+                                <div class="gen-cover"><span>@s.Title</span></div>
+                            }
+                        </div>
+                    </a>
+                }
+            </div>
         </div>
-    </div></div>
-</div>
-<div class="container" id="library">
-    <div class="section"><nav class="pillbar" aria-label="Lọc thể loại">
-        <a class="pill @(!Model.GenreId.HasValue ? "active" : "")" asp-action="Index" asp-route-q="@Model.Query" asp-fragment="library">Tất cả</a>
-        @foreach (var genre in Model.Genres)
+    </section>
+    <div class="container">
+        <div class="hp-stats">
+            <div><b>@Model.TotalStories</b><span>Bộ truyện</span></div>
+            <div><b>@Model.TotalGenres</b><span>Thể loại</span></div>
+            <div><b>@Model.TotalChapters</b><span>Chương</span></div>
+            <div><b>@Model.Free.Count</b><span>Truyện đọc miễn phí</span></div>
+        </div>
+
+        @if (Model.Genres.Count > 0)
         {
-            <a class="pill @(Model.GenreId == genre.Id ? "active" : "")" asp-action="Index" asp-route-genre="@genre.Id" asp-route-q="@Model.Query" asp-fragment="library">@genre.Name</a>
-        }
-    </nav></div>
-    @if (!string.IsNullOrWhiteSpace(Model.Query))
-    {
-        <p>Kết quả cho “@Model.Query” · <a asp-action="Index">Xóa bộ lọc</a></p>
-    }
-    @if (Model.Updated.Count == 0)
-    {
-        <div class="empty-state"><h2>Không tìm thấy truyện phù hợp</h2><p>Thử tên truyện khác hoặc bỏ bộ lọc.</p><a asp-action="Index">Xem tất cả truyện</a></div>
-    }
-    else
-    {
-        <section class="section" style="padding-top:0">
-            <div class="section-head"><h2>Mới cập nhật</h2></div>
-            <div class="rail">@foreach (var story in Model.Updated) { <partial name="_StoryCard" model="story" /> }</div>
-        </section>
-        <section class="section" style="padding-top:0">
-            <div class="section-head"><h2>Vừa đăng</h2></div>
-            <div class="rail">@foreach (var story in Model.Newest) { <partial name="_StoryCard" model="story" /> }</div>
-        </section>
-        @if (Model.Free.Count > 0)
-        {
-            <section class="section" style="padding-top:0">
-                <div class="section-head"><h2>Đọc miễn phí</h2></div>
-                <div class="rail">@foreach (var story in Model.Free) { <partial name="_StoryCard" model="story" /> }</div>
+            <section class="hp-sec">
+                <div class="hp-h"><h2>Tìm thể loại bạn thích</h2><a asp-controller="Stories" asp-action="Browse">Xem tất cả</a></div>
+                <div class="hp-cats">
+                    @foreach (var g in Model.Genres.Take(6))
+                    {
+                        <a class="hp-cat" asp-controller="Stories" asp-action="Browse" asp-route-genre="@g.Id">@g.Name<small>Xem truyện</small></a>
+                    }
+                </div>
             </section>
         }
-    }
-</div>
+
+        <section class="hp-sec">
+            <div class="hp-h"><h2>Truyện nổi bật</h2></div>
+            <div class="hp-tabs" id="hpTabs">
+                <button type="button" class="on">Mới cập nhật</button><button type="button">Vừa đăng</button><button type="button">Đọc miễn phí</button>
+            </div>
+            <div class="hp-pane on"><div class="rail">@foreach (var s in Model.Updated)
+                    {
+                        <partial name="_StoryCard" model="s" />
+                    }</div></div>
+            <div class="hp-pane"><div class="rail">@foreach (var s in Model.Newest)
+                    {
+                        <partial name="_StoryCard" model="s" />
+                    }</div></div>
+            <div class="hp-pane"><div class="rail">@foreach (var s in Model.Free)
+                    {
+                        <partial name="_StoryCard" model="s" />
+                    }</div></div>
+        </section>
+
+        <section class="hp-sec">
+            <div class="hp-h"><h2>Mới lên chương</h2><a asp-controller="Stories" asp-action="Browse">Xem toàn bộ</a></div>
+            <table class="hp-list">
+                @foreach (var s in Model.Updated)
+                {
+                    <tr>
+                        <td><a asp-controller="Stories" asp-action="Details" asp-route-id="@s.Id">@s.Title</a></td>
+                        <td class="m hide-sm">@s.Author</td>
+                        <td class="m">@(s.PublishedChapterCount > 0 ? $"Chương {s.PublishedChapterCount}" : "Chưa có chương")</td>
+                        <td class="m">@Ago(s.UpdatedAtSort)</td>
+                    </tr>
+                }
+            </table>
+        </section>
+
+        @if (User.Identity?.IsAuthenticated != true)
+        {
+            <div class="hp-cta">
+                <div><h2>Tham gia cộng đồng đọc truyện</h2><p>Đăng nhập để theo dõi truyện bạn yêu thích.</p></div>
+                <div class="hp-btns"><a class="btn btn-light" asp-controller="Account" asp-action="Login">Đăng nhập</a><a class="btn btn-brass" style="background:var(--amber);color:#241A08" asp-controller="Account" asp-action="Register">Đăng ký</a></div>
+            </div>
+        }
+    </div>
+}
+@section Scripts {
+    <script>
+        (function () {
+            var t = document.querySelectorAll('#hpTabs button'), p = document.querySelectorAll('.hp-pane');
+            t.forEach(function (b, i) { b.addEventListener('click', function () { t.forEach(function (x, j) { x.classList.toggle('on', i === j); p[j].classList.toggle('on', i === j); }); }); });
+        })();
+    </script>
+}

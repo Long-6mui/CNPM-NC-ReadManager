@@ -1,4 +1,8 @@
-
+@inject ReadManager.Web.Services.StoriesApiClient Api
+@{
+    List<ReadManager.Web.Services.GenreDto> navGenres = [];
+    try { navGenres = await Api.GenresAsync(); } catch { }
+}
 <!DOCTYPE html>
 <html lang="vi">
 <head>
@@ -6,6 +10,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>@ViewData["Title"] — Chữ &amp; Đêm</title>
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/theme.css" asp-append-version="true" />
 </head>
 <body>
     <a class="skip-link" href="#main-content">Đến nội dung chính</a>
@@ -15,24 +20,54 @@
             <nav class="nav-main" aria-label="Điều hướng chính">
                 <a class="nav-link" asp-area="" asp-controller="Home" asp-action="Index">Trang chủ</a>
                 <a class="nav-link" asp-area="" asp-controller="Stories" asp-action="Browse">Khám phá</a>
-@if (User.Identity?.IsAuthenticated == true && User.IsInRole("Admin")) { <a class="nav-link" asp-area="Admin" asp-controller="Stories" asp-action="Index">Quản trị</a> }
+                <details class="dd">
+                    <summary>Thể loại ▾</summary>
+                    <div class="dd-menu">
+                        @foreach (var g in navGenres)
+                        {
+                            <a asp-area="" asp-controller="Stories" asp-action="Browse" asp-route-genre="@g.GenreId">@g.Name</a>
+                        }
+                        @if (navGenres.Count == 0)
+                        {
+                            <span class="hint">Chưa có thể loại</span>
+                        }
+                    </div>
+                </details>
+                @if (User.Identity?.IsAuthenticated == true && User.IsInRole("Admin"))
+                {
+                    <a class="nav-link" asp-area="Admin" asp-controller="Stories" asp-action="Index">Quản trị</a>
+                }
             </nav>
-            <form class="nav-search" asp-area="" asp-controller="Home" asp-action="Index" method="get">
+            <form class="nav-search" asp-area="" asp-controller="Stories" asp-action="Browse" method="get">
                 <input type="search" name="q" aria-label="Tìm truyện hoặc tác giả" placeholder="Tìm truyện, tác giả…" value="@Context.Request.Query["q"]" />
                 <button class="btn btn-brass btn-sm" type="submit">Tìm</button>
             </form>
             <div class="nav-right">
-                <button type="button" class="btn btn-ghost" id="themeToggle" style="color:#EFE9D6" aria-label="Đổi giao diện sáng/tối">◐</button>
-                @if(User.Identity?.IsAuthenticated == true) {
- <span>Xin chào, @User.Identity.Name</span>
- <form asp-area="" asp-controller="Account" asp-action="Logout" method="post"><button class="btn btn-brass btn-sm" type="submit">Đăng xuất</button></form>
-} else { <a class="btn btn-brass btn-sm" asp-area="" asp-controller="Account" asp-action="Login">Đăng nhập</a> }
+                <button type="button" class="btn btn-ghost" id="themeToggle" aria-label="Đổi giao diện sáng/tối">◐</button>
+                @if (User.Identity?.IsAuthenticated == true)
+                {
+                    <span>Xin chào, @User.Identity.Name</span>
+                    <form asp-area="" asp-controller="Account" asp-action="Logout" method="post"><button class="btn btn-outline btn-sm" type="submit">Đăng xuất</button></form>
+                }
+                else
+                {
+                    <a class="btn btn-brass btn-sm" asp-area="" asp-controller="Account" asp-action="Login">Đăng nhập</a>
+                }
             </div>
         </div>
     </header>
-    @if (TempData["Toast"] is string message) { <div class="demo-notice" role="status">@message</div> }
+    @if (TempData["Toast"] is string message)
+    {
+        <div class="demo-notice" role="status">@message</div>
+    }
     <main id="main-content">@RenderBody()</main>
-    <footer><div class="container"><div><strong>吟 Chữ &amp; Đêm</strong><p>Thư viện đọc truyện trực tuyến — nhóm 05-03.</p></div></div></footer>
+    <footer>
+        <div class="container ft">
+            <div><strong>Chữ &amp; Đêm</strong><p>Thư viện đọc truyện trực tuyến — nhóm 05-03.</p></div>
+            <div><h4>Khám phá</h4><a asp-area="" asp-controller="Stories" asp-action="Browse">Tất cả truyện</a><a asp-area="" asp-controller="Stories" asp-action="Browse" asp-route-access="Free">Đọc miễn phí</a><a asp-area="" asp-controller="Stories" asp-action="Browse" asp-route-status="Completed">Truyện hoàn thành</a></div>
+            <div><h4>Tài khoản</h4><a asp-area="" asp-controller="Account" asp-action="Login">Đăng nhập</a><a asp-area="" asp-controller="Account" asp-action="Register">Đăng ký</a></div>
+        </div>
+    </footer>
     <script src="~/js/site.js" asp-append-version="true"></script>
     @await RenderSectionAsync("Scripts", required: false)
 </body>
