@@ -1,4 +1,4 @@
-﻿using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging;
 using ReadManager.Mobile.Services;
 using ReadManager.Mobile.Services.Auth;
 using ReadManager.Mobile.ViewModels;
@@ -42,6 +42,8 @@ namespace ReadManager.Mobile
             builder.Services.AddTransient<RegisterViewModel>();
             builder.Services.AddTransient<StoryListViewModel>();
             builder.Services.AddTransient<StoryDetailViewModel>();
+            builder.Services.AddTransient<BrowseViewModel>();
+            builder.Services.AddTransient<AccountViewModel>();
             builder.Services.AddTransient<ChapterListViewModel>();
             builder.Services.AddTransient<ChapterReaderViewModel>();
 
@@ -50,6 +52,8 @@ namespace ReadManager.Mobile
             builder.Services.AddTransient<RegisterPage>();
             builder.Services.AddTransient<StoryListPage>();
             builder.Services.AddTransient<StoryDetailPage>();
+            builder.Services.AddTransient<BrowsePage>();
+            builder.Services.AddTransient<AccountPage>();
             builder.Services.AddTransient<ChapterListPage>();
             builder.Services.AddTransient<ChapterReaderPage>();
 
