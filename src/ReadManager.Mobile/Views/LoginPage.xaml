@@ -4,43 +4,53 @@
              xmlns:vm="clr-namespace:ReadManager.Mobile.ViewModels"
              x:DataType="vm:LoginViewModel"
              x:Class="ReadManager.Mobile.Views.LoginPage"
-             Title="Đăng nhập">
+             Title="Đăng nhập"
+             BackgroundColor="{StaticResource WebBg}">
 
     <ScrollView>
-        <VerticalStackLayout Padding="30" Spacing="16" VerticalOptions="Center">
+        <VerticalStackLayout Padding="20,28" Spacing="14">
 
-            <Label Text="ReadManager" FontSize="28" FontAttributes="Bold" HorizontalOptions="Center" />
-            <Label Text="Đăng nhập để tiếp tục đọc truyện" FontSize="14" TextColor="Gray" HorizontalOptions="Center" />
+            <Border Style="{StaticResource Panel}">
+                <VerticalStackLayout Spacing="14">
+                    <Label Text="Đăng nhập" Style="{StaticResource LblH2}" />
+                    <Label Text="Chào mừng bạn quay lại Chữ &amp; Đêm." Style="{StaticResource LblMuted}" Margin="0,-8,0,4" />
 
-            <Entry Placeholder="Tên đăng nhập hoặc email"
-                   Text="{Binding UsernameOrEmail}"
-                   Keyboard="Email" />
+                    <VerticalStackLayout Spacing="6">
+                        <Label Text="Email" Style="{StaticResource LblFieldName}" />
+                        <Border Style="{StaticResource FieldBorder}">
+                            <Entry Style="{StaticResource WebEntry}" Text="{Binding UsernameOrEmail}"
+                                   Keyboard="Email" Placeholder="admin@doctruyen.local" />
+                        </Border>
+                    </VerticalStackLayout>
 
-            <Entry Placeholder="Mật khẩu"
-                   Text="{Binding Password}"
-                   IsPassword="True" />
+                    <VerticalStackLayout Spacing="6">
+                        <Label Text="Mật khẩu" Style="{StaticResource LblFieldName}" />
+                        <Border Style="{StaticResource FieldBorder}">
+                            <Entry Style="{StaticResource WebEntry}" Text="{Binding Password}"
+                                   IsPassword="True" Placeholder="Nhập mật khẩu" />
+                        </Border>
+                    </VerticalStackLayout>
 
-            <Label Text="{Binding ErrorMessage}"
-                   TextColor="Red"
-                   IsVisible="{Binding ErrorMessage, Converter={StaticResource StringToBoolConverter}}" />
+                    <Label Text="{Binding ErrorMessage}" TextColor="{StaticResource WebCrimson}" FontSize="13"
+                           IsVisible="{Binding ErrorMessage, Converter={StaticResource StringToBoolConverter}}" />
 
-            <ActivityIndicator IsRunning="{Binding IsBusy}" IsVisible="{Binding IsBusy}" />
+                    <ActivityIndicator IsRunning="{Binding IsBusy}" IsVisible="{Binding IsBusy}"
+                                       Color="{StaticResource WebRoyal}" />
 
-            <Button Text="Đăng nhập"
-                    Command="{Binding LoginCommand}"
-                    IsEnabled="{Binding IsBusy, Converter={StaticResource InvertedBoolConverter}}" />
+                    <Button Text="Đăng nhập" Style="{StaticResource BtnBrass}"
+                            Command="{Binding LoginCommand}"
+                            IsEnabled="{Binding IsBusy, Converter={StaticResource InvertedBoolConverter}}" />
 
-            <Button Text="Chưa có tài khoản? Đăng ký"
-                    Command="{Binding GoToRegisterCommand}"
-                    BackgroundColor="Transparent"
-                    TextColor="{StaticResource Primary}" />
+                    <HorizontalStackLayout HorizontalOptions="Center" Spacing="4">
+                        <Label Text="Chưa có tài khoản?" Style="{StaticResource LblMuted}" VerticalOptions="Center" FontSize="12.5" />
+                        <Button Text="Đăng ký ngay" Style="{StaticResource BtnLink}"
+                                Command="{Binding GoToRegisterCommand}" Padding="2,0" />
+                    </HorizontalStackLayout>
+                </VerticalStackLayout>
+            </Border>
 
-            <!-- CHỈ DÙNG ĐỂ DEMO/XEM GIAO DIỆN — xoá nút này trước khi nộp bài -->
-            <Button Text="⏩ Xem thử giao diện (bỏ qua đăng nhập)"
-                    Command="{Binding SkipLoginCommand}"
-                    BackgroundColor="Transparent"
-                    TextColor="Gray"
-                    FontSize="12" />
+            <Button Text="← Về trang chủ" Style="{StaticResource BtnLink}"
+                    Command="{Binding GoHomeCommand}" HorizontalOptions="Center" />
 
         </VerticalStackLayout>
     </ScrollView>

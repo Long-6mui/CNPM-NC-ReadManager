@@ -32,7 +32,7 @@ public partial class RegisterViewModel : BaseViewModel
     [RelayCommand]
     private async Task RegisterAsync()
     {
-        if (string.IsNullOrWhiteSpace(Username) || string.IsNullOrWhiteSpace(Email) ||
+        if (string.IsNullOrWhiteSpace(Email) ||
             string.IsNullOrWhiteSpace(DisplayName) || string.IsNullOrWhiteSpace(Password))
         {
             ErrorMessage = "Vui lòng nhập đầy đủ thông tin.";
@@ -49,7 +49,7 @@ public partial class RegisterViewModel : BaseViewModel
         {
             await _authService.RegisterAsync(new RegisterRequest
             {
-                Username = Username.Trim(),
+                Username = string.IsNullOrWhiteSpace(Username) ? Email.Trim().Split('@')[0] : Username.Trim(),
                 Email = Email.Trim(),
                 DisplayName = DisplayName.Trim(),
                 Password = Password
@@ -63,6 +63,6 @@ public partial class RegisterViewModel : BaseViewModel
     [RelayCommand]
     private async Task GoToLoginAsync()
     {
-        await Shell.Current.GoToAsync("..");
+        await Shell.Current.GoToAsync("//LoginPage");
     }
 }

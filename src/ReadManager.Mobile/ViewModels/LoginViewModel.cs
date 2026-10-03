@@ -48,11 +48,10 @@ public partial class LoginViewModel : BaseViewModel
         await Shell.Current.GoToAsync(nameof(Views.RegisterPage));
     }
 
-    // CHỈ DÙNG ĐỂ DEMO/XEM GIAO DIỆN — bỏ qua đăng nhập thật, nhảy thẳng trang chủ.
-    // Xoá command này (và nút tương ứng ở LoginPage.xaml) trước khi nộp bài / lên production.
+    // Quay về Trang chủ (đăng nhập là tuỳ chọn, giống web)
     [RelayCommand]
-    private async Task SkipLoginAsync()
+    private async Task GoHomeAsync()
     {
-        await Shell.Current.GoToAsync("StoryListPage");
+        await Shell.Current.GoToAsync("//StoryListPage");
     }
 }
