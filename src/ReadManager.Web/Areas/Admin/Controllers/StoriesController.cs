@@ -58,7 +58,10 @@ public class StoriesController(IWebHostEnvironment environment, StoriesApiClient
                 CoverUrl = d.CoverUrl,
                 FreeChapterCount = d.FreeChapterCount,
                 SelectedGenreIds = d.Genres.Select(g => g.GenreId).ToList(),
-                AllGenres = await LoadGenres()
+                AllGenres = await LoadGenres(),
+                // BE4 — lấy danh sách chương (kể cả nháp) hiện ở khung "Chương" bên phải
+                Chapters = (await api.ChaptersForAdminAsync(id, await Token()))
+                    .Select(StoriesApiClient.ToChapter).ToList()
             });
         }
         catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException)
@@ -141,16 +144,100 @@ public class StoriesController(IWebHostEnvironment environment, StoriesApiClient
         return RedirectToAction(nameof(Index));
     }
 
-    // ----- Phần chương: chờ Backend 4 -----
-    private IActionResult ChaptersPending(int storyId)
+    // ----- PHẦN CHƯƠNG (Backend 4) -----
+
+    // Mở form thêm chương (no = null) hoặc sửa chương (no = số chương)
+    public async Task<IActionResult> ChapterEdit(int storyId, int? no)
     {
-        TempData["Toast"] = "Quản lý chương sẽ hoạt động khi Backend 4 hoàn thành API chương.";
+        try
+        {
+            var token = await Token();
+            var story = await api.GetStoryForAdminAsync(storyId, token);
+            if (story is null) return NotFound();
+
+            if (no is null)
+            {
+                // Chương mới: tự gợi ý số chương tiếp theo (số lớn nhất + 1)
+                var list = await api.ChaptersForAdminAsync(storyId, token);
+                return View(new ChapterFormVm
+                {
+                    StoryId = storyId,
+                    StoryTitle = story.Title,
+                    No = list.Count == 0 ? 1 : list.Max(c => c.ChapterNumber) + 1,
+                    IsFree = story.AccessPolicy == "Free",
+                    Status = ChapterStatus.Reviewed
+                });
+            }
+
+            // Sửa chương: lấy nội dung chương cũ đổ vào form
+            var c = await api.GetChapterAsync(storyId, no.Value, token);
+            if (c is null) return NotFound();
+            return View(new ChapterFormVm
+            {
+                Id = c.ChapterId,
+                StoryId = storyId,
+                StoryTitle = story.Title,
+                No = c.ChapterNumber,
+                Title = c.Title,
+                Content = c.Content,
+                IsFree = c.AccessLevel == "Free",
+                Status = c.PublicationStatus == "Published" ? ChapterStatus.Reviewed : ChapterStatus.Draft
+            });
+        }
+        catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException)
+        {
+            TempData["Toast"] = ApiDown;
+            return RedirectToAction(nameof(Edit), new { id = storyId });
+        }
+    }
+
+    // Bấm "Lưu chương": Id = 0 → tạo mới, Id > 0 → sửa
+    [HttpPost, ValidateAntiForgeryToken]
+    public async Task<IActionResult> ChapterSave(ChapterFormVm vm)
+    {
+        if (!ModelState.IsValid) return View("ChapterEdit", vm);
+        try
+        {
+            var body = new
+            {
+                chapterNumber = vm.No,
+                title = vm.Title.Trim(),
+                content = vm.Content,
+                accessLevel = vm.IsFree ? "Free" : "Paid",                                         // PB10
+                publicationStatus = vm.Status == ChapterStatus.Reviewed ? "Published" : "Draft"
+            };
+            var result = await api.SaveChapterAsync(vm.StoryId, vm.Id, body, await Token());
+            if (result.Ok)
+            {
+                TempData["Toast"] = result.Message;
+                return RedirectToAction(nameof(Edit), new { id = vm.StoryId });
+            }
+            ModelState.AddModelError("", result.Message);   // vd: "Truyện đã có chương số 3."
+        }
+        catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException)
+        {
+            ModelState.AddModelError("", ApiDown);
+        }
+        return View("ChapterEdit", vm);
+    }
+
+    // Xóa chương: tìm Id của chương theo số chương rồi gọi API xóa
+    [HttpPost, ValidateAntiForgeryToken]
+    public async Task<IActionResult> ChapterDelete(int storyId, int no)
+    {
+        try
+        {
+            var token = await Token();
+            var c = await api.GetChapterAsync(storyId, no, token);
+            TempData["Toast"] = c is null
+                ? "Không tìm thấy chương."
+                : (await api.DeleteChapterAsync(c.ChapterId, token)).Message;
+        }
+        catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException) { TempData["Toast"] = ApiDown; }
         return RedirectToAction(nameof(Edit), new { id = storyId });
     }
-    public IActionResult ChapterEdit(int storyId, int? no) => ChaptersPending(storyId);
-    [HttpPost, ValidateAntiForgeryToken] public IActionResult ChapterSave(ChapterFormVm vm) => ChaptersPending(vm.StoryId);
-    [HttpPost, ValidateAntiForgeryToken] public IActionResult ChapterDelete(int storyId, int no) => ChaptersPending(storyId);
 
+    // Mở trang "Tải nhiều chương"
     public async Task<IActionResult> BulkImport(int storyId)
     {
         try
@@ -165,16 +252,67 @@ public class StoriesController(IWebHostEnvironment environment, StoriesApiClient
         }
     }
 
+    // ----- Tải nhiều chương: file .txt / .zip / văn bản dán -----
+    // Trang BulkImport gọi action này bằng JavaScript (fetch), KHÔNG tải lại trang,
+    // nhờ vậy file đã chọn vẫn còn khi bấm "Kiểm tra" rồi bấm "Lưu".
+    // save = false → chỉ kiểm tra, trả bảng xem trước + lỗi | save = true → lưu nếu không có lỗi.
     [HttpPost, ValidateAntiForgeryToken]
-    public IActionResult BulkImportSave(BulkImportVm vm)
+    [RequestSizeLimit(50 * 1024 * 1024)]
+    [RequestFormLimits(MultipartBodyLengthLimit = 50 * 1024 * 1024)]
+    public async Task<IActionResult> BulkImportCheck(int storyId, List<IFormFile> files, string? text,
+        bool markFree, bool publish, bool overwriteExisting, bool save)
     {
-        if (string.IsNullOrWhiteSpace(vm.RawText) || vm.RawText.Length > 200000)
-            ModelState.AddModelError("", "Nhập nội dung từ 1 đến 200.000 ký tự.");
-        else
+        try
         {
-            var result = ChapterBulkParser.Parse(vm.RawText);
-            ModelState.AddModelError("", $"Nhận diện {result.Count} chương. Đây là kiểm tra nội dung; chưa lưu DB (chờ API chương).");
+            // Gói lại thành form để chuyển tiếp sang API
+            using var form = new MultipartFormDataContent();
+            foreach (var file in files)
+            {
+                var part = new StreamContent(file.OpenReadStream());
+                part.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/octet-stream");
+                form.Add(part, "Files", file.FileName);
+            }
+            if (!string.IsNullOrWhiteSpace(text)) form.Add(new StringContent(text), "Text");
+            form.Add(new StringContent(markFree ? "Free" : "Paid"), "AccessLevel");
+            form.Add(new StringContent(publish ? "Published" : "Draft"), "PublicationStatus");
+            form.Add(new StringContent(overwriteExisting ? "true" : "false"), "OverwriteExisting");
+            form.Add(new StringContent(save ? "true" : "false"), "Save");
+
+            var (status, body) = await api.UploadChapterFilesAsync(storyId, form, await Token());
+
+            if (status == System.Net.HttpStatusCode.OK)
+            {
+                // Lưu thành công → để sẵn thông báo cho trang sửa truyện (JS sẽ chuyển trang)
+                using var doc = System.Text.Json.JsonDocument.Parse(body);
+                if (doc.RootElement.TryGetProperty("saved", out var saved) && saved.GetBoolean()
+                    && doc.RootElement.TryGetProperty("message", out var msg))
+                    TempData["Toast"] = msg.GetString();
+                return Content(body, "application/json");
+            }
+
+            return Json(ErrorJson(status switch
+            {
+                System.Net.HttpStatusCode.Unauthorized => "Phiên đăng nhập hết hạn. Hãy đăng nhập lại.",
+                System.Net.HttpStatusCode.Forbidden => "Bạn không có quyền thực hiện thao tác này.",
+                System.Net.HttpStatusCode.NotFound => "Không tìm thấy truyện.",
+                System.Net.HttpStatusCode.RequestEntityTooLarge => "File quá lớn (tối đa 50MB mỗi lần).",
+                _ => $"API trả về lỗi {(int)status}."
+            }));
         }
-        return View("BulkImport", vm);
+        catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException)
+        {
+            return Json(ErrorJson(ApiDown));
+        }
     }
+
+    // Định dạng lỗi giống kết quả của API để JavaScript hiện chung một kiểu
+    private static object ErrorJson(string message) => new
+    {
+        canSave = false,
+        saved = false,
+        errors = new[] { message },
+        warnings = Array.Empty<string>(),
+        chapters = Array.Empty<object>(),
+        message = "Có lỗi xảy ra."
+    };
 }

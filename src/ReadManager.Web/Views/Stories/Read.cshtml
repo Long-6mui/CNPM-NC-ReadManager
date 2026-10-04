@@ -32,7 +32,7 @@
         <div class="reader-content" id="readerContent">
             @foreach (var p in paragraphs)
             {
-                <p>@Html.Raw(Html.Encode(p).Replace("\n", "<br>"))</p>
+                <p>@Html.Raw(string.Join("<br>", p.Split('\n').Select(line => Html.Encode(line.Normalize()))))</p>
             }
         </div>
     }

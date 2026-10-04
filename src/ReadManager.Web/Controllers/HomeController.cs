@@ -1,4 +1,4 @@
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
 using ReadManager.Web.Models;
 using ReadManager.Web.Services;
@@ -33,12 +33,12 @@ public class HomeController(StoriesApiClient api) : Controller
         }
         catch (HttpRequestException)
         {
-            TempData["Toast"] = "Kh�ng k?t n?i ???c API. H�y ch?y ReadManager.Api r?i t?i l?i trang.";
+            TempData["Toast"] = "Không kết nối được API. Hãy chạy ReadManager.Api rồi tải lại trang.";
             return View(new HomeVm { Query = query, GenreId = genre });
         }
         catch (TaskCanceledException)
         {
-            TempData["Toast"] = "API ph?n h?i qu� ch?m. Vui l�ng th? l?i.";
+            TempData["Toast"] = "API phản hồi quá chậm. Vui lòng thử lại.";
             return View(new HomeVm { Query = query, GenreId = genre });
         }
     }
