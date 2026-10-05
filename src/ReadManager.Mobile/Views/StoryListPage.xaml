@@ -5,60 +5,299 @@
              xmlns:models="clr-namespace:ReadManager.Mobile.Models"
              x:DataType="vm:StoryListViewModel"
              x:Class="ReadManager.Mobile.Views.StoryListPage"
-             Title="Trang chủ">
+             Title="Chữ &amp; Đêm"
+             BackgroundColor="{StaticResource WebBg}">
 
-    <Grid RowDefinitions="Auto,Auto,*" Padding="16" RowSpacing="10">
+    <ContentPage.Resources>
+        <ResourceDictionary>
 
-        <SearchBar Grid.Row="0"
-                   Placeholder="Tìm truyện..."
-                   Text="{Binding SearchText}"
-                   SearchCommand="{Binding SearchCommand}" />
-
-        <CollectionView Grid.Row="1"
-                         ItemsSource="{Binding Genres}"
-                         ItemsLayout="HorizontalList"
-                         SelectionMode="None"
-                         HeightRequest="44">
-            <CollectionView.ItemTemplate>
-                <DataTemplate x:DataType="models:Genre">
-                    <Button Text="{Binding Name}"
-                            Padding="12,0"
-                            CornerRadius="16"
-                            Command="{Binding Source={RelativeSource AncestorType={x:Type vm:StoryListViewModel}}, Path=FilterByGenreCommand}"
+            <!-- Thẻ truyện — giống Views/Shared/_StoryCard.cshtml của web -->
+            <DataTemplate x:Key="StoryCardTemplate" x:DataType="models:StorySummary">
+                <VerticalStackLayout WidthRequest="150" Margin="0,0,12,14" Spacing="0">
+                    <VerticalStackLayout.GestureRecognizers>
+                        <TapGestureRecognizer
+                            Command="{Binding Source={RelativeSource AncestorType={x:Type vm:StoryListViewModel}}, Path=GoToDetailCommand}"
                             CommandParameter="{Binding .}" />
-                </DataTemplate>
-            </CollectionView.ItemTemplate>
-        </CollectionView>
+                    </VerticalStackLayout.GestureRecognizers>
 
-        <RefreshView Grid.Row="2"
-                     IsRefreshing="{Binding IsRefreshing}"
-                     Command="{Binding RefreshCommand}">
-            <CollectionView ItemsSource="{Binding Stories}"
-                             RemainingItemsThreshold="3"
-                             RemainingItemsThresholdReachedCommand="{Binding LoadMoreCommand}">
-                <CollectionView.ItemTemplate>
-                    <DataTemplate x:DataType="models:StorySummary">
-                        <Grid Padding="0,8" ColumnDefinitions="80,*" ColumnSpacing="12">
-                            <Grid.GestureRecognizers>
-                                <TapGestureRecognizer
-                                    Command="{Binding Source={RelativeSource AncestorType={x:Type vm:StoryListViewModel}}, Path=GoToDetailCommand}"
-                                    CommandParameter="{Binding .}" />
-                            </Grid.GestureRecognizers>
+                    <Border HeightRequest="225" StrokeThickness="1" Stroke="{StaticResource WebBorder}"
+                            BackgroundColor="{StaticResource WebSurface2}">
+                        <Border.StrokeShape>
+                            <RoundRectangle CornerRadius="4" />
+                        </Border.StrokeShape>
+                        <Grid>
+                            <Grid.Background>
+                                <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                    <GradientStop Color="#3B4E63" Offset="0.0" />
+                                    <GradientStop Color="#22303F" Offset="1.0" />
+                                </LinearGradientBrush>
+                            </Grid.Background>
 
-                            <Image Grid.Column="0" Source="{Binding CoverUrl}" Aspect="AspectFill" HeightRequest="100" WidthRequest="80" />
+                            <!-- Chưa có bìa: hiện tên truyện trên nền gradient (gen-cover của web) -->
+                            <Label Text="{Binding Title}" IsVisible="{Binding HasNoCover}"
+                                   FontFamily="{StaticResource SerifFont}" FontSize="15" FontAttributes="Bold"
+                                   TextColor="White" HorizontalTextAlignment="Center"
+                                   VerticalOptions="Center" Margin="10" />
+                            <Image Source="{Binding CoverUrl}" IsVisible="{Binding HasCover}" Aspect="AspectFill" />
 
-                            <VerticalStackLayout Grid.Column="1" VerticalOptions="Center" Spacing="4">
-                                <Label Text="{Binding Title}" FontAttributes="Bold" FontSize="16" LineBreakMode="TailTruncation" />
-                                <Label Text="{Binding AuthorName}" FontSize="13" TextColor="Gray" />
-                                <Label Text="{Binding PublicationStatus}" FontSize="12" TextColor="{StaticResource Primary}" />
+                            <Border HorizontalOptions="Start" VerticalOptions="Start" Margin="7"
+                                    Padding="7,3" StrokeThickness="0" BackgroundColor="{Binding AccessColor}">
+                                <Border.StrokeShape>
+                                    <RoundRectangle CornerRadius="3" />
+                                </Border.StrokeShape>
+                                <Label Text="{Binding AccessLabel}" TextColor="White" FontSize="10" FontAttributes="Bold" />
+                            </Border>
+
+                            <Border HorizontalOptions="End" VerticalOptions="End" Margin="7"
+                                    Padding="6,2" StrokeThickness="0" BackgroundColor="#8C000000">
+                                <Border.StrokeShape>
+                                    <RoundRectangle CornerRadius="3" />
+                                </Border.StrokeShape>
+                                <Label Text="{Binding StatusLabel}" TextColor="White" FontSize="9.5" FontAttributes="Bold" />
+                            </Border>
+                        </Grid>
+                    </Border>
+
+                    <Label Text="{Binding Title}" Style="{StaticResource LblCardTitle}" Margin="0,9,0,0" />
+                    <Label Text="{Binding MetaText}" Style="{StaticResource LblCardMeta}" Margin="0,3,0,0" />
+                </VerticalStackLayout>
+            </DataTemplate>
+
+            <!-- Hàng ở bảng "Mới lên chương" -->
+            <DataTemplate x:Key="UpdateRowTemplate" x:DataType="models:StorySummary">
+                <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,1" Padding="16,0" ColumnSpacing="10">
+                    <Grid.GestureRecognizers>
+                        <TapGestureRecognizer
+                            Command="{Binding Source={RelativeSource AncestorType={x:Type vm:StoryListViewModel}}, Path=GoToDetailCommand}"
+                            CommandParameter="{Binding .}" />
+                    </Grid.GestureRecognizers>
+                    <VerticalStackLayout Grid.Column="0" Padding="0,12" Spacing="2">
+                        <Label Text="{Binding Title}" FontSize="14" FontAttributes="Bold"
+                               TextColor="{StaticResource WebText}" LineBreakMode="TailTruncation" MaxLines="1" />
+                        <Label Text="{Binding AuthorName}" FontSize="12" TextColor="{StaticResource WebMuted}"
+                               LineBreakMode="TailTruncation" MaxLines="1" />
+                    </VerticalStackLayout>
+                    <VerticalStackLayout Grid.Column="1" Padding="0,12" Spacing="2" HorizontalOptions="End">
+                        <Label Text="{Binding ChapterText}" FontSize="12" TextColor="{StaticResource WebText}" HorizontalTextAlignment="End" />
+                        <Label Text="{Binding AgoText}" FontSize="11.5" TextColor="{StaticResource WebMuted}" HorizontalTextAlignment="End" />
+                    </VerticalStackLayout>
+                    <BoxView Grid.Row="1" Grid.ColumnSpan="2" HeightRequest="1" Color="{StaticResource WebBorder}" />
+                </Grid>
+            </DataTemplate>
+
+        </ResourceDictionary>
+    </ContentPage.Resources>
+
+    <RefreshView IsRefreshing="{Binding IsRefreshing}" Command="{Binding RefreshCommand}">
+        <ScrollView>
+            <VerticalStackLayout Spacing="0">
+
+                <!-- Thanh trên: tìm kiếm + đăng nhập/đăng xuất (topbar của web) -->
+                <Grid BackgroundColor="White" Padding="16,10" ColumnDefinitions="*,Auto" ColumnSpacing="10">
+                    <Border Grid.Column="0" Style="{StaticResource FieldBorder}" HeightRequest="40">
+                        <Entry Style="{StaticResource WebEntry}" HeightRequest="40"
+                               Placeholder="Tìm truyện, tác giả..."
+                               Text="{Binding SearchText}"
+                               ReturnType="Search"
+                               ReturnCommand="{Binding SearchCommand}" />
+                    </Border>
+                    <Button Grid.Column="1" Text="Đăng nhập" Style="{StaticResource BtnBrassSm}"
+                            Command="{Binding GoToLoginCommand}" IsVisible="{Binding IsGuest}" />
+                    <Button Grid.Column="1" Text="Đăng xuất" Style="{StaticResource BtnOutlineSm}"
+                            Command="{Binding LogoutCommand}" IsVisible="{Binding IsLoggedIn}" />
+                </Grid>
+                <BoxView HeightRequest="1" Color="{StaticResource WebBorder}" />
+
+                <ActivityIndicator IsRunning="{Binding IsBusy}" IsVisible="{Binding IsBusy}"
+                                   Color="{StaticResource WebRoyal}" Margin="0,16" />
+
+                <Label Text="{Binding ErrorMessage}" TextColor="{StaticResource WebCrimson}" Padding="16,10"
+                       IsVisible="{Binding ErrorMessage, Converter={StaticResource StringToBoolConverter}}" />
+
+                <!-- ============ KẾT QUẢ TÌM / LỌC (Stories/Browse) ============ -->
+                <Grid IsVisible="{Binding IsFiltering}" ColumnDefinitions="*,Auto" Padding="16,16,16,6">
+                    <Label Grid.Column="0" Text="{Binding FilterText}" VerticalOptions="Center"
+                           Style="{StaticResource LblH2}" FontSize="17" />
+                    <Button Grid.Column="1" Text="Xóa bộ lọc" Style="{StaticResource BtnLink}"
+                            Command="{Binding ClearFilterCommand}" />
+                </Grid>
+                <VerticalStackLayout IsVisible="{Binding IsFiltering}" Padding="16,8,16,24">
+                    <FlexLayout Wrap="Wrap" JustifyContent="Start"
+                                BindableLayout.ItemsSource="{Binding Results}"
+                                BindableLayout.ItemTemplate="{StaticResource StoryCardTemplate}" />
+                    <VerticalStackLayout IsVisible="{Binding ShowNoResults}" Padding="0,40" Spacing="6">
+                        <Label Text="Không tìm thấy truyện phù hợp" Style="{StaticResource LblH2}"
+                               FontSize="18" HorizontalTextAlignment="Center" />
+                        <Label Text="Thử tên truyện khác hoặc bỏ bộ lọc." Style="{StaticResource LblMuted}"
+                               HorizontalTextAlignment="Center" />
+                    </VerticalStackLayout>
+                </VerticalStackLayout>
+
+                <!-- ============ TRANG CHỦ (Home/Index) ============ -->
+                <VerticalStackLayout IsVisible="{Binding IsHome}" Spacing="0">
+
+                    <!-- Không có truyện -->
+                    <VerticalStackLayout IsVisible="{Binding ShowEmpty}" Padding="20,60" Spacing="6">
+                        <Label Text="Không tìm thấy truyện phù hợp" Style="{StaticResource LblH2}"
+                               FontSize="18" HorizontalTextAlignment="Center" />
+                        <Label Text="Kéo xuống để tải lại, hoặc kiểm tra API đã chạy chưa."
+                               Style="{StaticResource LblMuted}" HorizontalTextAlignment="Center" />
+                    </VerticalStackLayout>
+
+                    <VerticalStackLayout IsVisible="{Binding HasStories}" Spacing="0">
+
+                        <!-- Hero (hp-hero) -->
+                        <Grid Padding="22,32,22,64">
+                            <Grid.Background>
+                                <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                    <GradientStop Color="#0B1F4B" Offset="0.0" />
+                                    <GradientStop Color="#12347D" Offset="1.0" />
+                                </LinearGradientBrush>
+                            </Grid.Background>
+                            <VerticalStackLayout Spacing="12">
+                                <Label Text="Thư viện đọc truyện trực tuyến" TextColor="{StaticResource WebAmber}"
+                                       FontSize="13" FontAttributes="Bold" />
+                                <Label Text="Mỗi trang sách, một chân trời mới." TextColor="White"
+                                       FontFamily="{StaticResource SerifFont}" FontSize="32" FontAttributes="Bold" />
+                                <Label Text="Khám phá những câu chuyện mới, từ hành trình kỳ ảo đến những điều bình dị mỗi ngày."
+                                       TextColor="#C3D2F5" FontSize="15" />
+                                <HorizontalStackLayout Spacing="10" Margin="0,6,0,0">
+                                    <Button Text="Khám phá thư viện" Style="{StaticResource BtnBrass}"
+                                            Command="{Binding GoToBrowseCommand}" />
+                                    <Button Text="Đọc miễn phí" Style="{StaticResource BtnLight}"
+                                            Command="{Binding BrowseCommand}" CommandParameter="Free" />
+                                </HorizontalStackLayout>
                             </VerticalStackLayout>
                         </Grid>
-                    </DataTemplate>
-                </CollectionView.ItemTemplate>
-            </CollectionView>
-        </RefreshView>
 
-        <ActivityIndicator Grid.Row="2" IsRunning="{Binding IsBusy}" IsVisible="{Binding IsBusy}" VerticalOptions="Start" />
+                        <!-- Thống kê (hp-stats) -->
+                        <Border Style="{StaticResource Panel}" Margin="16,-34,16,0" Padding="10,14">
+                            <Grid ColumnDefinitions="*,*,*,*" ColumnSpacing="4">
+                                <VerticalStackLayout Grid.Column="0" HorizontalOptions="Center" Spacing="2">
+                                    <Label Text="{Binding TotalStories}" Style="{StaticResource LblH2}" HorizontalTextAlignment="Center" />
+                                    <Label Text="Bộ truyện" FontSize="10.5" TextColor="{StaticResource WebMuted}" HorizontalTextAlignment="Center" />
+                                </VerticalStackLayout>
+                                <VerticalStackLayout Grid.Column="1" HorizontalOptions="Center" Spacing="2">
+                                    <Label Text="{Binding TotalGenres}" Style="{StaticResource LblH2}" HorizontalTextAlignment="Center" />
+                                    <Label Text="Thể loại" FontSize="10.5" TextColor="{StaticResource WebMuted}" HorizontalTextAlignment="Center" />
+                                </VerticalStackLayout>
+                                <VerticalStackLayout Grid.Column="2" HorizontalOptions="Center" Spacing="2">
+                                    <Label Text="{Binding TotalChapters}" Style="{StaticResource LblH2}" HorizontalTextAlignment="Center" />
+                                    <Label Text="Chương" FontSize="10.5" TextColor="{StaticResource WebMuted}" HorizontalTextAlignment="Center" />
+                                </VerticalStackLayout>
+                                <VerticalStackLayout Grid.Column="3" HorizontalOptions="Center" Spacing="2">
+                                    <Label Text="{Binding FreeCount}" Style="{StaticResource LblH2}" HorizontalTextAlignment="Center" />
+                                    <Label Text="Đọc miễn phí" FontSize="10.5" TextColor="{StaticResource WebMuted}" HorizontalTextAlignment="Center" />
+                                </VerticalStackLayout>
+                            </Grid>
+                        </Border>
 
-    </Grid>
+                        <!-- Tìm thể loại bạn thích (hp-cats) -->
+                        <VerticalStackLayout IsVisible="{Binding HasGenres}" Padding="16,28,0,0" Spacing="12">
+                            <Label Text="Tìm thể loại bạn thích" Style="{StaticResource LblH2}" />
+                            <ScrollView Orientation="Horizontal" HorizontalScrollBarVisibility="Never">
+                                <HorizontalStackLayout Spacing="10" Padding="0,0,16,0"
+                                                       BindableLayout.ItemsSource="{Binding GenreCats}">
+                                    <BindableLayout.ItemTemplate>
+                                        <DataTemplate x:DataType="models:Genre">
+                                            <Border Style="{StaticResource Panel}" Padding="16,12" WidthRequest="130">
+                                                <Border.GestureRecognizers>
+                                                    <TapGestureRecognizer
+                                                        Command="{Binding Source={RelativeSource AncestorType={x:Type vm:StoryListViewModel}}, Path=FilterByGenreCommand}"
+                                                        CommandParameter="{Binding .}" />
+                                                </Border.GestureRecognizers>
+                                                <VerticalStackLayout Spacing="2">
+                                                    <Label Text="{Binding Name}" FontAttributes="Bold" FontSize="14"
+                                                           TextColor="{StaticResource WebText}" LineBreakMode="TailTruncation" MaxLines="1" />
+                                                    <Label Text="Xem truyện" FontSize="11.5" TextColor="{StaticResource WebMuted}" />
+                                                </VerticalStackLayout>
+                                            </Border>
+                                        </DataTemplate>
+                                    </BindableLayout.ItemTemplate>
+                                </HorizontalStackLayout>
+                            </ScrollView>
+                        </VerticalStackLayout>
+
+                        <!-- Truyện nổi bật + 3 tab (hp-tabs) -->
+                        <VerticalStackLayout Padding="16,28,0,0" Spacing="12">
+                            <Label Text="Truyện nổi bật" Style="{StaticResource LblH2}" />
+                            <HorizontalStackLayout Spacing="8">
+                                <Button Text="Mới cập nhật" Style="{StaticResource TabBtn}"
+                                        Command="{Binding SelectTabCommand}" CommandParameter="0">
+                                    <Button.Triggers>
+                                        <DataTrigger TargetType="Button" Binding="{Binding IsTab0}" Value="True">
+                                            <Setter Property="BackgroundColor" Value="{StaticResource WebNavy}" />
+                                            <Setter Property="TextColor" Value="White" />
+                                            <Setter Property="BorderColor" Value="{StaticResource WebNavy}" />
+                                        </DataTrigger>
+                                    </Button.Triggers>
+                                </Button>
+                                <Button Text="Vừa đăng" Style="{StaticResource TabBtn}"
+                                        Command="{Binding SelectTabCommand}" CommandParameter="1">
+                                    <Button.Triggers>
+                                        <DataTrigger TargetType="Button" Binding="{Binding IsTab1}" Value="True">
+                                            <Setter Property="BackgroundColor" Value="{StaticResource WebNavy}" />
+                                            <Setter Property="TextColor" Value="White" />
+                                            <Setter Property="BorderColor" Value="{StaticResource WebNavy}" />
+                                        </DataTrigger>
+                                    </Button.Triggers>
+                                </Button>
+                                <Button Text="Đọc miễn phí" Style="{StaticResource TabBtn}"
+                                        Command="{Binding SelectTabCommand}" CommandParameter="2">
+                                    <Button.Triggers>
+                                        <DataTrigger TargetType="Button" Binding="{Binding IsTab2}" Value="True">
+                                            <Setter Property="BackgroundColor" Value="{StaticResource WebNavy}" />
+                                            <Setter Property="TextColor" Value="White" />
+                                            <Setter Property="BorderColor" Value="{StaticResource WebNavy}" />
+                                        </DataTrigger>
+                                    </Button.Triggers>
+                                </Button>
+                            </HorizontalStackLayout>
+                            <ScrollView Orientation="Horizontal" HorizontalScrollBarVisibility="Never">
+                                <HorizontalStackLayout Padding="0,4,16,0"
+                                                       BindableLayout.ItemsSource="{Binding TabStories}"
+                                                       BindableLayout.ItemTemplate="{StaticResource StoryCardTemplate}" />
+                            </ScrollView>
+                        </VerticalStackLayout>
+
+                        <!-- Mới lên chương (hp-list) -->
+                        <VerticalStackLayout Padding="0,16,0,0" Spacing="6">
+                            <Grid ColumnDefinitions="*,Auto" Padding="16,0">
+                                <Label Grid.Column="0" Text="Mới lên chương" Style="{StaticResource LblH2}" VerticalOptions="Center" />
+                                <Button Grid.Column="1" Text="Xem toàn bộ" Style="{StaticResource BtnLink}"
+                                        Command="{Binding GoToBrowseCommand}" />
+                            </Grid>
+                            <Border Style="{StaticResource Panel}" Margin="16,0" Padding="0" StrokeThickness="1">
+                                <VerticalStackLayout BindableLayout.ItemsSource="{Binding Updated}"
+                                                     BindableLayout.ItemTemplate="{StaticResource UpdateRowTemplate}" />
+                            </Border>
+                        </VerticalStackLayout>
+
+                        <!-- Kêu gọi đăng nhập (hp-cta) — chỉ hiện khi chưa đăng nhập -->
+                        <Grid IsVisible="{Binding IsGuest}" Margin="16,28,16,32" Padding="22">
+                            <Grid.Background>
+                                <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                    <GradientStop Color="#0B1F4B" Offset="0.0" />
+                                    <GradientStop Color="#12347D" Offset="1.0" />
+                                </LinearGradientBrush>
+                            </Grid.Background>
+                            <VerticalStackLayout Spacing="8">
+                                <Label Text="Tham gia cộng đồng đọc truyện" TextColor="White"
+                                       FontFamily="{StaticResource SerifFont}" FontSize="20" FontAttributes="Bold" />
+                                <Label Text="Đăng nhập để theo dõi truyện bạn yêu thích." TextColor="#C3D2F5" FontSize="14" />
+                                <HorizontalStackLayout Spacing="10" Margin="0,8,0,0">
+                                    <Button Text="Đăng nhập" Style="{StaticResource BtnLight}"
+                                            Command="{Binding GoToLoginCommand}" />
+                                    <Button Text="Đăng ký" Style="{StaticResource BtnAmber}"
+                                            Command="{Binding GoToRegisterCommand}" />
+                                </HorizontalStackLayout>
+                            </VerticalStackLayout>
+                        </Grid>
+
+                    </VerticalStackLayout>
+                </VerticalStackLayout>
+
+            </VerticalStackLayout>
+        </ScrollView>
+    </RefreshView>
 </ContentPage>

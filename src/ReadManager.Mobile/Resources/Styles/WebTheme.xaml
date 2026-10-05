@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<?xaml-comp compile="true" ?>
+<!-- Theme lấy từ web (wwwroot/css/theme.css): xanh navy + trắng, chữ có chân cho tiêu đề -->
+<ResourceDictionary xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml">
+
+    <Color x:Key="WebNavy">#0B1F4B</Color>
+    <Color x:Key="WebRoyal">#1D4ED8</Color>
+    <Color x:Key="WebRoyal2">#173FB0</Color>
+    <Color x:Key="WebAmber">#F5B63E</Color>
+    <Color x:Key="WebBg">#F6F9FE</Color>
+    <Color x:Key="WebSurface2">#EAF0FB</Color>
+    <Color x:Key="WebText">#0F1B33</Color>
+    <Color x:Key="WebMuted">#5B6B88</Color>
+    <Color x:Key="WebBorder">#DCE5F4</Color>
+    <Color x:Key="WebSage">#12A150</Color>
+    <Color x:Key="WebCrimson">#E5484D</Color>
+
+    <OnPlatform x:Key="SerifFont" x:TypeArguments="x:String">
+        <On Platform="Android" Value="serif" />
+        <On Platform="iOS" Value="Georgia" />
+        <On Platform="MacCatalyst" Value="Georgia" />
+        <On Platform="WinUI" Value="Georgia" />
+    </OnPlatform>
+
+    <!-- Nút -->
+    <Style x:Key="BtnBrass" TargetType="Button">
+        <Setter Property="BackgroundColor" Value="{StaticResource WebRoyal}" />
+        <Setter Property="TextColor" Value="White" />
+        <Setter Property="FontAttributes" Value="Bold" />
+        <Setter Property="FontSize" Value="14" />
+        <Setter Property="CornerRadius" Value="8" />
+        <Setter Property="Padding" Value="16,0" />
+        <Setter Property="HeightRequest" Value="44" />
+    </Style>
+    <Style x:Key="BtnBrassSm" TargetType="Button" BasedOn="{StaticResource BtnBrass}">
+        <Setter Property="FontSize" Value="13" />
+        <Setter Property="HeightRequest" Value="38" />
+        <Setter Property="Padding" Value="14,0" />
+    </Style>
+    <Style x:Key="BtnOutlineSm" TargetType="Button">
+        <Setter Property="BackgroundColor" Value="Transparent" />
+        <Setter Property="TextColor" Value="{StaticResource WebText}" />
+        <Setter Property="BorderColor" Value="{StaticResource WebBorder}" />
+        <Setter Property="BorderWidth" Value="1" />
+        <Setter Property="FontAttributes" Value="Bold" />
+        <Setter Property="FontSize" Value="13" />
+        <Setter Property="CornerRadius" Value="8" />
+        <Setter Property="Padding" Value="14,0" />
+        <Setter Property="HeightRequest" Value="38" />
+    </Style>
+    <Style x:Key="BtnLight" TargetType="Button">
+        <Setter Property="BackgroundColor" Value="Transparent" />
+        <Setter Property="TextColor" Value="White" />
+        <Setter Property="BorderColor" Value="#8CFFFFFF" />
+        <Setter Property="BorderWidth" Value="1" />
+        <Setter Property="FontAttributes" Value="Bold" />
+        <Setter Property="FontSize" Value="14" />
+        <Setter Property="CornerRadius" Value="8" />
+        <Setter Property="Padding" Value="16,0" />
+        <Setter Property="HeightRequest" Value="44" />
+    </Style>
+    <Style x:Key="BtnAmber" TargetType="Button" BasedOn="{StaticResource BtnBrass}">
+        <Setter Property="BackgroundColor" Value="{StaticResource WebAmber}" />
+        <Setter Property="TextColor" Value="#241A08" />
+    </Style>
+    <Style x:Key="BtnLink" TargetType="Button">
+        <Setter Property="BackgroundColor" Value="Transparent" />
+        <Setter Property="TextColor" Value="{StaticResource WebRoyal2}" />
+        <Setter Property="FontAttributes" Value="Bold" />
+        <Setter Property="FontSize" Value="13" />
+        <Setter Property="Padding" Value="8,0" />
+        <Setter Property="HeightRequest" Value="36" />
+    </Style>
+    <Style x:Key="TabBtn" TargetType="Button">
+        <Setter Property="BackgroundColor" Value="Transparent" />
+        <Setter Property="TextColor" Value="{StaticResource WebMuted}" />
+        <Setter Property="BorderColor" Value="{StaticResource WebBorder}" />
+        <Setter Property="BorderWidth" Value="1" />
+        <Setter Property="FontAttributes" Value="Bold" />
+        <Setter Property="FontSize" Value="13" />
+        <Setter Property="CornerRadius" Value="18" />
+        <Setter Property="Padding" Value="14,0" />
+        <Setter Property="HeightRequest" Value="36" />
+    </Style>
+
+    <!-- Chữ -->
+    <Style x:Key="LblH2" TargetType="Label">
+        <Setter Property="FontFamily" Value="{StaticResource SerifFont}" />
+        <Setter Property="FontSize" Value="20" />
+        <Setter Property="FontAttributes" Value="Bold" />
+        <Setter Property="TextColor" Value="{StaticResource WebText}" />
+    </Style>
+    <Style x:Key="LblMuted" TargetType="Label">
+        <Setter Property="FontSize" Value="13" />
+        <Setter Property="TextColor" Value="{StaticResource WebMuted}" />
+    </Style>
+    <Style x:Key="LblFieldName" TargetType="Label">
+        <Setter Property="FontSize" Value="13" />
+        <Setter Property="FontAttributes" Value="Bold" />
+        <Setter Property="TextColor" Value="{StaticResource WebText}" />
+    </Style>
+    <Style x:Key="LblCardTitle" TargetType="Label">
+        <Setter Property="FontFamily" Value="{StaticResource SerifFont}" />
+        <Setter Property="FontSize" Value="14" />
+        <Setter Property="FontAttributes" Value="Bold" />
+        <Setter Property="TextColor" Value="{StaticResource WebText}" />
+        <Setter Property="MaxLines" Value="2" />
+        <Setter Property="LineBreakMode" Value="TailTruncation" />
+    </Style>
+    <Style x:Key="LblCardMeta" TargetType="Label">
+        <Setter Property="FontSize" Value="11.5" />
+        <Setter Property="TextColor" Value="{StaticResource WebMuted}" />
+        <Setter Property="MaxLines" Value="1" />
+        <Setter Property="LineBreakMode" Value="TailTruncation" />
+    </Style>
+
+    <!-- Khung / ô nhập -->
+    <Style x:Key="Panel" TargetType="Border">
+        <Setter Property="BackgroundColor" Value="White" />
+        <Setter Property="Stroke" Value="{StaticResource WebBorder}" />
+        <Setter Property="StrokeThickness" Value="1" />
+        <Setter Property="Padding" Value="20" />
+        <Setter Property="StrokeShape">
+            <Setter.Value>
+                <RoundRectangle CornerRadius="12" />
+            </Setter.Value>
+        </Setter>
+    </Style>
+    <Style x:Key="FieldBorder" TargetType="Border">
+        <Setter Property="BackgroundColor" Value="White" />
+        <Setter Property="Stroke" Value="{StaticResource WebBorder}" />
+        <Setter Property="StrokeThickness" Value="1" />
+        <Setter Property="Padding" Value="12,0" />
+        <Setter Property="StrokeShape">
+            <Setter.Value>
+                <RoundRectangle CornerRadius="8" />
+            </Setter.Value>
+        </Setter>
+    </Style>
+    <Style x:Key="WebEntry" TargetType="Entry">
+        <Setter Property="BackgroundColor" Value="Transparent" />
+        <Setter Property="TextColor" Value="{StaticResource WebText}" />
+        <Setter Property="PlaceholderColor" Value="{StaticResource WebMuted}" />
+        <Setter Property="FontSize" Value="14" />
+        <Setter Property="HeightRequest" Value="44" />
+    </Style>
+</ResourceDictionary>

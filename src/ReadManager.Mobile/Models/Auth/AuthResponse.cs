@@ -1,7 +1,11 @@
+using System.Text.Json.Serialization;
+
 namespace ReadManager.Mobile.Models.Auth;
 
 public class AuthResponse
 {
+    // API trả token ở trường "accessToken"
+    [JsonPropertyName("accessToken")]
     public string Token { get; set; } = string.Empty;
     public DateTime? ExpiresAt { get; set; }
     public UserProfile User { get; set; } = new();
