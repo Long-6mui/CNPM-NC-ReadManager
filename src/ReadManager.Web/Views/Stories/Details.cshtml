@@ -22,7 +22,10 @@
         </div>
         <div>
             <div class="tag-row">
-                @foreach (var g in Model.GenreNames) { <span class="tag">@g</span> }
+                @foreach (var g in Model.GenreNames)
+                {
+                    <span class="tag">@g</span>
+                }
                 <span class="tag">@statusLabel</span>
             </div>
             <h1>@story.Title</h1>
@@ -40,6 +43,7 @@
                     <span class="btn btn-outline" style="opacity:.6;">Chưa có chương</span>
                 }
 
+                <button type="button" class="btn btn-outline fav-btn" data-id="@story.Id" data-title="@story.Title" data-author="@story.Author" data-cover="@story.CoverUrl"><i>♡</i> <span>Yêu thích</span></button>
             </div>
             <div class="stat-row">
                 <div><b>@Model.Chapters.Count</b><span>Chương</span></div>
