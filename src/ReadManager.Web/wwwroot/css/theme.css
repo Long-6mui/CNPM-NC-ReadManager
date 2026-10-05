@@ -18,7 +18,7 @@
     --radius: 10px;
     --shadow: 0 16px 36px rgba(11,31,75,.18);
     --shadow-sm: 0 4px 14px rgba(11,31,75,.10);
-    --font-display: Georgia,'Noto Serif','Times New Roman',serif;
+    --font-display: 'Lora','Cambria','Times New Roman',serif;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -201,39 +201,104 @@ h1, h2, h3 {
 .story-card:hover .story-title {
     color: var(--brass-2)
 }
-/* Chân trang tối */
+/* Chân trang: nền xanh chuyển sắc, mép trên vát chéo, 3 cột */
 footer {
-    background: var(--navy);
-    color: #B7C5E6;
-    padding: 36px 0;
-    margin-top: 48px;
-    border: 0
+    position: relative;
+    margin-top: 64px;
+    padding: 96px 0 40px;
+    color: #D6E2FF;
+    border: 0;
+    background: linear-gradient(170deg,#2B5FE0 0%,#12347D 45%,#0B1F4B 100%);
+    clip-path: polygon(0 56px,100% 0,100% 100%,0 100%)
 }
 
 .ft {
     display: grid;
-    grid-template-columns: 1.4fr 1fr 1fr;
-    gap: 28px
+    grid-template-columns: 1fr 1.4fr 1fr;
+    gap: 40px
 }
 
-    .ft strong, .ft h4 {
+    .ft h4 {
+        margin: 0 0 14px;
+        font-size: 15px;
+        letter-spacing: .06em;
+        text-transform: uppercase;
         color: #fff
     }
 
-    .ft h4 {
+    .ft p {
+        margin: 0 0 10px;
+        line-height: 1.7;
+        font-size: 14px
+    }
+
+.ft-brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    font-family: var(--font-display);
+    font-size: 26px;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 12px
+}
+
+    .ft-brand i {
+        font-style: normal;
+        width: 38px;
+        height: 38px;
+        border-radius: 10px;
+        background: #fff;
+        color: var(--navy);
+        display: grid;
+        place-items: center;
+        font-size: 20px
+    }
+
+.ft a {
+    display: block;
+    padding: 4px 0;
+    transition: color .15s,transform .15s
+}
+
+    .ft a:hover {
+        color: var(--amber);
+        transform: translateX(3px)
+    }
+
+.ft-social {
+    display: flex;
+    gap: 12px;
+    margin-top: 18px
+}
+
+    .ft-social a {
+        width: 42px;
+        height: 42px;
+        padding: 0;
+        border-radius: 50%;
+        background: #fff;
+        color: var(--royal);
+        display: grid;
+        place-items: center;
+        font-weight: 800;
         font-size: 14px;
-        margin: 0 0 8px
+        transition: transform .2s,box-shadow .2s
     }
 
-    .ft a {
-        display: block;
-        padding: 3px 0;
-        transition: color .15s
-    }
-
-        .ft a:hover {
-            color: var(--amber)
+        .ft-social a:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 18px rgba(0,0,0,.3);
+            color: var(--royal)
         }
+
+.ft-note {
+    margin-top: 28px;
+    padding-top: 18px;
+    border-top: 1px solid rgba(255,255,255,.18);
+    font-size: 13px;
+    color: #A9BDEB
+}
 
 @media(max-width:820px) {
     .topbar-inner {
@@ -256,6 +321,11 @@ footer {
     .ft {
         grid-template-columns: 1fr
     }
+
+    footer {
+        clip-path: polygon(0 28px,100% 0,100% 100%,0 100%);
+        padding-top: 64px
+    }
 }
 
 @media(prefers-reduced-motion:reduce) {
@@ -267,8 +337,7 @@ footer {
         transform: none
     }
 }
-
-/* Admin: sửa lỗi cột Sửa/Xóa lệch hàng */
+/* Admin: sửa lỗi cột Sửa/Xóa lệch hàng (td không được dùng display:flex) */
 td.row-actions {
     display: table-cell;
     white-space: nowrap;
@@ -287,4 +356,19 @@ table.data td {
 
 table.data tr {
     transition: background .15s
+}
+
+/* Trang chi tiết: nút "Chưa có chương" và tên tác giả trên nền xanh đậm */
+.story-hero .btn-outline {
+    color: #fff;
+    border-color: rgba(255,255,255,.6);
+    opacity: 1 !important
+}
+
+    .story-hero .btn-outline:hover {
+        background: rgba(255,255,255,.12)
+    }
+
+.story-hero .author {
+    color: #9CC0FF
 }

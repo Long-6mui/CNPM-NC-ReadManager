@@ -7,10 +7,15 @@
 <html lang="vi">
 <head>
     <meta charset="utf-8" />
+    <meta name="uid" content="@User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>@ViewData["Title"] — Chữ &amp; Đêm</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lora:wght@500;700&display=swap" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/theme.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/account.css" asp-append-version="true" />
 </head>
 <body>
     <a class="skip-link" href="#main-content">Đến nội dung chính</a>
@@ -46,8 +51,18 @@
                 <button type="button" class="btn btn-ghost" id="themeToggle" aria-label="Đổi giao diện sáng/tối">◐</button>
                 @if (User.Identity?.IsAuthenticated == true)
                 {
-                    <span>Xin chào, @User.Identity.Name</span>
-                    <form asp-area="" asp-controller="Account" asp-action="Logout" method="post"><button class="btn btn-outline btn-sm" type="submit">Đăng xuất</button></form>
+                    <details class="dd user-dd">
+                        <summary class="avatar" aria-label="Tài khoản">@(string.IsNullOrWhiteSpace(User.Identity?.Name) ? "?" : User.Identity!.Name!.Trim()[0].ToString().ToUpper())</summary>
+                        <div class="user-menu">
+                            <div class="user-menu-name">@User.Identity.Name</div>
+                            <a asp-area="" asp-controller="Account" asp-action="Profile">Tài khoản của tôi</a>
+                            @if (User.IsInRole("Admin"))
+                            {
+                                <a asp-area="Admin" asp-controller="Stories" asp-action="Index">Trang quản trị</a>
+                            }
+                            <form asp-area="" asp-controller="Account" asp-action="Logout" method="post"><button type="submit">Đăng xuất</button></form>
+                        </div>
+                    </details>
                 }
                 else
                 {
@@ -62,13 +77,38 @@
     }
     <main id="main-content">@RenderBody()</main>
     <footer>
-        <div class="container ft">
-            <div><strong>Chữ &amp; Đêm</strong><p>Thư viện đọc truyện trực tuyến — nhóm 05-03.</p></div>
-            <div><h4>Khám phá</h4><a asp-area="" asp-controller="Stories" asp-action="Browse">Tất cả truyện</a><a asp-area="" asp-controller="Stories" asp-action="Browse" asp-route-access="Free">Đọc miễn phí</a><a asp-area="" asp-controller="Stories" asp-action="Browse" asp-route-status="Completed">Truyện hoàn thành</a></div>
-            <div><h4>Tài khoản</h4><a asp-area="" asp-controller="Account" asp-action="Login">Đăng nhập</a><a asp-area="" asp-controller="Account" asp-action="Register">Đăng ký</a></div>
+        <div class="container">
+            <div class="ft">
+                <div>
+                    <h4>Thông tin liên hệ</h4>
+                    <span class="ft-brand"><i>吟</i>Chữ &amp; Đêm</span>
+                    <p>Email: nhom0503@example.com</p>
+                    <div class="ft-social">
+                        <a href="#" aria-label="Facebook">f</a>
+                        <a href="#" aria-label="YouTube">▶</a>
+                        <a href="#" aria-label="Zalo">Z</a>
+                    </div>
+                </div>
+                <div>
+                    <h4>Giới thiệu</h4>
+                    <p><strong>Chào mừng bạn đến với Chữ &amp; Đêm.</strong> Thư viện đọc truyện trực tuyến, nơi mỗi trang sách mở ra một chân trời mới.</p>
+                    <p>Chúng tôi giới thiệu nhiều thể loại: từ ngôn tình, đời sống đến phiêu lưu kỳ ảo, để mỗi độc giả đều tìm được câu chuyện dành cho mình.</p>
+                    <a asp-area="" asp-controller="Home" asp-action="Privacy">Chính sách bảo mật và quyền riêng tư</a>
+                </div>
+                <div>
+                    <h4>Khám phá</h4>
+                    <a asp-area="" asp-controller="Stories" asp-action="Browse">Tất cả truyện</a>
+                    <a asp-area="" asp-controller="Stories" asp-action="Browse" asp-route-access="Free">Đọc miễn phí</a>
+                    <a asp-area="" asp-controller="Stories" asp-action="Browse" asp-route-status="Completed">Truyện hoàn thành</a>
+                    <a asp-area="" asp-controller="Account" asp-action="Login">Đăng nhập</a>
+                    <a asp-area="" asp-controller="Account" asp-action="Register">Đăng ký</a>
+                </div>
+            </div>
+            <div class="ft-note">© 2026 Chữ &amp; Đêm — Đồ án nhóm 05-03.</div>
         </div>
     </footer>
     <script src="~/js/site.js" asp-append-version="true"></script>
+    <script src="~/js/user-extras.js" asp-append-version="true"></script>
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>
