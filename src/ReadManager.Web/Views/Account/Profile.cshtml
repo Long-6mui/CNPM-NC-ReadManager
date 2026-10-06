@@ -1,0 +1,55 @@
+﻿@using System.Security.Claims
+@{
+    ViewData["Title"] = "Tài khoản";
+    var name = User.Identity?.Name ?? "";
+    var email = User.FindFirstValue(ClaimTypes.Email) ?? "";
+    var id = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "";
+    var isAdmin = User.IsInRole("Admin");
+    var initial = string.IsNullOrWhiteSpace(name) ? "?" : name.Trim()[0].ToString().ToUpper();
+}
+<div class="container pf">
+    <aside class="pf-card pf-side">
+        <div class="pf-avatar" id="pfAvatar">@initial</div>
+        <label class="btn btn-outline btn-sm pf-upload">Đổi ảnh đại diện<input type="file" id="avatarFile" accept="image/*" hidden /></label>
+        <p class="pf-hint">Ảnh được lưu trên trình duyệt này.</p>
+        <h1>@name</h1>
+        <span class="pf-badge">@(isAdmin ? "Quản trị viên" : "Thành viên")</span>
+        <div class="pf-info">
+            <div><span>Tên thành viên</span><b>@name</b></div>
+            <div><span>Email</span><b>@email</b></div>
+            <div><span>ID thành viên</span><b>@id</b></div>
+        </div>
+        @if (isAdmin)
+        {
+            <a class="btn btn-brass" style="margin-top:16px;width:100%" asp-area="Admin" asp-controller="Stories" asp-action="Index">Vào trang quản trị</a>
+        }
+    </aside>
+    <div>
+        <section class="pf-card">
+            <h2 class="pf-title">Hạng thành viên và gói đọc</h2>
+            <div class="pf-plans">
+                <div class="pf-plan"><h3>Gói đọc theo tháng</h3><ul><li>Đọc các truyện nằm trong gói</li><li>Gia hạn sớm hoặc muộn đều được cộng dồn</li></ul><button class="btn btn-outline" disabled>Sắp ra mắt</button></div>
+                <div class="pf-plan"><h3>Mua riêng từng truyện</h3><ul><li>Mua quyền đọc một truyện</li><li>Độc lập với gói theo tháng</li></ul><button class="btn btn-outline" disabled>Sắp ra mắt</button></div>
+            </div>
+        </section>
+        <section class="pf-card"><h2 class="pf-title">Truyện đã xem gần nhất</h2><p class="pf-empty">Bạn chưa có truyện nào đã xem.</p></section>
+        <section class="pf-card"><h2 class="pf-title">Truyện đã thích</h2><div id="favList" class="pf-favs"><p class="pf-empty">Bạn chưa lưu truyện nào.</p></div></section>
+        <section class="pf-card">
+            <h2 class="pf-title">Thông tin cá nhân</h2>
+            <div class="pf-form">
+                <input value="@name" disabled aria-label="Tên hiển thị" />
+                <input value="@email" disabled aria-label="Email" />
+                <p class="pf-hint">Đổi tên và email cần API cập nhật hồ sơ. Khi đổi email, hệ thống sẽ gửi thư xác nhận đến địa chỉ mới. Tính năng này đang chờ Backend 2.</p>
+            </div>
+        </section>
+        <section class="pf-card">
+            <h2 class="pf-title">Đổi mật khẩu</h2>
+            <form class="pf-form" asp-action="ChangePassword" method="post">
+                <input type="password" name="current" placeholder="Mật khẩu hiện tại" autocomplete="current-password" required />
+                <input type="password" name="next" placeholder="Mật khẩu mới (tối thiểu 6 ký tự)" minlength="6" autocomplete="new-password" required />
+                <input type="password" name="confirm" placeholder="Xác nhận mật khẩu mới" minlength="6" autocomplete="new-password" required />
+                <button class="btn btn-brass" type="submit">Đổi mật khẩu</button>
+            </form>
+        </section>
+    </div>
+</div>

@@ -1,12 +1,42 @@
-﻿<?xml version="1.0" encoding="UTF-8" ?>
+<?xml version="1.0" encoding="UTF-8" ?>
 <Shell
     x:Class="ReadManager.Mobile.AppShell"
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
     xmlns:views="clr-namespace:ReadManager.Mobile.Views"
+    Shell.BackgroundColor="White"
+    Shell.ForegroundColor="#0B1F4B"
+    Shell.TitleColor="#0B1F4B"
+    Shell.NavBarHasShadow="False"
+    Shell.TabBarBackgroundColor="White"
+    Shell.TabBarForegroundColor="#1D4ED8"
+    Shell.TabBarTitleColor="#1D4ED8"
+    Shell.TabBarUnselectedColor="#5B6B88"
     FlyoutBehavior="Disabled"
-    Title="ReadManager.Mobile">
+    Title="Chữ &amp; Đêm">
 
+    <!-- Thanh điều hướng dưới cùng: Trang chủ | Khám phá | Tài khoản (giống menu của web) -->
+    <TabBar>
+        <ShellContent
+            Title="Trang chủ"
+            Icon="tab_home.png"
+            ContentTemplate="{DataTemplate views:StoryListPage}"
+            Route="StoryListPage" />
+
+        <ShellContent
+            Title="Khám phá"
+            Icon="tab_explore.png"
+            ContentTemplate="{DataTemplate views:BrowsePage}"
+            Route="BrowsePage" />
+
+        <ShellContent
+            Title="Tài khoản"
+            Icon="tab_account.png"
+            ContentTemplate="{DataTemplate views:AccountPage}"
+            Route="AccountPage" />
+    </TabBar>
+
+    <!-- Đăng nhập nằm ngoài TabBar nên không hiện thanh tab. Vào bằng "//LoginPage", thoát bằng "//StoryListPage". -->
     <ShellContent
         Title="Đăng nhập"
         ContentTemplate="{DataTemplate views:LoginPage}"
