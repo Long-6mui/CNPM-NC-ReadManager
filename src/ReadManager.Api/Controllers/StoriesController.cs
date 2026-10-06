@@ -1,6 +1,8 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using ReadManager.Api.DTOs.Stories;
 using ReadManager.Api.Services;
+using System.Security.Claims;
 
 namespace ReadManager.Api.Controllers;
 
@@ -37,8 +39,7 @@ public class StoriesController : ControllerBase
 
     // GET api/stories/5/admin
     // Chi tiết truyện cho ADMIN — xem được cả Draft/Hidden để sửa (form Edit cần cái này).
-    // TODO(auth): gắn [Authorize(Roles = "Admin")] khi PB02/PB03 xong. HIỆN CHƯA CÓ GÌ CHẶN
-    // route này — ai gọi cũng xem được mọi truyện. Đừng deploy public trước khi gắn auth.
+    [Authorize(Roles = "Admin")] // PB03: chỉ Admin
     [HttpGet("{id:int}/admin")]
     public async Task<ActionResult<StoryDetailDto>> GetByIdForAdmin(int id)
     {
@@ -48,13 +49,14 @@ public class StoriesController : ControllerBase
 
     // POST api/stories
     // PB04 — tạo truyện mới.
-    // TODO(auth): gắn [Authorize(Roles = "Admin")] và lấy CreatedBy từ User đăng nhập
-    // khi PB02/PB03 xong — hiện Program.cs chưa bật Authentication nên chưa gắn được.
+    [Authorize(Roles = "Admin")] // PB03: chỉ Admin
     [HttpPost]
     public async Task<ActionResult<StoryDetailDto>> Create(CreateStoryDto dto)
     {
         try
         {
+            // Không tin CreatedBy do client gửi: luôn lấy từ người dùng đang đăng nhập.
+            dto.CreatedBy = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
             var created = await _storyService.CreateAsync(dto);
             // Trỏ Location tới route /admin, KHÔNG phải GetById công khai: truyện mới tạo
             // mặc định Visibility=Draft, nếu trỏ về GetById (đã lọc Public) sẽ 404 ngay
@@ -69,7 +71,7 @@ public class StoriesController : ControllerBase
 
     // PUT api/stories/5
     // PB05 — sửa truyện + đổi trạng thái phát hành. PB06 — gán lại thể loại (qua GenreIds).
-    // TODO(auth): gắn [Authorize(Roles = "Admin")] khi PB02/PB03 xong.
+    [Authorize(Roles = "Admin")] // PB03: chỉ Admin
     [HttpPut("{id:int}")]
     public async Task<ActionResult<StoryDetailDto>> Update(int id, UpdateStoryDto dto)
     {
