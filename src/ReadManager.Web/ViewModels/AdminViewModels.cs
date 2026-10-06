@@ -1,6 +1,5 @@
 using System.ComponentModel.DataAnnotations;
 
-
 namespace ReadManager.Web.ViewModels;
 
 public class StoryFormVm
@@ -36,25 +35,36 @@ public class StoryFormVm
     public List<Chapter> Chapters { get; set; } = new();
 }
 
+// Form thêm / sửa 1 chương (BE4)
 public class ChapterFormVm
 {
-    public int Id { get; set; }
+    public int Id { get; set; }               // 0 = chương mới
     public int StoryId { get; set; }
     public string StoryTitle { get; set; } = "";
 
-    [Range(1, int.MaxValue)] public int No { get; set; }
+    [Range(1, 100000, ErrorMessage = "Số chương phải từ 1 trở lên.")]
+    [Display(Name = "Số chương")]
+    public int No { get; set; }
+
     [Required(ErrorMessage = "Vui lòng nhập tiêu đề chương.")]
+    [StringLength(255, ErrorMessage = "Tiêu đề tối đa 255 ký tự.")]
+    [Display(Name = "Tiêu đề chương")]
     public string Title { get; set; } = "";
+
     [Required(ErrorMessage = "Vui lòng nhập nội dung chương.")]
+    [StringLength(200000, ErrorMessage = "Nội dung tối đa 200.000 ký tự.")]
+    [Display(Name = "Nội dung")]
     public string Content { get; set; } = "";
-    public bool IsFree { get; set; }
-    public ChapterStatus Status { get; set; } = ChapterStatus.Reviewed;
+
+    public bool IsFree { get; set; }                                         // PB10 — miễn phí?
+    public ChapterStatus Status { get; set; } = ChapterStatus.Reviewed;      // Reviewed = công khai
 
     [Display(Name = "Hẹn giờ đăng (để trống = đăng ngay)")]
     [DataType(DataType.DateTime)]
     public DateTime? PublishAt { get; set; }
 }
 
+// Trang tải nhiều chương (BE4)
 public class BulkImportVm
 {
     public int StoryId { get; set; }
@@ -62,6 +72,8 @@ public class BulkImportVm
     [Display(Name = "Dán nội dung nhiều chương")]
     public string RawText { get; set; } = "";
     public bool MarkFree { get; set; }
+    public bool Publish { get; set; } = true;          // true = công khai ngay, false = lưu nháp
+    public bool OverwriteExisting { get; set; }        // true = ghi đè chương trùng số
 }
 
 public class GenreFormVm
@@ -70,4 +82,3 @@ public class GenreFormVm
     [Required(ErrorMessage = "Vui lòng nhập tên thể loại.")]
     public string Name { get; set; } = "";
 }
-

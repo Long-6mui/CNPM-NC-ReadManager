@@ -19,6 +19,7 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 
 builder.Services.AddScoped<IStoryService, StoryService>();
 builder.Services.AddScoped<IGenreService, GenreService>();
+builder.Services.AddScoped<IChapterService, ChapterService>(); // Backend 4 — chương/đọc
 
 builder.Services.AddDataProtection()
     .SetApplicationName("ReadManager.Api");

@@ -40,13 +40,13 @@
                 }
                 else
                 {
-                    <span class="btn btn-outline" style="opacity:.6;">Chưa có chương</span>
+                    <span class="btn" style="background:rgba(255,255,255,.12); color:#fff; border:1px solid rgba(255,255,255,.4); cursor:not-allowed;">📖 Chưa có chương</span>
                 }
 
                 <button type="button" class="btn btn-outline fav-btn" data-id="@story.Id" data-title="@story.Title" data-author="@story.Author" data-cover="@story.CoverUrl"><i>♡</i> <span>Yêu thích</span></button>
             </div>
             <div class="stat-row">
-                <div><b>@Model.Chapters.Count</b><span>Chương</span></div>
+                <div><b>@Model.TotalChapters</b><span>Chương</span></div>
                 <div><b>@story.Price.ToString("N0")₫</b><span>@(story.Access == AccessPolicy.Paid ? "Giá trọn bộ" : "Mua trọn bộ")</span></div>
                 <div><b>@(story.FreeChapterCount >= 999 ? "Tất cả" : story.FreeChapterCount.ToString())</b><span>Chương đọc miễn phí</span></div>
             </div>
@@ -54,35 +54,182 @@
     </div>
 </div>
 
+<style>
+    /* ===== Danh sách chương: 2 cột + phân trang ===== */
+    .chapter-box {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 22px 24px;
+    }
+
+        .chapter-box h2 {
+            text-align: center;
+            font-size: 18px;
+            letter-spacing: .5px;
+            text-transform: uppercase;
+            color: var(--brass);
+            margin-bottom: 16px;
+        }
+
+    .chapter-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        column-gap: 20px;
+    }
+
+    @@media (max-width: 700px) {
+        .chapter-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    .chapter-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 11px 12px;
+        border-radius: 6px;
+        font-size: 14px;
+        color: var(--text);
+        border-bottom: 1px dashed var(--border);
+    }
+
+        .chapter-item:hover {
+            background: var(--brass);
+            color: #fff;
+        }
+
+            .chapter-item:hover .muted, .chapter-item:hover b {
+                color: #fff;
+            }
+
+        .chapter-item .arrow {
+            flex: none;
+            opacity: .7;
+        }
+
+        .chapter-item .name {
+            flex: 1;
+            min-width: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .chapter-item .muted {
+            color: var(--muted);
+        }
+
+    .pager {
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+        justify-content: center;
+        margin-top: 18px;
+    }
+
+        .pager a, .pager span {
+            min-width: 30px;
+            height: 30px;
+            padding: 0 8px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid var(--border);
+            border-radius: 15px;
+            font-size: 12.5px;
+            color: var(--text);
+        }
+
+            .pager a:hover {
+                border-color: var(--brass);
+                color: var(--brass);
+            }
+
+        .pager .current {
+            background: var(--brass);
+            border-color: var(--brass);
+            color: #fff;
+            font-weight: 700;
+        }
+
+        .pager .dots {
+            border: none;
+        }
+</style>
+
 <div class="container section">
     <div class="two-col">
         <div>
-            <div class="section-head" style="margin-bottom:14px;"><h2 style="font-size:18px;">Danh sách chương</h2></div>
-            @if (Model.Chapters.Any())
-            {
-                <div class="chapter-list">
-                    @foreach (var c in Model.Chapters)
+            <div class="chapter-box" id="chapters">
+                <h2>Danh sách chương</h2>
+                @if (Model.Chapters.Any())
+                {
+                    <div class="chapter-grid">
+                        @foreach (var c in Model.Chapters)
+                        {
+                            // Chương không có tiêu đề riêng (trống hoặc chỉ là "Chương N") → chỉ hiện "Chương N"
+                            bool noTitle = string.IsNullOrWhiteSpace(c.Title) || c.Title.Trim() == $"Chương {c.No}";
+                            <a class="chapter-item" asp-action="Read" asp-route-storyId="@story.Id" asp-route-no="@c.No"
+                               title="@(noTitle ? $"Chương {c.No}" : $"Chương {c.No}: {c.Title}")">
+                                <span class="arrow">»</span>
+                                <span class="name">
+                                    <b>@(noTitle ? $"Chương {c.No}" : $"Chương {c.No}:")</b>
+                                    @if (!noTitle)
+                                    {
+                                        <span>@c.Title</span>
+                                    }
+                                </span>
+                                @if (c.Locked)
+                                {
+                                    <span title="Chương trả phí — cần mở khóa">🔒</span>
+                                }
+                            </a>
+                        }
+                    </div>
+
+                    @* ===== Phân trang: 1 2 3 … 23 » ===== *@
+                    @if (Model.ChapterPageCount > 1)
                     {
-                        <a class="chapter-row" asp-action="Read" asp-route-storyId="@story.Id" asp-route-no="@c.No">
-                            <span class="no">#@c.No</span>
-                            <span class="title">@c.Title</span>
-                            @if (c.NotYetPublicPreview)
+                        int cur = Model.ChapterPage, last = Model.ChapterPageCount;
+                        // Hiện trang đầu, trang cuối và 2 trang quanh trang hiện tại; chỗ bị bỏ thay bằng "…"
+                        var shown = new SortedSet<int> { 1, last };
+                        for (int p = cur - 2; p <= cur + 2; p++) { if (p >= 1 && p <= last) shown.Add(p); }
+                        int prevShown = 0;
+                        <nav class="pager" aria-label="Phân trang chương">
+                            @if (cur > 1)
                             {
-                                <span class="badge badge-gold">@c.StatusLabel</span>
+                                <a asp-action="Details" asp-route-id="@story.Id" asp-route-page="@(cur - 1)" asp-fragment="chapters" title="Trang trước">«</a>
                             }
-                            else if (c.Locked)
+                            @foreach (var p in shown)
                             {
-                                <span title="Cần mở khóa">🔒</span>
+                                if (p - prevShown > 1)
+                                {
+                                    <span class="dots">…</span>
+                                }
+                                if (p == cur)
+                                {
+                                    <span class="current">@p</span>
+                                }
+                                else
+                                {
+                                    <a asp-action="Details" asp-route-id="@story.Id" asp-route-page="@p" asp-fragment="chapters">@p</a>
+                                }
+                                prevShown = p;
                             }
-                            <span class="date">@c.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy")</span>
-                        </a>
+                            @if (cur < last)
+                            {
+                                <a asp-action="Details" asp-route-id="@story.Id" asp-route-page="@(cur + 1)" asp-fragment="chapters" title="Trang sau">»</a>
+                            }
+                        </nav>
                     }
-                </div>
-            }
-            else
-            {
-                <div class="empty-state"><h3>Chưa có chương nào</h3><p>Quản trị viên sẽ sớm đăng nội dung đầu tiên.</p></div>
-            }
+                }
+                else
+                {
+                    <div class="empty-state"><h3>Chưa có chương nào</h3><p>Quản trị viên sẽ sớm đăng nội dung đầu tiên.</p></div>
+                }
+            </div>
         </div>
         <div>
             <div class="panel">
