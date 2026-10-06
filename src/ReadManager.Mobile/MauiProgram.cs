@@ -1,9 +1,13 @@
+<<<<<<< Updated upstream
 using Microsoft.Extensions.Logging;
 using ReadManager.Mobile.Services;
 using ReadManager.Mobile.Services.Auth;
 using ReadManager.Mobile.ViewModels;
 using ReadManager.Mobile.Views;
 using Microsoft.Extensions.DependencyInjection;
+=======
+﻿using Microsoft.Extensions.Logging;
+>>>>>>> Stashed changes
 
 namespace ReadManager.Mobile
 {
@@ -24,9 +28,10 @@ namespace ReadManager.Mobile
             builder.Logging.AddDebug();
 #endif
 
-            // ---- Services ----
-            builder.Services.AddSingleton<ITokenStore, SecureTokenStore>();
+            // Đăng ký Service kết nối API
+            builder.Services.AddSingleton<ReadManager.Mobile.Services.ApiService>();
 
+<<<<<<< Updated upstream
             // ApiClient dùng HttpClient factory để tránh lỗi socket exhaustion khi tạo HttpClient thủ công
             builder.Services.AddHttpClient<ApiClient>(client =>
             {
@@ -56,6 +61,11 @@ namespace ReadManager.Mobile
             builder.Services.AddTransient<AccountPage>();
             builder.Services.AddTransient<ChapterListPage>();
             builder.Services.AddTransient<ChapterReaderPage>();
+=======
+            // Đăng ký ViewModel và View
+            builder.Services.AddTransient<ReadManager.Mobile.ViewModels.HomeViewModel>();
+            builder.Services.AddTransient<MainPage>();
+>>>>>>> Stashed changes
 
             return builder.Build();
         }
