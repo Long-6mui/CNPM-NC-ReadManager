@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -46,7 +46,7 @@ public class AuthService : IAuthService
 
         var newUser = new User
         {
-            Username = $"{baseUsername}_{uniqueSuffix}",
+            Username = $"user_{Guid.NewGuid():N}",
             Email = normalizedEmail,
             DisplayName = string.IsNullOrWhiteSpace(request.DisplayName) ? baseUsername : request.DisplayName.Trim(),
             Role = "Member", // Mặc định là quyền Member (khớp Entities/User.cs)
@@ -66,6 +66,7 @@ public class AuthService : IAuthService
         }
         catch (DbUpdateException)
         {
+            if (!await _db.Users.AsNoTracking().AnyAsync(u => u.Email == normalizedEmail)) throw;
             // Hai người đăng ký cùng email cùng lúc: chỉ số UNIQUE trong DB sẽ chặn người đến sau.
             return (false, "Email này đã được sử dụng. Vui lòng chọn email khác.", null);
         }
@@ -95,8 +96,9 @@ public class AuthService : IAuthService
         }
 
         // Kiểm tra mật khẩu băm
-        var verifyResult = new PasswordHasher<User>()
-            .VerifyHashedPassword(user, user.PasswordHash, request.Password);
+        PasswordVerificationResult verifyResult;
+        try { verifyResult = new PasswordHasher<User>().VerifyHashedPassword(user, user.PasswordHash, request.Password); }
+        catch (FormatException) { verifyResult = PasswordVerificationResult.Failed; }
 
         if (verifyResult == PasswordVerificationResult.Failed)
         {
@@ -106,6 +108,12 @@ public class AuthService : IAuthService
         if (user.AccountStatus != "Active")
         {
             return (false, "Tài khoản của bạn đang bị khóa.", null, true);
+        }
+
+        if (verifyResult == PasswordVerificationResult.SuccessRehashNeeded)
+        {
+            user.PasswordHash = new PasswordHasher<User>().HashPassword(user, request.Password);
+            await _db.SaveChangesAsync();
         }
 
         // Tạo token đúng định dạng mà ApiSessionHandler đọc được (AuthenticationTicket + TicketDataFormat)

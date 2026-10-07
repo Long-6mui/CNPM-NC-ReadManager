@@ -18,7 +18,13 @@ public class StoriesController(IWebHostEnvironment environment, StoriesApiClient
     {
         try
         {
-            var result = await api.ListAsync(null, null, null, null, "updated", 1, 50);
+            var result = await api.AdminListAsync(await Token());
+            for (var page = 2; result.Items.Count < result.TotalCount; page++)
+            {
+                var next = await api.AdminListAsync(await Token(), page);
+                if (next.Items.Count == 0) break;
+                result.Items.AddRange(next.Items);
+            }
             ViewBag.ChapterCounts = result.Items.ToDictionary(s => s.StoryId, s => s.PublishedChapterCount);
             return View(result.Items.Select(StoriesApiClient.ToListStory).ToList());
         }

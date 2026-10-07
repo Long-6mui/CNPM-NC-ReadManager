@@ -86,7 +86,7 @@
                             <Border.StrokeShape>
                                 <RoundRectangle CornerRadius="8" />
                             </Border.StrokeShape>
-                            <Label Text="Chưa có chương" TextColor="White" FontSize="14" FontAttributes="Bold" />
+                            <Label Text="Danh sách chương ở bên dưới" TextColor="White" FontSize="14" FontAttributes="Bold" />
                         </Border>
 
                         <HorizontalStackLayout Spacing="26" Margin="0,6,0,0">
@@ -112,14 +112,7 @@
                 <!-- Danh sách chương -->
                 <VerticalStackLayout Padding="16,24,16,0" Spacing="12">
                     <Label Text="Danh sách chương" Style="{StaticResource LblH2}" FontSize="18" />
-                    <Border Style="{StaticResource Panel}" Padding="20,36">
-                        <VerticalStackLayout Spacing="6">
-                            <Label Text="Chưa có chương nào" Style="{StaticResource LblH2}"
-                                   FontSize="18" HorizontalTextAlignment="Center" />
-                            <Label Text="Quản trị viên sẽ sớm đăng nội dung đầu tiên."
-                                   Style="{StaticResource LblMuted}" HorizontalTextAlignment="Center" />
-                        </VerticalStackLayout>
-                    </Border>
+                    <Button Text="Xem danh sách chương" Command="{Binding OpenChaptersCommand}" />
                 </VerticalStackLayout>
 
                 <!-- Giới thiệu (panel bên phải của web) -->

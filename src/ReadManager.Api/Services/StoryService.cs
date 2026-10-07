@@ -1,4 +1,4 @@
-﻿using System.Globalization;
+using System.Globalization;
 using System.Text;
 using System.Text.RegularExpressions;
 using Microsoft.EntityFrameworkCore;
@@ -10,10 +10,10 @@ namespace ReadManager.Api.Services;
 
 public interface IStoryService
 {
-    Task<PagedResultDto<StoryListItemDto>> GetListAsync(StoryListQueryDto query);
+    Task<PagedResultDto<StoryListItemDto>> GetListAsync(StoryListQueryDto query, bool includeHidden = false);
     Task<StoryDetailDto?> GetPublicByIdAsync(int id);
     Task<StoryDetailDto?> GetByIdForAdminAsync(int id);
-    Task<StoryDetailDto> CreateAsync(CreateStoryDto dto);
+    Task<StoryDetailDto> CreateAsync(CreateStoryDto dto, int createdBy);
     Task<StoryDetailDto?> UpdateAsync(int id, UpdateStoryDto dto);
 }
 
@@ -31,14 +31,15 @@ public class StoryService : IStoryService
     }
 
     // ----- GET /api/stories : danh sách cho trang chủ / trang khám phá -----
-    public async Task<PagedResultDto<StoryListItemDto>> GetListAsync(StoryListQueryDto query)
+    public async Task<PagedResultDto<StoryListItemDto>> GetListAsync(StoryListQueryDto query, bool includeHidden = false)
     {
         var page = query.Page < 1 ? 1 : query.Page;
         var pageSize = query.PageSize is < 1 or > 50 ? 12 : query.PageSize;
 
         // Chỉ hiện truyện Visibility = Public: đây là API phục vụ trang chủ/độc giả,
         // không phải API cho Admin xem tất cả (kể cả bản nháp).
-        IQueryable<Story> stories = _db.Stories.Where(s => s.Visibility == "Public");
+        IQueryable<Story> stories = _db.Stories;
+        if (!includeHidden) stories = stories.Where(s => s.Visibility == "Public");
 
         if (!string.IsNullOrWhiteSpace(query.Q))
         {
@@ -143,8 +144,7 @@ public class StoryService : IStoryService
     // ----- Chi tiết truyện KHÔNG lọc Visibility — dùng cho form sửa của Admin, và cho
     // CreateAsync/UpdateAsync tự gọi lại để trả full detail ngay sau khi ghi DB (lúc đó
     // truyện có thể vẫn đang Draft, nên không được lọc ở đây). -----
-    // TODO(auth): gắn [Authorize(Roles = "Admin")] ở controller khi PB02/PB03 xong —
-    // hiện CHƯA có gì chặn, ai gọi route /admin cũng xem được mọi truyện kể cả Draft/Hidden.
+    // Route /admin đã yêu cầu quyền Admin tại StoriesController.
     public async Task<StoryDetailDto?> GetByIdForAdminAsync(int id)
     {
         var story = await _db.Stories.FindAsync(id);
@@ -167,12 +167,12 @@ public class StoryService : IStoryService
     }
 
     // ----- POST /api/stories : tạo truyện mới -----
-    public async Task<StoryDetailDto> CreateAsync(CreateStoryDto dto)
+    public async Task<StoryDetailDto> CreateAsync(CreateStoryDto dto, int createdBy)
     {
         ValidateAccessAndVisibility(dto.AccessPolicy, dto.Visibility);
         ValidatePrice(dto.AccessPolicy, dto.CurrentPrice);
 
-        if (!await _db.Users.AnyAsync(u => u.UserId == dto.CreatedBy))
+        if (!await _db.Users.AnyAsync(u => u.UserId == createdBy))
             throw new InvalidOperationException("CreatedBy không khớp người dùng nào trong hệ thống.");
 
         var title = dto.Title.Trim();
@@ -188,7 +188,7 @@ public class StoryService : IStoryService
             Visibility = dto.Visibility,
             AccessPolicy = dto.AccessPolicy,
             CurrentPrice = dto.AccessPolicy == "Free" ? null : dto.CurrentPrice,
-            CreatedBy = dto.CreatedBy,
+            CreatedBy = createdBy,
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow,
             FirstPublishedAt = dto.Visibility == "Public" ? DateTime.UtcNow : null

@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ReadManager.Api.DTOs.Stories;
 using ReadManager.Api.Services;
@@ -25,6 +25,11 @@ public class StoriesController : ControllerBase
         var result = await _storyService.GetListAsync(query);
         return Ok(result);
     }
+
+    [Authorize(Roles = "Admin")]
+    [HttpGet("admin")]
+    public async Task<ActionResult<PagedResultDto<StoryListItemDto>>> GetAdminList([FromQuery] StoryListQueryDto query)
+        => Ok(await _storyService.GetListAsync(query, includeHidden: true));
 
     // GET api/stories/5
     // PB11 — thông tin chi tiết truyện cho ĐỘC GIẢ. Chỉ trả về truyện Visibility=Public;
@@ -56,8 +61,8 @@ public class StoriesController : ControllerBase
         try
         {
             // Không tin CreatedBy do client gửi: luôn lấy từ người dùng đang đăng nhập.
-            dto.CreatedBy = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
-            var created = await _storyService.CreateAsync(dto);
+            var createdBy = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+            var created = await _storyService.CreateAsync(dto, createdBy);
             // Trỏ Location tới route /admin, KHÔNG phải GetById công khai: truyện mới tạo
             // mặc định Visibility=Draft, nếu trỏ về GetById (đã lọc Public) sẽ 404 ngay
             // sau khi vừa tạo thành công — rất khó hiểu cho người gọi API.

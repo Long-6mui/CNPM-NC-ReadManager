@@ -22,6 +22,7 @@ public class AuthController : ControllerBase
     /// Đăng ký tài khoản (POST /api/auth/register)
     /// </summary>
     [HttpPost("register")]
+    [EnableRateLimiting("login")]
     [AllowAnonymous]
     public async Task<IActionResult> Register([FromBody] RegisterRequestDto request)
     {

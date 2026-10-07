@@ -1,4 +1,5 @@
 using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
 using ReadManager.Mobile.Models;
 using ReadManager.Mobile.Services;
 
@@ -29,5 +30,12 @@ public partial class StoryDetailViewModel : BaseViewModel
         {
             Story = await _storyService.GetStoryByIdAsync(value);
         });
+    }
+    [RelayCommand]
+    private async Task OpenChaptersAsync()
+    {
+        if (StoryId <= 0) return;
+        await Shell.Current.GoToAsync(nameof(Views.ChapterListPage), new Dictionary<string, object>
+        { ["storyId"] = StoryId, ["storyTitle"] = Story?.Title ?? "Danh sách chương" });
     }
 }

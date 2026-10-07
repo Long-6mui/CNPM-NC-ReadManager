@@ -49,6 +49,16 @@ public class ApiClient
         await HandleResponseAsync(response);
     }
 
+    private static string GetErrorMessage(ApiError? error, int statusCode)
+    {
+        if (!string.IsNullOrWhiteSpace(error?.Message)) return error.Message;
+        var messages = error?.Errors?.Values.SelectMany(values => values)
+            .Where(message => !string.IsNullOrWhiteSpace(message)).Distinct().ToArray();
+        if (messages is { Length: > 0 }) return string.Join(Environment.NewLine, messages);
+        return statusCode == 429
+            ? "Bạn thử quá nhiều lần. Vui lòng chờ một phút rồi thử lại."
+            : $"Yêu cầu chưa được xử lý (HTTP {statusCode}). Vui lòng thử lại.";
+    }
     private static async Task<T?> HandleResponseAsync<T>(HttpResponseMessage response)
     {
         var raw = await response.Content.ReadAsStringAsync();
@@ -61,7 +71,7 @@ public class ApiClient
 
             throw new ApiException(
                 (int)response.StatusCode,
-                error?.Message ?? $"Lỗi máy chủ ({(int)response.StatusCode})",
+                GetErrorMessage(error, (int)response.StatusCode),
                 error);
         }
 
@@ -80,7 +90,7 @@ public class ApiClient
 
             throw new ApiException(
                 (int)response.StatusCode,
-                error?.Message ?? $"Lỗi máy chủ ({(int)response.StatusCode})",
+                GetErrorMessage(error, (int)response.StatusCode),
                 error);
         }
     }

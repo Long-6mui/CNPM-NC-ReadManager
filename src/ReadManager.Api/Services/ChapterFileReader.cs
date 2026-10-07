@@ -1,10 +1,10 @@
-﻿using System.IO.Compression;
+using System.IO.Compression;
 using System.Text;
 using System.Text.RegularExpressions;
 
 namespace ReadManager.Api.Services;
 
-// PB08 — Đọc văn bản dán / file .txt / .zip và tách thành từng chương.
+// PB07–08 — Đọc văn bản dán / file .txt / .zip và tách thành từng chương.
 // Chỉ đọc và tách, không đụng database (kiểm tra & lưu nằm ở ChapterService).
 // Số chương lấy theo thứ tự: dòng "Chương N" → số trong tên file → tự đánh số.
 
@@ -28,6 +28,18 @@ public class ChapterReadResult
 
 public static class ChapterFileReader
 {
+    public const long MaxTotalReadBytes = 20L * 1024 * 1024;
+    public const int MaxParsedChapters = 500;
+    private sealed class ReadBudget
+    {
+        public long Used { get; private set; }
+        public void Add(long count)
+        {
+            if (count > MaxTotalReadBytes - Used)
+                throw new InvalidDataException("Tổng nội dung giải nén vượt 20MB. Hãy chia nhỏ lần tải lên.");
+            Used += count;
+        }
+    }
     public const long MaxFileBytes = 10 * 1024 * 1024;        // 10MB / file
     private const long MaxZipEntryBytes = 2 * 1024 * 1024;    // 2MB / file trong zip
     private const int MaxZipEntries = 1000;
@@ -59,49 +71,60 @@ public static class ChapterFileReader
     public static async Task<ChapterReadResult> ReadAsync(string? pastedText, IReadOnlyList<IFormFile> files)
     {
         var result = new ChapterReadResult();
-
-        if (!string.IsNullOrWhiteSpace(pastedText))
-            SplitText(pastedText, "Văn bản dán", fileName: null, result);
-
-        // Sắp theo số tự nhiên: 2.txt trước 10.txt
-        foreach (var file in files.OrderBy(f => f.FileName, NaturalComparer.Instance))
+        var budget = new ReadBudget();
+        try
         {
-            var name = Path.GetFileName(file.FileName);
-            var ext = Path.GetExtension(name).ToLowerInvariant();
 
-            if (file.Length == 0)
+            if (!string.IsNullOrWhiteSpace(pastedText))
             {
-                result.Errors.Add($"File \"{name}\" rỗng, không có nội dung.");
-                continue;
-            }
-            if (file.Length > MaxFileBytes)
-            {
-                result.Errors.Add($"File \"{name}\" lớn hơn 10MB.");
-                continue;
+                budget.Add(Encoding.UTF8.GetByteCount(pastedText));
+                SplitText(pastedText, "Văn bản dán", fileName: null, result);
             }
 
-            if (ext == ".txt")
+            // Sắp theo số tự nhiên: 2.txt trước 10.txt
+            foreach (var file in files.OrderBy(f => f.FileName, NaturalComparer.Instance))
             {
-                await using var stream = file.OpenReadStream();
-                var text = await ReadUtf8Async(stream, name, result);
-                if (text is not null)
-                    SplitText(text, name, fileName: name, result);
+                var name = Path.GetFileName(file.FileName);
+                var ext = Path.GetExtension(name).ToLowerInvariant();
+
+                if (file.Length == 0)
+                {
+                    result.Errors.Add($"File \"{name}\" rỗng, không có nội dung.");
+                    continue;
+                }
+                if (file.Length > MaxFileBytes)
+                {
+                    result.Errors.Add($"File \"{name}\" lớn hơn 10MB.");
+                    continue;
+                }
+
+                if (ext == ".txt")
+                {
+                    await using var stream = file.OpenReadStream();
+                    var text = await ReadUtf8Async(stream, name, result, budget, MaxFileBytes);
+                    if (text is not null)
+                        SplitText(text, name, fileName: name, result);
+                }
+                else if (ext == ".zip")
+                {
+                    await ReadZipAsync(file, name, result, budget);
+                }
+                else
+                {
+                    result.Errors.Add($"File \"{name}\" không phải .txt hoặc .zip. Hãy bỏ file này ra.");
+                }
             }
-            else if (ext == ".zip")
-            {
-                await ReadZipAsync(file, name, result);
-            }
-            else
-            {
-                result.Errors.Add($"File \"{name}\" không phải .txt hoặc .zip. Hãy bỏ file này ra.");
-            }
+
         }
-
+        catch (Exception ex) when (ex is InvalidDataException or IOException or ArgumentException or NotSupportedException)
+        {
+            result.Errors.Add(ex is InvalidDataException ? ex.Message : "Không đọc được file tải lên.");
+        }
         return result;
     }
 
     // Đọc từng file .txt trong zip
-    private static async Task ReadZipAsync(IFormFile file, string zipName, ChapterReadResult result)
+    private static async Task ReadZipAsync(IFormFile file, string zipName, ChapterReadResult result, ReadBudget budget)
     {
         using var stream = new MemoryStream();
         await using (var upload = file.OpenReadStream())
@@ -155,7 +178,7 @@ public static class ChapterFileReader
 
                 txtCount++;
                 await using var entryStream = entry.Open();
-                var text = await ReadUtf8Async(entryStream, label, result);
+                var text = await ReadUtf8Async(entryStream, label, result, budget, MaxZipEntryBytes);
                 if (text is not null)
                     SplitText(text, label, fileName: entry.Name, result);
             }
@@ -169,10 +192,18 @@ public static class ChapterFileReader
     }
 
     // Đọc chữ, bắt buộc UTF-8
-    private static async Task<string?> ReadUtf8Async(Stream stream, string label, ChapterReadResult result)
+    private static async Task<string?> ReadUtf8Async(Stream stream, string label, ChapterReadResult result, ReadBudget budget, long fileLimit)
     {
         using var memory = new MemoryStream();
-        await stream.CopyToAsync(memory);
+        var buffer = new byte[8192];
+        int count;
+        while ((count = await stream.ReadAsync(buffer)) > 0)
+        {
+            if (memory.Length + count > fileLimit)
+                throw new InvalidDataException($"File {label} vượt giới hạn dung lượng giải nén.");
+            budget.Add(count);
+            await memory.WriteAsync(buffer.AsMemory(0, count));
+        }
         var bytes = memory.ToArray();
 
         // Bỏ BOM
@@ -212,6 +243,8 @@ public static class ChapterFileReader
                 // Gặp tiêu đề → đóng chương cũ, mở chương mới
                 CloseChapter(current, currentLines, found);
 
+                if (result.Chapters.Count + found.Count >= MaxParsedChapters)
+                    throw new InvalidDataException("Mỗi lần chỉ tải tối đa 500 chương.");
                 current = new ParsedChapter
                 {
                     Title = match.Groups["title"].Value.Trim(),
@@ -284,6 +317,8 @@ public static class ChapterFileReader
             chapter.Title = nameOnly.Trim();    // không có số → ChapterService tự đánh số
         }
 
+        if (result.Chapters.Count >= MaxParsedChapters)
+            throw new InvalidDataException("Mỗi lần chỉ tải tối đa 500 chương.");
         result.Chapters.Add(chapter);
     }
 

@@ -27,7 +27,7 @@ public partial class AccountViewModel : BaseViewModel
 
     // Gọi mỗi lần tab hiện ra để cập nhật trạng thái sau khi đăng nhập/đăng xuất
     [RelayCommand]
-    private async Task LoadAsync()
+    private async Task LoadAsync() => await RunSafeAsync(async () =>
     {
         IsLoggedIn = await _authService.IsLoggedInAsync();
 
@@ -37,7 +37,7 @@ public partial class AccountViewModel : BaseViewModel
         Email = user?.Email ?? string.Empty;
         RoleText = user?.Role == "Admin" ? "Quản trị viên" : "Thành viên";
         Initial = name.Trim().Length > 0 ? name.Trim()[..1].ToUpperInvariant() : "?";
-    }
+    });
 
     [RelayCommand]
     private async Task GoToLoginAsync() => await Shell.Current.GoToAsync("//LoginPage");
@@ -48,7 +48,11 @@ public partial class AccountViewModel : BaseViewModel
     [RelayCommand]
     private async Task LogoutAsync()
     {
-        await _authService.LogoutAsync();
-        await LoadAsync();
+        await RunSafeAsync(() => _authService.LogoutAsync());
+        IsLoggedIn = false;
+        DisplayName = "Thành viên";
+        Email = string.Empty;
+        RoleText = string.Empty;
+        Initial = "?";
     }
 }
