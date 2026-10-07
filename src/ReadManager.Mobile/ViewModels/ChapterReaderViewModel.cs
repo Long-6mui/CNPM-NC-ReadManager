@@ -26,6 +26,7 @@ public partial class ChapterReaderViewModel : BaseViewModel
         _ = RunSafeAsync(async () =>
         {
             Chapter = await _chapterService.GetChapterContentAsync(value);
+            if (Chapter.IsLocked) ErrorMessage = "Chương trả phí chưa được mở khóa.";
         });
     }
 

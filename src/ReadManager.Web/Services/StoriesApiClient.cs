@@ -1,4 +1,4 @@
-﻿using System.Net;
+using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using ReadManager.Web.ViewModels;
@@ -41,6 +41,14 @@ public record UploadChaptersResultApi(int Created, int Updated, List<int> Skippe
 
 public class StoriesApiClient(HttpClient http)
 {
+    public async Task<PagedApi<StoryListItemApi>> AdminListAsync(string? token, int page = 1)
+    {
+        using var req = Build(HttpMethod.Get, $"api/stories/admin?page={page}&pageSize=50", token);
+        using var res = await http.SendAsync(req);
+        res.EnsureSuccessStatusCode();
+        return (await res.Content.ReadFromJsonAsync<PagedApi<StoryListItemApi>>())!;
+    }
+
     // ---------- Phần công khai (ai cũng xem được) ----------
     public async Task<PagedApi<StoryListItemApi>> ListAsync(
         string? q, int? genreId, string? status, string? access,

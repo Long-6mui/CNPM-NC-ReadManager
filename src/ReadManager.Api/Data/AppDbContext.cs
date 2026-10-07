@@ -17,6 +17,8 @@ public class AppDbContext : DbContext
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
+        modelBuilder.HasCharSet("utf8mb4");
+        modelBuilder.UseCollation("utf8mb4_unicode_ci");
 
         modelBuilder.Entity<User>(entity =>
         {
@@ -39,7 +41,8 @@ public class AppDbContext : DbContext
 
         modelBuilder.Entity<Story>(entity =>
         {
-            entity.ToTable("Stories");
+            entity.ToTable("Stories", table =>
+                table.HasCheckConstraint("CK_Stories_CurrentPrice", "`CurrentPrice` IS NULL OR `CurrentPrice` > 0"));
             entity.HasKey(x => x.StoryId);
             entity.Property(x => x.StoryId).ValueGeneratedOnAdd();
             entity.Property(x => x.Title).HasMaxLength(255).IsRequired();
@@ -63,7 +66,8 @@ public class AppDbContext : DbContext
 
         modelBuilder.Entity<Chapter>(entity =>
         {
-            entity.ToTable("Chapters");
+            entity.ToTable("Chapters", table =>
+                table.HasCheckConstraint("CK_Chapters_ChapterNumber", "`ChapterNumber` > 0"));
             entity.HasKey(x => x.ChapterId);
             entity.Property(x => x.ChapterId).ValueGeneratedOnAdd();
             // Alternate key để ReadingProgress tham chiếu khóa ghép ở sprint sau.

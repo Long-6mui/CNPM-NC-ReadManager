@@ -15,7 +15,8 @@
                 <Label Text="{Binding Chapter.Title, StringFormat='Chương {0}'}"
                        FontSize="18" FontAttributes="Bold" />
 
-                <Label Text="{Binding Chapter.Content}"
+                <Label Text="{Binding ErrorMessage}" TextColor="Red" />
+                <Label IsVisible="{Binding Chapter.IsLocked, Converter={StaticResource InvertedBoolConverter}}" Text="{Binding Chapter.Content}"
                        FontSize="16"
                        LineHeight="1.4" />
             </VerticalStackLayout>

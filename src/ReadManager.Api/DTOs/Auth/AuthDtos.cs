@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 
 namespace ReadManager.Api.DTOs.Auth;
 
@@ -10,10 +10,12 @@ public class RegisterRequestDto
     public string DisplayName { get; set; } = string.Empty;
 
     [Required(ErrorMessage = "Email không được để trống.")]
+    [StringLength(254)]
     [EmailAddress(ErrorMessage = "Email không đúng định dạng.")]
     public string Email { get; set; } = string.Empty;
 
     [Required(ErrorMessage = "Mật khẩu không được để trống.")]
+    [StringLength(100)]
     [MinLength(6, ErrorMessage = "Mật khẩu phải từ 6 ký tự trở lên.")]
     public string Password { get; set; } = string.Empty;
 }
@@ -25,6 +27,7 @@ public class LoginRequestDto
     public string Email { get; set; } = string.Empty;
 
     [Required(ErrorMessage = "Mật khẩu không được để trống.")]
+    [StringLength(100)]
     public string Password { get; set; } = string.Empty;
 }
 
@@ -34,7 +37,7 @@ public class UserDto
     public int UserId { get; set; }
     public string Email { get; set; } = string.Empty;
     public string DisplayName { get; set; } = string.Empty;
-    public string Role { get; set; } = "User"; // Admin hoặc User
+    public string Role { get; set; } = "Member";
 }
 
 // DTO kết quả Đăng nhập khớp 100% với LoginResult của Web
