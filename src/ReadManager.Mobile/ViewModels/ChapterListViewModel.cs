@@ -42,7 +42,7 @@ public partial class ChapterListViewModel : BaseViewModel
     {
         if (chapter is null) return;
 
-        if (chapter.AccessLevel != "Free")
+        if (chapter.IsLocked)
         {
             ErrorMessage = "Chương này chưa mở khoá miễn phí.";
             return;

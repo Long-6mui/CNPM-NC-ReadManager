@@ -49,6 +49,39 @@ public class ApiClient
         await HandleResponseAsync(response);
     }
 
+    public async Task<TResponse?> PutAsync<TRequest, TResponse>(string uri, TRequest body)
+    {
+        await AttachAuthHeaderAsync();
+        using var response = await _http.PutAsJsonAsync(uri, body, JsonOptions);
+        return await HandleResponseAsync<TResponse>(response);
+    }
+
+    public async Task DeleteAsync(string uri)
+    {
+        await AttachAuthHeaderAsync();
+        using var response = await _http.DeleteAsync(uri);
+        await HandleResponseAsync(response);
+    }
+
+    // Gửi form có file (tải nhiều chương). Timeout dài hơn vì file có thể lớn.
+    public async Task<T?> PostMultipartAsync<T>(string uri, MultipartFormDataContent content)
+    {
+        await AttachAuthHeaderAsync();
+        using var cts = new CancellationTokenSource(TimeSpan.FromMinutes(2));
+        using var response = await _http.PostAsync(uri, content, cts.Token);
+        return await HandleResponseAsync<T>(response);
+    }
+
+    private static string GetErrorMessage(ApiError? error, int statusCode)
+    {
+        if (!string.IsNullOrWhiteSpace(error?.Message)) return error.Message;
+        var messages = error?.Errors?.Values.SelectMany(values => values)
+            .Where(message => !string.IsNullOrWhiteSpace(message)).Distinct().ToArray();
+        if (messages is { Length: > 0 }) return string.Join(Environment.NewLine, messages);
+        return statusCode == 429
+            ? "Bạn thử quá nhiều lần. Vui lòng chờ một phút rồi thử lại."
+            : $"Yêu cầu chưa được xử lý (HTTP {statusCode}). Vui lòng thử lại.";
+    }
     private static async Task<T?> HandleResponseAsync<T>(HttpResponseMessage response)
     {
         var raw = await response.Content.ReadAsStringAsync();
@@ -61,7 +94,7 @@ public class ApiClient
 
             throw new ApiException(
                 (int)response.StatusCode,
-                error?.Message ?? $"Lỗi máy chủ ({(int)response.StatusCode})",
+                GetErrorMessage(error, (int)response.StatusCode),
                 error);
         }
 
@@ -80,7 +113,7 @@ public class ApiClient
 
             throw new ApiException(
                 (int)response.StatusCode,
-                error?.Message ?? $"Lỗi máy chủ ({(int)response.StatusCode})",
+                GetErrorMessage(error, (int)response.StatusCode),
                 error);
         }
     }

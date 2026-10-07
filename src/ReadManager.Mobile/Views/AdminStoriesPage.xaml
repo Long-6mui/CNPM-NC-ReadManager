@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:ReadManager.Mobile.ViewModels"
+             xmlns:models="clr-namespace:ReadManager.Mobile.Models"
+             x:DataType="vm:AdminStoriesViewModel"
+             x:Class="ReadManager.Mobile.Views.AdminStoriesPage"
+             Title="Quản lý truyện"
+             BackgroundColor="{StaticResource WebBg}">
+
+    <ContentPage.ToolbarItems>
+        <ToolbarItem Text="Trang chủ" Command="{Binding GoHomeCommand}" />
+    </ContentPage.ToolbarItems>
+
+    <Grid RowDefinitions="Auto,Auto,*">
+
+        <!-- Tiêu đề + thêm truyện -->
+        <Grid Grid.Row="0" ColumnDefinitions="*,Auto" Padding="16,14,16,6">
+            <VerticalStackLayout Grid.Column="0" Spacing="2" VerticalOptions="Center">
+                <Label Text="Trang quản trị" Style="{StaticResource LblH2}" />
+                <Label Text="{Binding CountText}" Style="{StaticResource LblMuted}" />
+            </VerticalStackLayout>
+            <Button Grid.Column="1" Text="+ Thêm truyện" Style="{StaticResource BtnBrassSm}"
+                    Command="{Binding AddCommand}" VerticalOptions="Center" />
+        </Grid>
+
+        <VerticalStackLayout Grid.Row="1" Padding="16,0">
+            <Label Text="{Binding ErrorMessage}" TextColor="{StaticResource WebCrimson}" FontSize="13"
+                   IsVisible="{Binding ErrorMessage, Converter={StaticResource StringToBoolConverter}}" />
+            <ActivityIndicator IsRunning="{Binding IsBusy}" IsVisible="{Binding IsBusy}"
+                               Color="{StaticResource WebRoyal}" Margin="0,8" />
+        </VerticalStackLayout>
+
+        <!-- Danh sách truyện -->
+        <RefreshView Grid.Row="2" IsRefreshing="{Binding IsRefreshing}" Command="{Binding RefreshCommand}">
+            <CollectionView ItemsSource="{Binding Stories}" SelectionMode="None" Margin="16,0">
+                <CollectionView.Footer>
+                    <BoxView HeightRequest="16" Color="Transparent" />
+                </CollectionView.Footer>
+                <CollectionView.ItemTemplate>
+                    <DataTemplate x:DataType="models:StorySummary">
+                        <Border Style="{StaticResource Panel}" Padding="12" Margin="0,0,0,10">
+                            <Grid ColumnDefinitions="52,*" ColumnSpacing="12">
+
+                                <Border Grid.Column="0" HeightRequest="78" StrokeThickness="1"
+                                        Stroke="{StaticResource WebBorder}" VerticalOptions="Start">
+                                    <Border.StrokeShape>
+                                        <RoundRectangle CornerRadius="3" />
+                                    </Border.StrokeShape>
+                                    <Grid>
+                                        <Grid.Background>
+                                            <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                                <GradientStop Color="#3B4E63" Offset="0.0" />
+                                                <GradientStop Color="#22303F" Offset="1.0" />
+                                            </LinearGradientBrush>
+                                        </Grid.Background>
+                                        <Label Text="{Binding Title}" IsVisible="{Binding HasNoCover}"
+                                               FontFamily="{StaticResource SerifFont}" FontSize="8" FontAttributes="Bold"
+                                               TextColor="White" HorizontalTextAlignment="Center"
+                                               VerticalOptions="Center" Margin="3" />
+                                        <Image Source="{Binding CoverUrl}" IsVisible="{Binding HasCover}" Aspect="AspectFill" />
+                                    </Grid>
+                                </Border>
+
+                                <VerticalStackLayout Grid.Column="1" Spacing="3">
+                                    <Label Text="{Binding Title}" FontSize="15" FontAttributes="Bold"
+                                           TextColor="{StaticResource WebText}" MaxLines="2" LineBreakMode="TailTruncation" />
+                                    <Label Text="{Binding AdminLine1}" Style="{StaticResource LblCardMeta}" />
+                                    <Label Text="{Binding AdminLine2}" Style="{StaticResource LblCardMeta}" />
+                                    <HorizontalStackLayout Spacing="8" Margin="0,6,0,0">
+                                        <Button Text="Sửa" Style="{StaticResource BtnOutlineSm}"
+                                                Command="{Binding Source={RelativeSource AncestorType={x:Type vm:AdminStoriesViewModel}}, Path=EditCommand}"
+                                                CommandParameter="{Binding .}" />
+                                        <Button Text="Xóa" Style="{StaticResource BtnOutlineSm}" TextColor="{StaticResource WebCrimson}"
+                                                Command="{Binding Source={RelativeSource AncestorType={x:Type vm:AdminStoriesViewModel}}, Path=DeleteCommand}"
+                                                CommandParameter="{Binding .}" />
+                                    </HorizontalStackLayout>
+                                </VerticalStackLayout>
+                            </Grid>
+                        </Border>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+            </CollectionView>
+        </RefreshView>
+
+        <VerticalStackLayout Grid.Row="2" IsVisible="{Binding ShowEmpty}" VerticalOptions="Start"
+                             Padding="24,50" InputTransparent="True">
+            <Label Text="Chưa có truyện nào." Style="{StaticResource LblMuted}" HorizontalTextAlignment="Center" />
+        </VerticalStackLayout>
+    </Grid>
+</ContentPage>

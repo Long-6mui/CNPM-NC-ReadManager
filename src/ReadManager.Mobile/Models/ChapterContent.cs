@@ -3,6 +3,7 @@ namespace ReadManager.Mobile.Models;
 // Dùng cho màn Đọc chương (miễn phí — Sprint 1)
 public class ChapterContent
 {
+    public bool IsLocked { get; set; }
     public int ChapterId { get; set; }
     public int StoryId { get; set; }
     public int ChapterNumber { get; set; }

@@ -69,7 +69,7 @@ public partial class StoryListViewModel : BaseViewModel
     [RelayCommand]
     private async Task LoadAsync()
     {
-        IsLoggedIn = await _authService.IsLoggedInAsync();
+        await RunSafeAsync(async () => IsLoggedIn = await _authService.IsLoggedInAsync());
         if (IsFiltering || Updated.Count > 0) return; // đã có dữ liệu thì không tải lại (kéo xuống để làm mới)
         await ReloadAsync();
     }
@@ -162,7 +162,7 @@ public partial class StoryListViewModel : BaseViewModel
     [RelayCommand]
     private async Task LogoutAsync()
     {
-        await _authService.LogoutAsync();
+        await RunSafeAsync(() => _authService.LogoutAsync());
         IsLoggedIn = false;
     }
 

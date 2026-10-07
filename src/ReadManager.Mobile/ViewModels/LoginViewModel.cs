@@ -31,14 +31,15 @@ public partial class LoginViewModel : BaseViewModel
 
         await RunSafeAsync(async () =>
         {
-            await _authService.LoginAsync(new LoginRequest
+            var user = await _authService.LoginAsync(new LoginRequest
             {
                 UsernameOrEmail = UsernameOrEmail.Trim(),
                 Password = Password
             });
 
-            // Đăng nhập xong -> vào trang chủ, xoá lịch sử điều hướng để không back lại màn Login
-            await Shell.Current.GoToAsync("//StoryListPage");
+            // Giống web: Admin vào thẳng trang quản trị, người dùng thường về trang chủ.
+            // "//" thay toàn bộ stack để không back lại màn Login.
+            await Shell.Current.GoToAsync(user.Role == "Admin" ? "//AdminStoriesPage" : "//StoryListPage");
         });
     }
 

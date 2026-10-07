@@ -9,9 +9,11 @@
 
     <Grid RowDefinitions="Auto,*" Padding="16">
 
-        <ActivityIndicator Grid.Row="0" IsRunning="{Binding IsBusy}" IsVisible="{Binding IsBusy}" />
+        <VerticalStackLayout Grid.Row="0"><Label Text="{Binding ErrorMessage}" TextColor="Red" />
+        <ActivityIndicator IsRunning="{Binding IsBusy}" IsVisible="{Binding IsBusy}" /></VerticalStackLayout>
 
         <CollectionView Grid.Row="1" ItemsSource="{Binding Chapters}">
+            <CollectionView.EmptyView><Label Text="Chưa có chương công khai." /></CollectionView.EmptyView>
             <CollectionView.ItemTemplate>
                 <DataTemplate x:DataType="models:ChapterSummary">
                     <Grid Padding="0,10" ColumnDefinitions="*,Auto">

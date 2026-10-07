@@ -7,8 +7,7 @@ public class AuthService : IAuthService
     private readonly ApiClient _api;
     private readonly ITokenStore _tokenStore;
 
-    // TODO: xác nhận lại route thật với Backend 2 (AuthController) — đang giả định
-    // POST api/auth/register và POST api/auth/login trả về AuthResponse { token, user }.
+    // Register returns user information; only login creates a session.
     private const string RegisterEndpoint = "auth/register";
     private const string LoginEndpoint = "auth/login";
 
@@ -22,10 +21,9 @@ public class AuthService : IAuthService
 
     public async Task<UserProfile> RegisterAsync(RegisterRequest request)
     {
-        var result = await _api.PostAsync<RegisterRequest, AuthResponse>(RegisterEndpoint, request)
+        var result = await _api.PostAsync<RegisterRequest, RegistrationResponse>(RegisterEndpoint, request)
             ?? throw new ApiException(0, "Không nhận được phản hồi từ máy chủ.");
 
-        await PersistSessionAsync(result);
         return result.User;
     }
 
@@ -40,18 +38,27 @@ public class AuthService : IAuthService
 
     public async Task LogoutAsync()
     {
-        CurrentUser = null;
-        await _tokenStore.ClearAsync();
+        try { await _api.PostAsync("auth/logout", new { }); }
+        catch (ApiException ex) when (ex.StatusCode is 401 or 403) { }
+        finally { CurrentUser = null; await _tokenStore.ClearAsync(); }
     }
 
     public async Task<bool> IsLoggedInAsync()
     {
         var token = await _tokenStore.GetTokenAsync();
-        return !string.IsNullOrEmpty(token);
+        if (string.IsNullOrEmpty(token)) { CurrentUser = null; return false; }
+        try
+        {
+            CurrentUser = await _api.GetAsync<UserProfile>("auth/me");
+            return CurrentUser is not null;
+        }
+        catch (ApiException ex) when (ex.StatusCode is 401 or 403)
+        { CurrentUser = null; await _tokenStore.ClearAsync(); return false; }
     }
 
     private async Task PersistSessionAsync(AuthResponse result)
     {
+        if (string.IsNullOrWhiteSpace(result.Token)) throw new ApiException(0, "Phản hồi đăng nhập thiếu token.");
         await _tokenStore.SaveTokenAsync(result.Token);
         CurrentUser = result.User;
     }

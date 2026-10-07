@@ -9,6 +9,7 @@ namespace ReadManager.Mobile.ViewModels;
 public partial class ChapterReaderViewModel : BaseViewModel
 {
     private readonly IChapterService _chapterService;
+    private readonly ILibraryService _library;
 
     [ObservableProperty]
     private int chapterId;
@@ -16,9 +17,10 @@ public partial class ChapterReaderViewModel : BaseViewModel
     [ObservableProperty]
     private ChapterContent? chapter;
 
-    public ChapterReaderViewModel(IChapterService chapterService)
+    public ChapterReaderViewModel(IChapterService chapterService, ILibraryService library)
     {
         _chapterService = chapterService;
+        _library = library;
     }
 
     partial void OnChapterIdChanged(int value)
@@ -26,6 +28,8 @@ public partial class ChapterReaderViewModel : BaseViewModel
         _ = RunSafeAsync(async () =>
         {
             Chapter = await _chapterService.GetChapterContentAsync(value);
+            if (Chapter.IsLocked) ErrorMessage = "Chương trả phí chưa được mở khóa.";
+            else _library.RecordChapter(Chapter.StoryId, Chapter.ChapterId, Chapter.ChapterNumber, Chapter.Title); // Tủ sách: nhớ chương đang đọc
         });
     }
 

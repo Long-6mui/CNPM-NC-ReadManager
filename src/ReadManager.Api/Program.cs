@@ -1,12 +1,14 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.DataProtection;
+using Microsoft.EntityFrameworkCore;
+using ReadManager.Api.Authentication;
 using ReadManager.Api.Data;
-
+using ReadManager.Api.Services;
+using System.Threading.RateLimiting;
 
 var builder = WebApplication.CreateBuilder(args);
 
-
-var connectionString =
-    builder.Configuration.GetConnectionString("DefaultConnection")
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
     ?? throw new InvalidOperationException(
         "Chưa cấu hình ConnectionStrings:DefaultConnection.");
 
@@ -15,25 +17,52 @@ builder.Services.AddDbContext<AppDbContext>(options =>
         connectionString,
         ServerVersion.AutoDetect(connectionString)));
 
+builder.Services.AddScoped<IStoryService, StoryService>();
+builder.Services.AddScoped<IGenreService, GenreService>();
+builder.Services.AddScoped<IChapterService, ChapterService>();
+builder.Services.AddScoped<IAuthService, AuthService>();
 
-// Add services to the container.
+builder.Services.AddDataProtection()
+    .SetApplicationName("ReadManager.Api");
+
+builder.Services.AddAuthentication(ApiSessionHandler.SchemeName)
+    .AddScheme<AuthenticationSchemeOptions, ApiSessionHandler>(
+        ApiSessionHandler.SchemeName,
+        _ => { });
+
+builder.Services.AddAuthorization();
+
+builder.Services.AddRateLimiter(options =>
+{
+    options.RejectionStatusCode = 429;
+
+    options.AddPolicy("login", context =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 10,
+                Window = TimeSpan.FromMinutes(1),
+                QueueLimit = 0
+            }));
+});
 
 builder.Services.AddControllers();
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
 }
 
-app.UseHttpsRedirection();
-
+// Android emulator uses local HTTP in Development; production requires HTTPS.
+if (!app.Environment.IsDevelopment()) app.UseHttpsRedirection();
+app.UseRateLimiter();
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();

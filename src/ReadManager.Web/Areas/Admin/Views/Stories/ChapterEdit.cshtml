@@ -3,8 +3,9 @@
     ViewData["Title"] = Model.Id == 0 ? "Thêm chương" : "Sửa chương";
     ViewBag.ActiveNav = "stories";
 }
+@* Form thêm / sửa 1 chương (BE4 — PB07, PB08, PB10) *@
 <div class="container section">
-    <div class="section-head"><h2>Trang quản trị</h2><span class="badge badge-gold">Xem trước · chưa lưu DB</span></div>
+    <div class="section-head"><h2>Trang quản trị</h2></div>
     <div class="admin-shell">
         <partial name="_AdminNav" />
         <div>
@@ -15,6 +16,7 @@
                 <input type="hidden" asp-for="Id" />
                 <input type="hidden" asp-for="StoryId" />
                 <input type="hidden" asp-for="StoryTitle" />
+                @* Lỗi từ API (vd: trùng số chương) hiện ở đây *@
                 <div asp-validation-summary="ModelOnly" class="validation-summary-errors"></div>
 
                 <div class="field-row">
@@ -34,15 +36,16 @@
                     <textarea asp-for="Content" rows="14" placeholder="Dán nội dung chương tại đây. Để trống dòng giữa các đoạn văn."></textarea>
                     <span asp-validation-for="Content" class="text-danger"></span>
                 </div>
+                @* PB10 — thiết lập miễn phí / trả phí *@
                 <label class="checkline" style="margin-bottom:14px;">
-                    <input asp-for="IsFree" type="checkbox" style="width:auto;" /> Cho đọc miễn phí (bỏ qua kiểm tra quyền đọc)
+                    <input asp-for="IsFree" type="checkbox" style="width:auto;" /> Cho đọc miễn phí (truyện Miễn phí thì mọi chương luôn miễn phí)
                 </label>
                 <div class="divider"></div>
                 <div class="field">
-                    <label asp-for="Status">Kiểm duyệt</label>
+                    <label asp-for="Status">Trạng thái</label>
                     <select asp-for="Status" id="chStatusSelect">
                         <option value="Draft">Nháp — chưa duyệt, độc giả không thấy</option>
-                        <option value="Reviewed">Đã kiểm duyệt</option>
+                        <option value="Reviewed">Công khai — độc giả đọc được</option>
                     </select>
                 </div>
                 <button type="submit" class="btn btn-brass" style="margin-top:16px;">Lưu chương</button>

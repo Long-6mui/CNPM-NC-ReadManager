@@ -1,31 +1,318 @@
 @model BulkImportVm
 @{
-    ViewData["Title"] = "Dán nhiều chương";
+    ViewData["Title"] = "Tải nhiều chương";
     ViewBag.ActiveNav = "stories";
 }
+@*
+    =====================================================================
+    TRANG TẢI NHIỀU CHƯƠNG (PB08)
+    - Chọn file .txt / .zip, hoặc dán văn bản, hoặc cả hai.
+    - Bấm "Kiểm tra" → hiện bảng xem trước + danh sách lỗi (CHƯA lưu).
+    - Không còn lỗi → nút "Lưu" mới bấm được.
+    Trang dùng JavaScript gửi dữ liệu (không tải lại trang) để file đã chọn không bị mất.
+    =====================================================================
+*@
+<style>
+    .upload-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+    }
+
+    @@media (max-width: 800px) {
+        .upload-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    .upload-grid .field {
+        margin-bottom: 0;
+    }
+    /* Khung chọn file và ô dán cao bằng nhau */
+    .drop-zone {
+        border: 2px dashed var(--border);
+        border-radius: 6px;
+        padding: 22px;
+        text-align: center;
+        cursor: pointer;
+        background: var(--surface-2);
+        min-height: 220px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+    }
+
+    .paste-box {
+        min-height: 220px !important;
+    }
+    /* Nút bị khóa (chưa Kiểm tra / còn lỗi) → mờ đi, không bấm được */
+    .actions-row .btn:disabled {
+        opacity: .45;
+        cursor: not-allowed;
+        filter: grayscale(.4);
+    }
+
+    .drop-zone.dragging {
+        border-color: var(--brass);
+    }
+
+    .file-list {
+        margin-top: 10px;
+        font-size: 13px;
+        text-align: left;
+    }
+
+        .file-list li {
+            margin: 2px 0;
+        }
+
+    .msg-box {
+        border-radius: 5px;
+        padding: 12px 16px;
+        margin-bottom: 12px;
+        font-size: 13.5px;
+    }
+
+        .msg-box ul {
+            margin: 6px 0 0 18px;
+        }
+
+    .msg-error {
+        background: rgba(200, 40, 50, .10);
+        border: 1px solid rgba(200, 40, 50, .45);
+        color: #b3202c;
+    }
+
+    .msg-warn {
+        background: rgba(220, 160, 30, .12);
+        border: 1px solid rgba(220, 160, 30, .5);
+        color: #8a5a00;
+    }
+
+    .msg-ok {
+        background: rgba(40, 150, 80, .10);
+        border: 1px solid rgba(40, 150, 80, .45);
+        color: #1d7a43;
+    }
+
+    .preview-wrap {
+        overflow-x: auto;
+    }
+
+    tr.row-error td {
+        background: rgba(200, 40, 50, .08);
+    }
+
+    tr.row-warn td {
+        background: rgba(220, 160, 30, .08);
+    }
+
+    .problems {
+        margin: 4px 0 0 16px;
+        font-size: 12px;
+    }
+
+        .problems li {
+            color: #8a5a00;
+        }
+
+    tr.row-error .problems li {
+        color: #b3202c;
+    }
+
+    .muted-sm {
+        font-size: 12px;
+        color: var(--muted);
+    }
+
+    .actions-row {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        margin-top: 14px;
+        flex-wrap: wrap;
+    }
+</style>
+
 <div class="container section">
-    <div class="section-head"><h2>Trang quản trị</h2><span class="badge badge-gold">Xem trước · chưa lưu DB</span></div>
+    <div class="section-head"><h2>Trang quản trị</h2></div>
     <div class="admin-shell">
         <partial name="_AdminNav" />
         <div>
             <div class="flexbar" style="margin-bottom:14px;">
                 <a asp-action="Edit" asp-route-id="@Model.StoryId" style="font-size:13px; color:var(--muted);">← @Model.StoryTitle</a>
             </div>
-            <form class="panel" asp-action="BulkImportSave" method="post">
-                <input type="hidden" asp-for="StoryId" />
-                <input type="hidden" asp-for="StoryTitle" />
-                <div asp-validation-summary="ModelOnly" class="validation-summary-errors"></div>
-                <p class="hint" style="margin-bottom:12px;">
-                    Dán nội dung nhiều chương liền nhau. Mỗi chương cần bắt đầu bằng một dòng dạng <b>"Chương 3: Tên chương"</b>
-                    (không phân biệt hoa/thường). Bản xem trước chỉ kiểm tra và đếm chương, chưa tạo hay cập nhật dữ liệu.
+
+            <form id="uploadForm" class="panel" asp-action="BulkImportCheck" method="post" enctype="multipart/form-data">
+                <input type="hidden" name="storyId" value="@Model.StoryId" />
+
+                <!-- ===== Hướng dẫn ===== -->
+                <p class="hint" style="margin-bottom:14px;">
+                    Mỗi chương cần bắt đầu bằng một dòng dạng <b>"Chương 3: Tên chương"</b>.
+                    Nếu file không có dòng này, cả file được tính là 1 chương và số chương lấy từ <b>tên file</b>
+                    (vd: <code>chuong-03.txt</code>, <code>03 - Gặp gỡ.txt</code>).
+                    File phải lưu dạng <b>UTF-8</b>.
                 </p>
-                <textarea asp-for="RawText" rows="16" placeholder="Chương 1: Mở đầu&#10;Nội dung chương 1…&#10;&#10;Chương 2: Tiếp theo&#10;Nội dung chương 2…"></textarea>
-                <span asp-validation-for="RawText" class="text-danger"></span>
-                <label class="checkline" style="margin-top:12px; margin-bottom:16px;">
-                    <input asp-for="MarkFree" type="checkbox" style="width:auto;" /> Đánh dấu tất cả chương vừa nhập là miễn phí
+
+                <div class="upload-grid">
+                    <!-- ===== Khung chọn file ===== -->
+                    <div class="field">
+                        <label>Chọn file (.txt hoặc .zip)</label>
+                        <div id="dropZone" class="drop-zone">
+                            <div>📂 Bấm để chọn file, hoặc kéo thả file vào đây</div>
+                            <div class="muted-sm">Chọn được nhiều file cùng lúc · tối đa 50MB</div>
+                            <input id="fileInput" type="file" name="files" accept=".txt,.zip" multiple style="display:none;" />
+                            <ul id="fileList" class="file-list"></ul>
+                        </div>
+                    </div>
+
+                    <!-- ===== Khung dán văn bản ===== -->
+                    <div class="field">
+                        <label>Hoặc dán nội dung</label>
+                        <textarea name="text" class="paste-box" placeholder="Chương 1: Mở đầu&#10;Nội dung chương 1…&#10;&#10;Chương 2: Tiếp theo&#10;Nội dung chương 2…"></textarea>
+                    </div>
+                </div>
+
+                <!-- ===== Tùy chọn ===== -->
+                <label class="checkline" style="margin-top:12px;">
+                    <input type="checkbox" name="markFree" value="true" style="width:auto;" /> Đánh dấu tất cả chương là miễn phí
                 </label>
-                <button type="submit" class="btn btn-brass">Kiểm tra nội dung</button>
+                <label class="checkline">
+                    <input type="checkbox" name="publish" value="true" checked style="width:auto;" /> Công khai ngay (bỏ chọn = lưu nháp)
+                </label>
+                <label class="checkline">
+                    <input type="checkbox" name="overwriteExisting" value="true" style="width:auto;" /> Ghi đè chương đã có cùng số (bỏ chọn = bỏ qua chương trùng)
+                </label>
+
+                <div class="actions-row">
+                    <button type="button" id="btnCheck" class="btn btn-outline">🔍 Kiểm tra</button>
+                    <button type="button" id="btnSave" class="btn btn-brass" disabled title="Bấm Kiểm tra trước">💾 Lưu các chương</button>
+                    <span id="busy" class="muted-sm" style="display:none;">Đang xử lý…</span>
+                </div>
             </form>
+
+            <!-- ===== Kết quả kiểm tra: lỗi, cảnh báo, bảng xem trước ===== -->
+            <div id="result" style="margin-top:16px;"></div>
         </div>
     </div>
 </div>
+
+@section Scripts {
+    <script>
+        (function () {
+            const form = document.getElementById('uploadForm');
+            const fileInput = document.getElementById('fileInput');
+            const dropZone = document.getElementById('dropZone');
+            const fileList = document.getElementById('fileList');
+            const btnCheck = document.getElementById('btnCheck');
+            const btnSave = document.getElementById('btnSave');
+            const busy = document.getElementById('busy');
+            const result = document.getElementById('result');
+            const editUrl = '@Url.Action("Edit", new { id = Model.StoryId })';
+
+            // Chống chèn mã HTML khi hiện chữ lấy từ file
+            const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+            // ---------- Chọn file / kéo thả ----------
+            dropZone.addEventListener('click', e => { if (e.target !== fileInput) fileInput.click(); });
+            dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragging'); });
+            dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragging'));
+            dropZone.addEventListener('drop', e => {
+                e.preventDefault();
+                dropZone.classList.remove('dragging');
+                fileInput.files = e.dataTransfer.files;
+                onInputChanged();
+            });
+            fileInput.addEventListener('change', onInputChanged);
+            form.addEventListener('input', onInputChanged);
+
+            function onInputChanged() {
+                fileList.innerHTML = [...fileInput.files]
+                    .map(f => `<li>📄 ${esc(f.name)} <span class="muted-sm">(${(f.size / 1024).toFixed(1)} KB)</span></li>`)
+                    .join('');
+                // Đổi file / nội dung / tùy chọn → phải kiểm tra lại mới được lưu
+                btnSave.disabled = true;
+                btnSave.title = 'Bấm Kiểm tra trước';
+            }
+
+            btnCheck.addEventListener('click', () => send(false));
+            btnSave.addEventListener('click', () => {
+                if (confirm('Lưu các chương vào truyện?')) send(true);
+            });
+
+            // ---------- Gửi lên server ----------
+            async function send(save) {
+                const data = new FormData(form);   // gồm file, văn bản, tùy chọn và mã chống giả mạo
+                data.append('save', save ? 'true' : 'false');
+
+                btnCheck.disabled = true;
+                btnSave.disabled = true;
+                busy.style.display = 'inline';
+                try {
+                    const res = await fetch(form.action, { method: 'POST', body: data });
+                    if (!res.ok) throw new Error('Máy chủ trả lỗi ' + res.status);
+                    const r = await res.json();
+                    render(r);
+                    if (r.saved) {
+                        setTimeout(() => location.href = editUrl, 1200);   // lưu xong → về trang sửa truyện
+                        return;
+                    }
+                    btnSave.disabled = !r.canSave;
+                    btnSave.title = r.canSave ? '' : 'Sửa hết lỗi màu đỏ rồi kiểm tra lại';
+                } catch (err) {
+                    render({ errors: ['Không gửi được dữ liệu: ' + err.message], warnings: [], chapters: [] });
+                } finally {
+                    btnCheck.disabled = false;
+                    busy.style.display = 'none';
+                }
+            }
+
+            // ---------- Vẽ kết quả ----------
+            function render(r) {
+                let html = '';
+
+                if (r.saved) {
+                    html += `<div class="msg-box msg-ok">✅ <b>Đã lưu.</b> ${esc(r.message)} Đang quay về trang truyện…</div>`;
+                } else if (r.message) {
+                    const cls = (r.errors && r.errors.length) ? 'msg-error' : 'msg-ok';
+                    html += `<div class="msg-box ${cls}"><b>${esc(r.message)}</b></div>`;
+                }
+
+                // Lỗi chung (màu đỏ) — phải sửa mới lưu được
+                if (r.errors && r.errors.length) {
+                    html += `<div class="msg-box msg-error">❌ <b>Có ${r.errors.length} lỗi cần sửa:</b><ul>`
+                          + r.errors.map(e => `<li>${esc(e)}</li>`).join('') + `</ul></div>`;
+                }
+                // Cảnh báo (màu vàng) — vẫn lưu được
+                if (r.warnings && r.warnings.length) {
+                    html += `<div class="msg-box msg-warn">⚠️ <b>Cảnh báo:</b><ul>`
+                          + r.warnings.map(w => `<li>${esc(w)}</li>`).join('') + `</ul></div>`;
+                }
+
+                // Bảng xem trước từng chương
+                if (r.chapters && r.chapters.length) {
+                    const badge = a => a === 'Lỗi' ? 'badge-red' : a === 'Bỏ qua' ? 'badge-gray' : a === 'Ghi đè' ? 'badge-gold' : 'badge-green';
+                    html += `<div class="panel preview-wrap"><table class="data"><thead><tr>
+                                <th>Số chương</th><th>Tiêu đề</th><th>Lấy từ</th><th>Độ dài</th><th>Sẽ làm</th>
+                             </tr></thead><tbody>`;
+                    for (const c of r.chapters) {
+                        const rowCls = c.hasError ? 'row-error' : (c.problems && c.problems.length ? 'row-warn' : '');
+                        const problems = (c.problems && c.problems.length)
+                            ? `<ul class="problems">${c.problems.map(p => `<li>${esc(p)}</li>`).join('')}</ul>` : '';
+                        html += `<tr class="${rowCls}">
+                            <td><b>${c.chapterNumber}</b><div class="muted-sm">${esc(c.numberFrom)}</div></td>
+                            <td>${esc(c.title)}<div class="muted-sm">${esc(c.contentPreview)}</div>${problems}</td>
+                            <td class="muted-sm">${esc(c.source)}</td>
+                            <td class="muted-sm">${Number(c.contentLength).toLocaleString('vi-VN')} ký tự</td>
+                            <td><span class="badge ${badge(c.action)}">${esc(c.action)}</span></td>
+                        </tr>`;
+                    }
+                    html += `</tbody></table></div>`;
+                }
+
+                result.innerHTML = html;
+                result.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+        })();
+    </script>
+}

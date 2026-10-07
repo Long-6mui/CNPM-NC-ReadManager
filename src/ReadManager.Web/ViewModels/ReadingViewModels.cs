@@ -1,4 +1,5 @@
 namespace ReadManager.Web.ViewModels;
+
 public class BrowseVm
 {
     public List<StoryCardVm> Stories { get; set; } = new();
@@ -24,7 +25,13 @@ public class StoryDetailVm
 {
     public Story Story { get; set; } = null!;
     public List<string> GenreNames { get; set; } = new();
-    public List<ChapterRowVm> Chapters { get; set; } = new();
+    public List<ChapterRowVm> Chapters { get; set; } = new();   // chỉ các chương của TRANG đang xem
+
+    // Phân trang danh sách chương (mỗi trang 20 chương, chia 2 cột)
+    public int TotalChapters { get; set; }
+    public int ChapterPage { get; set; } = 1;
+    public int ChapterPageCount { get; set; } = 1;
+
     public bool IsFollowing { get; set; }
     public bool Owned { get; set; }
     public bool HasPendingOrder { get; set; }
@@ -41,4 +48,3 @@ public class ReadVm
     public int? PrevNo { get; set; }
     public int? NextNo { get; set; }
 }
-

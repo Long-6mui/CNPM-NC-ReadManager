@@ -31,11 +31,14 @@ namespace ReadManager.Mobile
             builder.Services.AddHttpClient<ApiClient>(client =>
             {
                 client.BaseAddress = new Uri(ApiSettings.BaseUrl);
+                client.Timeout = TimeSpan.FromSeconds(20);
             });
 
             builder.Services.AddSingleton<IAuthService, AuthService>(); // singleton để giữ CurrentUser xuyên suốt phiên
             builder.Services.AddTransient<IStoryService, StoryService>();
             builder.Services.AddTransient<IChapterService, ChapterService>();
+            builder.Services.AddTransient<IAdminService, AdminService>();
+            builder.Services.AddSingleton<ILibraryService, LibraryService>(); // Tủ sách lưu trên máy
 
             // ---- ViewModels ----
             builder.Services.AddTransient<LoginViewModel>();
@@ -46,6 +49,12 @@ namespace ReadManager.Mobile
             builder.Services.AddTransient<AccountViewModel>();
             builder.Services.AddTransient<ChapterListViewModel>();
             builder.Services.AddTransient<ChapterReaderViewModel>();
+            builder.Services.AddTransient<LibraryViewModel>();
+            builder.Services.AddTransient<AdminStoriesViewModel>();
+            builder.Services.AddTransient<AdminGenresViewModel>();
+            builder.Services.AddTransient<AdminStoryEditViewModel>();
+            builder.Services.AddTransient<AdminChapterEditViewModel>();
+            builder.Services.AddTransient<AdminBulkImportViewModel>();
 
             // ---- Pages ----
             builder.Services.AddTransient<LoginPage>();
@@ -56,6 +65,12 @@ namespace ReadManager.Mobile
             builder.Services.AddTransient<AccountPage>();
             builder.Services.AddTransient<ChapterListPage>();
             builder.Services.AddTransient<ChapterReaderPage>();
+            builder.Services.AddTransient<LibraryPage>();
+            builder.Services.AddTransient<AdminStoriesPage>();
+            builder.Services.AddTransient<AdminGenresPage>();
+            builder.Services.AddTransient<AdminStoryEditPage>();
+            builder.Services.AddTransient<AdminChapterEditPage>();
+            builder.Services.AddTransient<AdminBulkImportPage>();
 
             return builder.Build();
         }
