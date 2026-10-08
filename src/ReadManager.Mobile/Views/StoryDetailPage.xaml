@@ -80,14 +80,13 @@
                     <VerticalStackLayout Grid.Row="1" Grid.ColumnSpan="2" Spacing="14" Margin="0,16,0,0">
                         <Label Text="{Binding Story.Synopsis}" TextColor="#C3D2F5" FontSize="14" />
 
-                        <!-- Web: "Chưa có chương" khi chưa có API chương -->
-                        <Border HorizontalOptions="Start" Padding="16,10" StrokeThickness="1"
-                                Stroke="#8CFFFFFF" Opacity="0.6">
-                            <Border.StrokeShape>
-                                <RoundRectangle CornerRadius="8" />
-                            </Border.StrokeShape>
-                            <Label Text="Danh sách chương ở bên dưới" TextColor="White" FontSize="14" FontAttributes="Bold" />
-                        </Border>
+                        <!-- Nút hành động: xem chương + yêu thích (Tủ sách) -->
+                        <HorizontalStackLayout Spacing="10">
+                            <Button Text="Xem chương" Style="{StaticResource BtnBrass}"
+                                    Command="{Binding OpenChaptersCommand}" />
+                            <Button Text="{Binding FavoriteText}" Style="{StaticResource BtnLight}"
+                                    Command="{Binding ToggleFavoriteCommand}" />
+                        </HorizontalStackLayout>
 
                         <HorizontalStackLayout Spacing="26" Margin="0,6,0,0">
                             <VerticalStackLayout Spacing="2">

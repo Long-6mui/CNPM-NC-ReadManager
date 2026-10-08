@@ -49,6 +49,29 @@ public class ApiClient
         await HandleResponseAsync(response);
     }
 
+    public async Task<TResponse?> PutAsync<TRequest, TResponse>(string uri, TRequest body)
+    {
+        await AttachAuthHeaderAsync();
+        using var response = await _http.PutAsJsonAsync(uri, body, JsonOptions);
+        return await HandleResponseAsync<TResponse>(response);
+    }
+
+    public async Task DeleteAsync(string uri)
+    {
+        await AttachAuthHeaderAsync();
+        using var response = await _http.DeleteAsync(uri);
+        await HandleResponseAsync(response);
+    }
+
+    // Gửi form có file (tải nhiều chương). Timeout dài hơn vì file có thể lớn.
+    public async Task<T?> PostMultipartAsync<T>(string uri, MultipartFormDataContent content)
+    {
+        await AttachAuthHeaderAsync();
+        using var cts = new CancellationTokenSource(TimeSpan.FromMinutes(2));
+        using var response = await _http.PostAsync(uri, content, cts.Token);
+        return await HandleResponseAsync<T>(response);
+    }
+
     private static string GetErrorMessage(ApiError? error, int statusCode)
     {
         if (!string.IsNullOrWhiteSpace(error?.Message)) return error.Message;

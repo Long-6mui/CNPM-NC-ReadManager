@@ -2,53 +2,42 @@
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:vm="clr-namespace:ReadManager.Mobile.ViewModels"
+             xmlns:models="clr-namespace:ReadManager.Mobile.Models"
              x:DataType="vm:AccountViewModel"
              x:Class="ReadManager.Mobile.Views.AccountPage"
              Title="Tài khoản"
              BackgroundColor="{StaticResource WebBg}">
 
+    <ContentPage.Resources>
+        <ResourceDictionary>
+            <!-- Một dòng truyện ở mục "đã xem gần nhất" / "đã thích" -->
+            <DataTemplate x:Key="PreviewRowTemplate" x:DataType="models:LibraryEntry">
+                <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,1" ColumnSpacing="8">
+                    <Grid.GestureRecognizers>
+                        <TapGestureRecognizer
+                            Command="{Binding Source={RelativeSource AncestorType={x:Type vm:AccountViewModel}}, Path=OpenStoryCommand}"
+                            CommandParameter="{Binding .}" />
+                    </Grid.GestureRecognizers>
+                    <VerticalStackLayout Grid.Column="0" Padding="0,10" Spacing="2">
+                        <Label Text="{Binding Title}" FontSize="14" FontAttributes="Bold" TextColor="{StaticResource WebText}"
+                               LineBreakMode="TailTruncation" MaxLines="1" />
+                        <Label Text="{Binding MetaText}" Style="{StaticResource LblCardMeta}" />
+                    </VerticalStackLayout>
+                    <Label Grid.Column="1" Text="›" FontSize="20" TextColor="{StaticResource WebMuted}" VerticalOptions="Center" />
+                    <BoxView Grid.Row="1" Grid.ColumnSpan="2" HeightRequest="1" Color="{StaticResource WebBorder}" />
+                </Grid>
+            </DataTemplate>
+        </ResourceDictionary>
+    </ContentPage.Resources>
+
     <ScrollView>
-        <VerticalStackLayout Padding="20,28" Spacing="16">
+        <VerticalStackLayout Padding="16,20,16,32" Spacing="14">
 
-            <!-- Đã đăng nhập -->
-            <Border Style="{StaticResource Panel}" IsVisible="{Binding IsLoggedIn}">
-                <VerticalStackLayout Spacing="14">
-                    <Grid ColumnDefinitions="Auto,*" ColumnSpacing="14">
-                        <Border Grid.Column="0" WidthRequest="56" HeightRequest="56" StrokeThickness="0"
-                                BackgroundColor="{StaticResource WebNavy}">
-                            <Border.StrokeShape>
-                                <RoundRectangle CornerRadius="28" />
-                            </Border.StrokeShape>
-                            <Label Text="{Binding Initial}" TextColor="White" FontSize="24" FontAttributes="Bold"
-                                   FontFamily="{StaticResource SerifFont}"
-                                   HorizontalOptions="Center" VerticalOptions="Center" />
-                        </Border>
-                        <VerticalStackLayout Grid.Column="1" VerticalOptions="Center" Spacing="2">
-                            <Label Text="{Binding DisplayName}" Style="{StaticResource LblH2}" FontSize="18"
-                                   LineBreakMode="TailTruncation" MaxLines="1" />
-                            <Label Text="{Binding Email}" Style="{StaticResource LblMuted}"
-                                   LineBreakMode="TailTruncation" MaxLines="1" />
-                        </VerticalStackLayout>
-                    </Grid>
-
-                    <BoxView HeightRequest="1" Color="{StaticResource WebBorder}" />
-
-                    <Grid ColumnDefinitions="*,Auto">
-                        <Label Text="Vai trò" FontSize="13" TextColor="{StaticResource WebMuted}" />
-                        <Label Grid.Column="1" Text="{Binding RoleText}" FontSize="13" FontAttributes="Bold"
-                               TextColor="{StaticResource WebText}" />
-                    </Grid>
-
-                    <Button Text="Đăng xuất" Style="{StaticResource BtnOutlineSm}"
-                            Command="{Binding LogoutCommand}" Margin="0,6,0,0" />
-                </VerticalStackLayout>
-            </Border>
-
-            <!-- Chưa đăng nhập -->
+            <!-- ============ CHƯA ĐĂNG NHẬP ============ -->
             <Border Style="{StaticResource Panel}" IsVisible="{Binding IsGuest}">
                 <VerticalStackLayout Spacing="12">
                     <Label Text="Tham gia cộng đồng đọc truyện" Style="{StaticResource LblH2}" />
-                    <Label Text="Đăng nhập để theo dõi truyện bạn yêu thích." Style="{StaticResource LblMuted}" />
+                    <Label Text="Đăng nhập để xem thông tin tài khoản và theo dõi truyện bạn yêu thích." Style="{StaticResource LblMuted}" />
                     <Button Text="Đăng nhập" Style="{StaticResource BtnBrass}"
                             Command="{Binding GoToLoginCommand}" Margin="0,8,0,0" />
                     <Button Text="Đăng ký" Style="{StaticResource BtnOutlineSm}"
@@ -56,8 +45,158 @@
                 </VerticalStackLayout>
             </Border>
 
-            <Label Text="Chữ &amp; Đêm — Thư viện đọc truyện trực tuyến." Style="{StaticResource LblMuted}"
-                   FontSize="12" HorizontalTextAlignment="Center" Margin="0,12,0,0" />
+            <!-- ============ ĐÃ ĐĂNG NHẬP ============ -->
+            <VerticalStackLayout IsVisible="{Binding IsLoggedIn}" Spacing="14">
+
+                <!-- Thẻ thông tin (pf-side) -->
+                <Border Style="{StaticResource Panel}">
+                    <VerticalStackLayout Spacing="10" HorizontalOptions="Fill">
+                        <Border WidthRequest="88" HeightRequest="88" StrokeThickness="0"
+                                BackgroundColor="{StaticResource WebNavy}" HorizontalOptions="Center">
+                            <Border.StrokeShape>
+                                <RoundRectangle CornerRadius="44" />
+                            </Border.StrokeShape>
+                            <Grid>
+                                <Label Text="{Binding Initial}" IsVisible="{Binding HasNoAvatar}"
+                                       TextColor="White" FontSize="36" FontAttributes="Bold"
+                                       FontFamily="{StaticResource SerifFont}"
+                                       HorizontalOptions="Center" VerticalOptions="Center" />
+                                <Image Source="{Binding AvatarSource}" IsVisible="{Binding HasAvatar}" Aspect="AspectFill" />
+                            </Grid>
+                        </Border>
+
+                        <Button Text="Đổi ảnh đại diện" Style="{StaticResource BtnOutlineSm}"
+                                Command="{Binding ChangeAvatarCommand}" HorizontalOptions="Center" />
+                        <Label Text="Ảnh được lưu trên thiết bị này." Style="{StaticResource LblMuted}"
+                               FontSize="11.5" HorizontalTextAlignment="Center" />
+
+                        <Label Text="{Binding DisplayName}" Style="{StaticResource LblH2}" FontSize="22"
+                               HorizontalTextAlignment="Center" />
+                        <Border HorizontalOptions="Center" Padding="12,4" StrokeThickness="0"
+                                BackgroundColor="{StaticResource WebSurface2}">
+                            <Border.StrokeShape>
+                                <RoundRectangle CornerRadius="12" />
+                            </Border.StrokeShape>
+                            <Label Text="{Binding RoleText}" FontSize="12" FontAttributes="Bold" TextColor="{StaticResource WebRoyal2}" />
+                        </Border>
+
+                        <BoxView HeightRequest="1" Color="{StaticResource WebBorder}" Margin="0,6" />
+
+                        <Grid ColumnDefinitions="Auto,*" ColumnSpacing="12">
+                            <Label Text="Tên thành viên" FontSize="13" TextColor="{StaticResource WebMuted}" />
+                            <Label Grid.Column="1" Text="{Binding DisplayName}" FontSize="13" FontAttributes="Bold"
+                                   TextColor="{StaticResource WebText}" HorizontalTextAlignment="End" LineBreakMode="TailTruncation" />
+                        </Grid>
+                        <Grid ColumnDefinitions="Auto,*" ColumnSpacing="12">
+                            <Label Text="Email" FontSize="13" TextColor="{StaticResource WebMuted}" />
+                            <Label Grid.Column="1" Text="{Binding Email}" FontSize="13" FontAttributes="Bold"
+                                   TextColor="{StaticResource WebText}" HorizontalTextAlignment="End" LineBreakMode="TailTruncation" />
+                        </Grid>
+                        <Grid ColumnDefinitions="Auto,*" ColumnSpacing="12">
+                            <Label Text="ID thành viên" FontSize="13" TextColor="{StaticResource WebMuted}" />
+                            <Label Grid.Column="1" Text="{Binding UserIdText}" FontSize="13" FontAttributes="Bold"
+                                   TextColor="{StaticResource WebText}" HorizontalTextAlignment="End" />
+                        </Grid>
+
+                        <!-- Chỉ Admin thấy (giống web) -->
+                        <Button Text="Vào trang quản trị" Style="{StaticResource BtnBrass}"
+                                Command="{Binding GoToAdminCommand}" IsVisible="{Binding IsAdmin}" Margin="0,8,0,0" />
+                    </VerticalStackLayout>
+                </Border>
+
+                <!-- Hạng thành viên và gói đọc (pf-plans) -->
+                <Border Style="{StaticResource Panel}">
+                    <VerticalStackLayout Spacing="12">
+                        <Label Text="Hạng thành viên và gói đọc" Style="{StaticResource LblH2}" FontSize="17" />
+
+                        <Border Style="{StaticResource Panel}" Padding="14" BackgroundColor="{StaticResource WebBg}">
+                            <VerticalStackLayout Spacing="6">
+                                <Label Text="Gói đọc theo tháng" FontSize="15" FontAttributes="Bold" TextColor="{StaticResource WebText}" />
+                                <Label Text="• Đọc các truyện nằm trong gói" Style="{StaticResource LblMuted}" />
+                                <Label Text="• Gia hạn sớm hoặc muộn đều được cộng dồn" Style="{StaticResource LblMuted}" />
+                                <Button Text="Sắp ra mắt" Style="{StaticResource BtnOutlineSm}" IsEnabled="False" Margin="0,6,0,0" />
+                            </VerticalStackLayout>
+                        </Border>
+
+                        <Border Style="{StaticResource Panel}" Padding="14" BackgroundColor="{StaticResource WebBg}">
+                            <VerticalStackLayout Spacing="6">
+                                <Label Text="Mua riêng từng truyện" FontSize="15" FontAttributes="Bold" TextColor="{StaticResource WebText}" />
+                                <Label Text="• Mua quyền đọc một truyện" Style="{StaticResource LblMuted}" />
+                                <Label Text="• Độc lập với gói theo tháng" Style="{StaticResource LblMuted}" />
+                                <Button Text="Sắp ra mắt" Style="{StaticResource BtnOutlineSm}" IsEnabled="False" Margin="0,6,0,0" />
+                            </VerticalStackLayout>
+                        </Border>
+                    </VerticalStackLayout>
+                </Border>
+
+                <!-- Truyện đã xem gần nhất -->
+                <Border Style="{StaticResource Panel}">
+                    <VerticalStackLayout Spacing="8">
+                        <Grid ColumnDefinitions="*,Auto">
+                            <Label Text="Truyện đã xem gần nhất" Style="{StaticResource LblH2}" FontSize="17" VerticalOptions="Center" />
+                            <Button Grid.Column="1" Text="Tủ sách" Style="{StaticResource BtnLink}"
+                                    Command="{Binding GoToLibraryCommand}" />
+                        </Grid>
+                        <Label Text="Bạn chưa có truyện nào đã xem." Style="{StaticResource LblMuted}"
+                               IsVisible="{Binding HasNoHistory}" />
+                        <VerticalStackLayout IsVisible="{Binding HasHistory}"
+                                             BindableLayout.ItemsSource="{Binding HistoryPreview}"
+                                             BindableLayout.ItemTemplate="{StaticResource PreviewRowTemplate}" />
+                    </VerticalStackLayout>
+                </Border>
+
+                <!-- Truyện đã thích -->
+                <Border Style="{StaticResource Panel}">
+                    <VerticalStackLayout Spacing="8">
+                        <Label Text="Truyện đã thích" Style="{StaticResource LblH2}" FontSize="17" />
+                        <Label Text="Bạn chưa lưu truyện nào." Style="{StaticResource LblMuted}"
+                               IsVisible="{Binding HasNoFavorites}" />
+                        <VerticalStackLayout IsVisible="{Binding HasFavorites}"
+                                             BindableLayout.ItemsSource="{Binding FavoritePreview}"
+                                             BindableLayout.ItemTemplate="{StaticResource PreviewRowTemplate}" />
+                    </VerticalStackLayout>
+                </Border>
+
+                <!-- Thông tin cá nhân -->
+                <Border Style="{StaticResource Panel}">
+                    <VerticalStackLayout Spacing="10">
+                        <Label Text="Thông tin cá nhân" Style="{StaticResource LblH2}" FontSize="17" />
+                        <Border Style="{StaticResource FieldBorder}" BackgroundColor="{StaticResource WebSurface2}">
+                            <Entry Style="{StaticResource WebEntry}" Text="{Binding DisplayName}" IsReadOnly="True" />
+                        </Border>
+                        <Border Style="{StaticResource FieldBorder}" BackgroundColor="{StaticResource WebSurface2}">
+                            <Entry Style="{StaticResource WebEntry}" Text="{Binding Email}" IsReadOnly="True" />
+                        </Border>
+                        <Label Style="{StaticResource LblMuted}" FontSize="12"
+                               Text="Đổi tên và email cần API cập nhật hồ sơ. Khi đổi email, hệ thống sẽ gửi thư xác nhận đến địa chỉ mới. Tính năng này đang chờ Backend 2." />
+                    </VerticalStackLayout>
+                </Border>
+
+                <!-- Đổi mật khẩu -->
+                <Border Style="{StaticResource Panel}">
+                    <VerticalStackLayout Spacing="10">
+                        <Label Text="Đổi mật khẩu" Style="{StaticResource LblH2}" FontSize="17" />
+                        <Border Style="{StaticResource FieldBorder}">
+                            <Entry Style="{StaticResource WebEntry}" Text="{Binding CurrentPassword}" IsPassword="True"
+                                   Placeholder="Mật khẩu hiện tại" />
+                        </Border>
+                        <Border Style="{StaticResource FieldBorder}">
+                            <Entry Style="{StaticResource WebEntry}" Text="{Binding NewPassword}" IsPassword="True"
+                                   Placeholder="Mật khẩu mới (tối thiểu 6 ký tự)" />
+                        </Border>
+                        <Border Style="{StaticResource FieldBorder}">
+                            <Entry Style="{StaticResource WebEntry}" Text="{Binding ConfirmPassword}" IsPassword="True"
+                                   Placeholder="Xác nhận mật khẩu mới" />
+                        </Border>
+                        <Label Text="{Binding PasswordMessage}" TextColor="{StaticResource WebRoyal2}" FontSize="13"
+                               IsVisible="{Binding PasswordMessage, Converter={StaticResource StringToBoolConverter}}" />
+                        <Button Text="Đổi mật khẩu" Style="{StaticResource BtnBrass}" Command="{Binding ChangePasswordCommand}" />
+                    </VerticalStackLayout>
+                </Border>
+
+                <Button Text="Đăng xuất" Style="{StaticResource BtnOutlineSm}" HeightRequest="44"
+                        Command="{Binding LogoutCommand}" />
+            </VerticalStackLayout>
 
         </VerticalStackLayout>
     </ScrollView>
