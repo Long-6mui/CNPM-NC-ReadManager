@@ -1,4 +1,4 @@
-namespace ReadManager.Mobile.Models;
+﻿namespace ReadManager.Mobile.Models;
 
 public class Genre
 {

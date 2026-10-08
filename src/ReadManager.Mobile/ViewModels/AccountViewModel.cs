@@ -63,7 +63,7 @@ public partial class AccountViewModel : BaseViewModel
 
     // Gọi mỗi lần tab hiện ra để cập nhật sau khi đăng nhập/đăng xuất/xem truyện
     [RelayCommand]
-    private async Task LoadAsync()
+    private async Task LoadAsync() => await RunSafeAsync(async () =>
     {
         try { IsLoggedIn = await _authService.IsLoggedInAsync(); }
         catch { IsLoggedIn = _authService.CurrentUser is not null; } // mất mạng
