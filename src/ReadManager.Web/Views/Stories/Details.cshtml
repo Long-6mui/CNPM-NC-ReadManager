@@ -120,6 +120,21 @@
         .chapter-item .muted {
             color: var(--muted);
         }
+    /* Nhãn "⏳ giờ ra mắt" của chương hẹn giờ */
+    .upcoming-tag {
+        flex: none;
+        font-size: 12px;
+        padding: 2px 8px;
+        border-radius: 10px;
+        background: rgba(220, 160, 30, .15);
+        color: #9a6400;
+        white-space: nowrap;
+    }
+
+    .chapter-item:hover .upcoming-tag {
+        background: rgba(255, 255, 255, .25);
+        color: #fff;
+    }
 
     .pager {
         display: flex;
@@ -181,7 +196,12 @@
                                         <span>@c.Title</span>
                                     }
                                 </span>
-                                @if (c.Locked)
+                                @if (c.UpcomingAt.HasValue)
+                                {
+                                    @* Chương hẹn giờ: thấy trong danh sách nhưng chưa đọc được *@
+                                    <span class="upcoming-tag" title="Sắp ra mắt">⏳ @c.UpcomingAt.Value.ToString("HH:mm dd/MM")</span>
+                                }
+                                else if (c.Locked)
                                 {
                                     <span title="Chương trả phí — cần mở khóa">🔒</span>
                                 }
