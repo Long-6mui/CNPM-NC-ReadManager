@@ -2,7 +2,60 @@
 @{
     ViewData["Title"] = $"Chương {Model.Chapter.No}: {Model.Chapter.Title}";
     var paragraphs = (Model.Chapter.Content ?? "").Replace("\r\n", "\n").Split("\n\n", StringSplitOptions.RemoveEmptyEntries);
+
+    // ===== CHỐNG LỘ NỘI DUNG: hình mờ (watermark) ghi tên người đọc + thời gian =====
+    // Ai chụp màn hình đem đi chia sẻ thì ảnh vẫn dính tên tài khoản → truy ra người làm lộ.
+    var reader = User.Identity?.IsAuthenticated == true ? User.Identity!.Name ?? "Độc giả" : "Khách";
+    var markText = System.Security.SecurityElement.Escape($"{reader} · {DateTime.Now:dd/MM/yyyy HH:mm}");
+    var markSvg = $"<svg xmlns='http://www.w3.org/2000/svg' width='360' height='200'>"
+                + $"<text x='20' y='120' transform='rotate(-25 180 100)' font-family='Arial' font-size='15' fill='rgba(120,120,120,0.16)'>{markText}</text></svg>";
+    var markUrl = "data:image/svg+xml;charset=utf-8," + Uri.EscapeDataString(markSvg);
 }
+<style>
+    /* ===== Chống copy / chụp / in nội dung chương ===== */
+    .protected {
+        position: relative;
+        user-select: none;
+        -webkit-user-select: none;
+        -webkit-touch-callout: none;
+    }
+
+        .protected .watermark {
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            z-index: 2;
+            background-repeat: repeat;
+        }
+
+        .protected.shielded .reader-text {
+            filter: blur(10px);
+            transition: filter .15s;
+        }
+    /* mất focus / bấm PrtSc → làm mờ */
+    .shield-msg {
+        display: none;
+        position: sticky;
+        top: 40%;
+        z-index: 3;
+        text-align: center;
+        font-weight: 600;
+    }
+
+    .protected.shielded .shield-msg {
+        display: block;
+    }
+
+    @@media print {
+        .protected .reader-text {
+            display: none !important;
+        }
+        /* in trang → không in nội dung */
+        .protected::after {
+            content: "Nội dung chương được bảo vệ, không thể in.";
+        }
+    }
+</style>
 <div class="reader-bar">
     <div class="container reader-bar-inner">
         <a class="btn btn-ghost btn-sm" asp-action="Details" asp-route-id="@Model.Story.Id">← @Model.Story.Title</a>
@@ -14,13 +67,44 @@
     </div>
 </div>
 <div class="reader-wrap">
+    @if (Model.UpcomingAt.HasValue && !string.IsNullOrEmpty(Model.Chapter.Content))
+    {
+        <div class="banner banner-warn" style="margin-bottom:18px;">Bạn đang xem trước — chương hẹn ra mắt lúc @Model.UpcomingAt.Value.ToString("HH:mm dd/MM/yyyy"), độc giả chưa đọc được.</div>
+    }
     @if (Model.NotYetPublicPreview)
     {
         <div class="banner banner-warn" style="margin-bottom:18px;">Bạn đang xem trước với quyền quản trị — độc giả thường chưa thấy chương này.</div>
     }
     <h1>Chương @Model.Chapter.No: @Model.Chapter.Title</h1>
 
-    @if (Model.Locked)
+    @if (Model.UpcomingAt.HasValue && !Model.NotYetPublicPreview && string.IsNullOrEmpty(Model.Chapter.Content))
+    {
+        @* Chương hẹn giờ: chưa tới giờ ra mắt → hiện giờ ra mắt + đếm ngược, tới giờ tự tải lại trang *@
+        var releaseIso = DateTime.SpecifyKind(Model.UpcomingAt.Value, DateTimeKind.Local).ToUniversalTime().ToString("o");
+        <div class="locked-box">
+            <h3>⏳ Chương sắp ra mắt</h3>
+            <p>Chương này sẽ ra mắt lúc <b>@Model.UpcomingAt.Value.ToString("HH:mm 'ngày' dd/MM/yyyy")</b>.</p>
+            <p style="font-size:20px; font-weight:700; margin-top:8px;" id="countdown" data-release="@releaseIso"></p>
+        </div>
+        <script>
+            (function () {
+                const el = document.getElementById('countdown');
+                const release = new Date(el.dataset.release).getTime();
+                const pad = n => String(n).padStart(2, '0');
+                function tick() {
+                    let s = Math.max(0, Math.floor((release - Date.now()) / 1000));
+                    if (s === 0) { location.reload(); return; }   // tới giờ → tải lại để đọc
+                    const d = Math.floor(s / 86400); s %= 86400;
+                    const h = Math.floor(s / 3600); s %= 3600;
+                    const m = Math.floor(s / 60); s %= 60;
+                    el.textContent = 'Còn ' + (d ? d + ' ngày ' : '') + pad(h) + ':' + pad(m) + ':' + pad(s);
+                    setTimeout(tick, 1000);
+                }
+                tick();
+            })();
+        </script>
+    }
+    else if (Model.Locked)
     {
         <div class="locked-box">
             <h3>Chương này dành cho độc giả đã mở khóa</h3>
@@ -29,12 +113,50 @@
     }
     else
     {
-        <div class="reader-content" id="readerContent">
-            @foreach (var p in paragraphs)
-            {
-                <p>@Html.Raw(string.Join("<br>", p.Split('\n').Select(line => Html.Encode(line.Normalize()))))</p>
-            }
+        <div class="reader-content protected" id="readerContent">
+            <div class="watermark" style="background-image:url(&quot;@markUrl&quot;)"></div>
+            <div class="shield-msg">🔒 Nội dung được bảo vệ — quay lại trang để tiếp tục đọc</div>
+            <div class="reader-text">
+                @foreach (var p in paragraphs)
+                {
+                    <p>@Html.Raw(string.Join("<br>", p.Split('\n').Select(line => Html.Encode(line.Normalize()))))</p>
+                }
+            </div>
         </div>
+        <script>
+            // ===== Chống copy / chụp màn hình nội dung chương =====
+            (function () {
+                const box = document.getElementById('readerContent');
+                const stop = e => e.preventDefault();
+
+                // 1. Chặn bôi đen, chuột phải, copy, cắt, kéo thả chữ
+                ['copy', 'cut', 'contextmenu', 'selectstart', 'dragstart'].forEach(ev => box.addEventListener(ev, stop));
+                document.addEventListener('copy', e => { e.preventDefault(); e.clipboardData && e.clipboardData.setData('text/plain', ''); });
+
+                // 2. Chặn phím tắt: Ctrl+C / A / X / S / P / U (copy, chọn hết, lưu trang, in, xem mã nguồn)
+                document.addEventListener('keydown', e => {
+                    const k = e.key.toLowerCase();
+                    if ((e.ctrlKey || e.metaKey) && ['c', 'a', 'x', 's', 'p', 'u'].includes(k)) { e.preventDefault(); }
+                });
+
+                // 3. Bấm PrintScreen → xóa ảnh vừa chụp khỏi clipboard + làm mờ nội dung một lúc
+                const shield = ms => {
+                    box.classList.add('shielded');
+                    if (ms) setTimeout(() => box.classList.remove('shielded'), ms);
+                };
+                document.addEventListener('keyup', e => {
+                    if (e.key === 'PrintScreen') {
+                        try { navigator.clipboard.writeText(''); } catch { }
+                        shield(2000);
+                    }
+                });
+
+                // 4. Rời khỏi trang (mở công cụ cắt màn hình Win+Shift+S, chuyển cửa sổ, chuyển tab) → làm mờ
+                window.addEventListener('blur', () => shield());
+                window.addEventListener('focus', () => box.classList.remove('shielded'));
+                document.addEventListener('visibilitychange', () => document.hidden ? shield() : box.classList.remove('shielded'));
+            })();
+        </script>
     }
 
     <div class="reader-toolbar">
@@ -42,12 +164,20 @@
         {
             <a class="btn btn-outline btn-sm" asp-action="Read" asp-route-storyId="@Model.Story.Id" asp-route-no="@Model.PrevNo">← Chương trước</a>
         }
-        else { <span></span> }
+        else
+        {
+
+            <span></span>
+        }
         <a class="btn btn-outline btn-sm" asp-action="Details" asp-route-id="@Model.Story.Id">Danh sách chương</a>
         @if (Model.NextNo.HasValue)
         {
             <a class="btn btn-outline btn-sm" asp-action="Read" asp-route-storyId="@Model.Story.Id" asp-route-no="@Model.NextNo">Chương sau →</a>
         }
-        else { <span></span> }
+        else
+        {
+
+            <span></span>
+        }
     </div>
 </div>

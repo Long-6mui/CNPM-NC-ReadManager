@@ -6,18 +6,22 @@
 
 public class ChapterListItemDto
 {
-    public int ChapterId { get; set; }       
-    public int StoryId { get; set; }       
-    public int ChapterNumber { get; set; }  
-    public string Title { get; set; } = string.Empty;   
+    public int ChapterId { get; set; }
+    public int StoryId { get; set; }
+    public int ChapterNumber { get; set; }
+    public string Title { get; set; } = string.Empty;
 
-    public string AccessLevel { get; set; } = "Free";      
-    public string PublicationStatus { get; set; } = "Draft"; 
+    public string AccessLevel { get; set; } = "Free";
+    public string PublicationStatus { get; set; } = "Draft";
 
     // PB10 — true giao diện hiện ổ khóa 🔒
     public bool IsLocked { get; set; }
 
+    // Hẹn giờ ra mắt: IsUpcoming = true → chưa tới giờ, độc giả chưa đọc được (giờ ra mắt ở ScheduledAt, UTC)
+    public DateTime? ScheduledAt { get; set; }
+    public bool IsUpcoming { get; set; }
+
     public DateTime? PublishedAt { get; set; }  // Ngày công khai lần đầu (null nếu còn nháp)
-    public DateTime CreatedAt { get; set; }     
-    public DateTime UpdatedAt { get; set; }     
+    public DateTime CreatedAt { get; set; }
+    public DateTime UpdatedAt { get; set; }
 }

@@ -21,7 +21,10 @@ public class CreateChapterDto
     [RegularExpression("^(Free|Paid)$", ErrorMessage = "AccessLevel phải là Free hoặc Paid.")]
     public string AccessLevel { get; set; } = "Free";
 
-   
     [RegularExpression("^(Draft|Published)$", ErrorMessage = "PublicationStatus phải là Draft hoặc Published.")]
     public string PublicationStatus { get; set; } = "Draft";
+
+    // Hẹn giờ ra mắt (giờ UTC). Chỉ có tác dụng khi PublicationStatus = Published và thời điểm ở tương lai.
+    // Trước giờ này: độc giả THẤY chương trong danh sách nhưng CHƯA ĐỌC được. Để trống = ra mắt ngay.
+    public DateTime? ScheduledAt { get; set; }
 }

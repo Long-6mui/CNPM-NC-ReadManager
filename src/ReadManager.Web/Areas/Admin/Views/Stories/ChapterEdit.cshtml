@@ -48,6 +48,13 @@
                         <option value="Reviewed">Công khai — độc giả đọc được</option>
                     </select>
                 </div>
+                @* Hẹn giờ ra mắt: trước giờ này độc giả thấy chương trong danh sách nhưng chưa đọc được *@
+                <div class="field" id="scheduleField">
+                    <label asp-for="PublishAt"></label>
+                    <input asp-for="PublishAt" type="datetime-local" />
+                    <span asp-validation-for="PublishAt" class="text-danger"></span>
+                    <p class="hint" style="margin-top:6px;">Chỉ dùng khi Trạng thái là <b>Công khai</b>. Trước giờ này, độc giả thấy chương kèm giờ ra mắt nhưng chưa đọc được; tới giờ sẽ tự mở.</p>
+                </div>
                 <button type="submit" class="btn btn-brass" style="margin-top:16px;">Lưu chương</button>
             </form>
         </div>
