@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:ReadManager.Mobile.ViewModels"
+             xmlns:models="clr-namespace:ReadManager.Mobile.Models"
+             x:DataType="vm:AdminGenresViewModel"
+             x:Class="ReadManager.Mobile.Views.AdminGenresPage"
+             Title="Thể loại"
+             BackgroundColor="{StaticResource WebBg}">
+
+    <ContentPage.ToolbarItems>
+        <ToolbarItem Text="Trang chủ" Command="{Binding GoHomeCommand}" />
+    </ContentPage.ToolbarItems>
+
+    <ScrollView>
+        <VerticalStackLayout Padding="16,14,16,32" Spacing="14">
+
+            <Label Text="Trang quản trị" Style="{StaticResource LblH2}" />
+
+            <!-- Thêm thể loại -->
+            <Border Style="{StaticResource Panel}" Padding="16">
+                <VerticalStackLayout Spacing="8">
+                    <Label Text="Tên thể loại mới" Style="{StaticResource LblFieldName}" />
+                    <Border Style="{StaticResource FieldBorder}">
+                        <Entry Style="{StaticResource WebEntry}" Text="{Binding NewGenreName}"
+                               Placeholder="Vd: Kiếm hiệp" ReturnCommand="{Binding AddCommand}" />
+                    </Border>
+                    <Button Text="+ Thêm thể loại" Style="{StaticResource BtnBrass}" Command="{Binding AddCommand}" />
+                    <Label Text="{Binding ToastMessage}" TextColor="{StaticResource WebSage}" FontSize="13"
+                           IsVisible="{Binding ToastMessage, Converter={StaticResource StringToBoolConverter}}" />
+                    <Label Text="{Binding ErrorMessage}" TextColor="{StaticResource WebCrimson}" FontSize="13"
+                           IsVisible="{Binding ErrorMessage, Converter={StaticResource StringToBoolConverter}}" />
+                </VerticalStackLayout>
+            </Border>
+
+            <ActivityIndicator IsRunning="{Binding IsBusy}" IsVisible="{Binding IsBusy}" Color="{StaticResource WebRoyal}" />
+
+            <!-- Danh sách -->
+            <Border Style="{StaticResource Panel}" Padding="0">
+                <VerticalStackLayout BindableLayout.ItemsSource="{Binding Genres}">
+                    <BindableLayout.ItemTemplate>
+                        <DataTemplate x:DataType="models:Genre">
+                            <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,1" Padding="16,0" ColumnSpacing="10">
+                                <VerticalStackLayout Grid.Column="0" Padding="0,12" Spacing="2">
+                                    <Label Text="{Binding Name}" FontSize="15" FontAttributes="Bold" TextColor="{StaticResource WebText}" />
+                                    <Label Text="{Binding StoryCount, StringFormat='{0} truyện'}" Style="{StaticResource LblMuted}" FontSize="12" />
+                                </VerticalStackLayout>
+                                <Button Grid.Column="1" Text="Xóa" Style="{StaticResource BtnOutlineSm}"
+                                        TextColor="{StaticResource WebCrimson}" VerticalOptions="Center"
+                                        Command="{Binding Source={RelativeSource AncestorType={x:Type vm:AdminGenresViewModel}}, Path=DeleteCommand}"
+                                        CommandParameter="{Binding .}" />
+                                <BoxView Grid.Row="1" Grid.ColumnSpan="2" HeightRequest="1" Color="{StaticResource WebBorder}" />
+                            </Grid>
+                        </DataTemplate>
+                    </BindableLayout.ItemTemplate>
+                </VerticalStackLayout>
+            </Border>
+            <Label Text="Chưa có thể loại nào." Style="{StaticResource LblMuted}" HorizontalTextAlignment="Center"
+                   IsVisible="{Binding ShowEmpty}" />
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

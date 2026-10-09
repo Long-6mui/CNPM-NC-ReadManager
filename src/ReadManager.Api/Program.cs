@@ -19,7 +19,8 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 
 builder.Services.AddScoped<IStoryService, StoryService>();
 builder.Services.AddScoped<IGenreService, GenreService>();
-builder.Services.AddScoped<IChapterService, ChapterService>(); // Backend 4 — chương/đọc
+builder.Services.AddScoped<IChapterService, ChapterService>();
+builder.Services.AddScoped<IAuthService, AuthService>();
 
 builder.Services.AddDataProtection()
     .SetApplicationName("ReadManager.Api");
@@ -58,7 +59,8 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-app.UseHttpsRedirection();
+// Android emulator uses local HTTP in Development; production requires HTTPS.
+if (!app.Environment.IsDevelopment()) app.UseHttpsRedirection();
 app.UseRateLimiter();
 app.UseAuthentication();
 app.UseAuthorization();

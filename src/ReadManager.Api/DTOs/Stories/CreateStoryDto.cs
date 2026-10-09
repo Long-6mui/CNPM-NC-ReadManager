@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 
 namespace ReadManager.Api.DTOs.Stories;
 
@@ -33,9 +33,4 @@ public class CreateStoryDto
 
     public List<int> GenreIds { get; set; } = new();
 
-    // TODO(auth): khi PB02/PB03 (đăng nhập, phân quyền) xong, lấy UserId từ
-    // người dùng đang đăng nhập (User.Identity) thay vì nhận trực tiếp từ client
-    // như hiện tại — vì hiện Program.cs của Api chưa bật Authentication.
-    [Required]
-    public int CreatedBy { get; set; }
 }

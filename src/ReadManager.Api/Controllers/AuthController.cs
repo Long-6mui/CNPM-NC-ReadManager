@@ -1,106 +1,111 @@
-using System.Security.Claims;
-using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.DataProtection;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
-using Microsoft.EntityFrameworkCore;
-using ReadManager.Api.Authentication;
-using ReadManager.Api.Data;
-using ReadManager.Api.Entities;
-using ReadManager.Api.DTOs.Auth; // Gọi đến thư mục chứa 2 file DTO vừa tạo
+using ReadManager.Api.DTOs.Auth;
+using ReadManager.Api.Services;
+using System.Security.Claims;
 
 namespace ReadManager.Api.Controllers;
 
-[ApiController, Route("api/auth")]
-public class AuthController(AppDbContext db, IDataProtectionProvider protection) : ControllerBase
+[ApiController]
+[Route("api/[controller]")]
+public class AuthController : ControllerBase
 {
-    [HttpPost("register"), AllowAnonymous, EnableRateLimiting("login")]
-    public async Task<IActionResult> Register([FromBody] RegisterRequest request)
+    private readonly IAuthService _authService;
+
+    public AuthController(IAuthService authService)
     {
-        var email = request.Email.Trim().ToLowerInvariant();
+        _authService = authService;
+    }
 
-        if (await db.Users.AnyAsync(u => u.Email == email))
-            return Conflict(new { message = "Email này đã được sử dụng." });
-
-        var user = new User
+    /// <summary>
+    /// Đăng ký tài khoản (POST /api/auth/register)
+    /// </summary>
+    [HttpPost("register")]
+    [EnableRateLimiting("login")]
+    [AllowAnonymous]
+    public async Task<IActionResult> Register([FromBody] RegisterRequestDto request)
+    {
+        if (!ModelState.IsValid)
         {
-            Username = $"user_{Guid.NewGuid():N}",
-            Email = email,
-            DisplayName = request.DisplayName.Trim(),
-            Role = "Member",
-            AccountStatus = "Active",
-            SecurityVersion = 1
-        };
-
-        user.PasswordHash = new PasswordHasher<User>().HashPassword(user, request.Password);
-
-        try
-        {
-            db.Users.Add(user);
-            await db.SaveChangesAsync();
+            return BadRequest(ModelState);
         }
-        catch (DbUpdateException)
+
+        var (success, errorMessage, user) = await _authService.RegisterAsync(request);
+
+        if (!success)
         {
-            if (await db.Users.AnyAsync(u => u.Email == email))
-                return Conflict(new { message = "Email này đã được sử dụng." });
-            throw;
+            // Trả về 409 Conflict khi trùng email
+            return Conflict(new { message = errorMessage });
         }
 
         return StatusCode(StatusCodes.Status201Created, new
         {
-            message = "Đăng ký thành công.",
-            user = new { user.UserId, user.Email, user.DisplayName, user.Role }
+            message = "Đăng ký tài khoản thành công.",
+            user
         });
     }
 
-    [HttpPost("login"), AllowAnonymous, EnableRateLimiting("login")]
-    public async Task<IActionResult> Login(LoginRequest request)
+    /// <summary>
+    /// Đăng nhập hệ thống (POST /api/auth/login)
+    /// </summary>
+    [HttpPost("login")]
+    [AllowAnonymous]
+    [EnableRateLimiting("login")] // tối đa 10 lần/phút/IP (policy khai báo trong Program.cs)
+    public async Task<IActionResult> Login([FromBody] LoginRequestDto request)
     {
-        var email = request.Email.Trim().ToLowerInvariant();
-        var user = await db.Users.SingleOrDefaultAsync(u => u.Email == email);
-
-        if (user is null || user.AccountStatus != "Active")
-            return Unauthorized(new { message = "Email hoặc mật khẩu không đúng, hoặc tài khoản không hoạt động." });
-
-        PasswordVerificationResult verified;
-        try { verified = new PasswordHasher<User>().VerifyHashedPassword(user, user.PasswordHash, request.Password); }
-        catch (FormatException) { verified = PasswordVerificationResult.Failed; }
-
-        if (verified == PasswordVerificationResult.Failed)
-            return Unauthorized(new { message = "Email hoặc mật khẩu không đúng, hoặc tài khoản không hoạt động." });
-
-        if (verified == PasswordVerificationResult.SuccessRehashNeeded)
+        if (!ModelState.IsValid)
         {
-            user.PasswordHash = new PasswordHasher<User>().HashPassword(user, request.Password);
-            await db.SaveChangesAsync();
+            return BadRequest(ModelState);
         }
 
-        var expires = DateTimeOffset.UtcNow.AddHours(8);
-        var claims = new[]
+        var (success, errorMessage, loginResult, isLocked) = await _authService.LoginAsync(request);
+
+        if (!success)
         {
-            new Claim(ClaimTypes.NameIdentifier, user.UserId.ToString()),
-            new Claim(ClaimTypes.Name, user.DisplayName),
-            new Claim(ClaimTypes.Email, user.Email),
-            new Claim(ClaimTypes.Role, user.Role),
-            new Claim("security_version", user.SecurityVersion.ToString())
-        };
+            // 403 khi tài khoản bị khóa (Web hiển thị "Tài khoản đã bị khóa"), 401 khi sai thông tin
+            return isLocked
+                ? StatusCode(StatusCodes.Status403Forbidden, new { message = errorMessage })
+                : Unauthorized(new { message = errorMessage });
+        }
 
-        var principal = new ClaimsPrincipal(new ClaimsIdentity(claims, ApiSessionHandler.SchemeName));
-        var ticket = new AuthenticationTicket(principal, new AuthenticationProperties { IssuedUtc = DateTimeOffset.UtcNow, ExpiresUtc = expires }, ApiSessionHandler.SchemeName);
-
-        return Ok(new { accessToken = ApiSessionHandler.Format(protection).Protect(ticket), expiresAt = expires, user = new { user.UserId, user.Email, user.DisplayName, user.Role } });
+        return Ok(loginResult);
     }
 
-    [Authorize, HttpGet("me")]
-    public IActionResult Me() => Ok(new { userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!), email = User.FindFirstValue(ClaimTypes.Email), displayName = User.Identity!.Name, role = User.FindFirstValue(ClaimTypes.Role) });
-
-    [Authorize, HttpPost("logout")]
+    /// <summary>
+    /// Đăng xuất (POST /api/auth/logout)
+    /// </summary>
+    [HttpPost("logout")]
+    [Authorize]
     public async Task<IActionResult> Logout()
     {
-        var id = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
-        await db.Users.Where(x => x.UserId == id).ExecuteUpdateAsync(s => s.SetProperty(x => x.SecurityVersion, x => x.SecurityVersion + 1));
-        return NoContent();
+        if (int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var userId))
+        {
+            await _authService.LogoutAsync(userId); // thu hồi token
+        }
+
+        return Ok(new { message = "Đăng xuất thành công." });
+    }
+
+    /// <summary>
+    /// Lấy thông tin tài khoản hiện tại (GET /api/auth/me)
+    /// </summary>
+    [HttpGet("me")]
+    [Authorize]
+    public async Task<IActionResult> GetCurrentUser()
+    {
+        var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out var userId))
+        {
+            return Unauthorized();
+        }
+
+        var user = await _authService.GetUserByIdAsync(userId);
+        if (user == null)
+        {
+            return NotFound(new { message = "Không tìm thấy người dùng." });
+        }
+
+        return Ok(user);
     }
 }

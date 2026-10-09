@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using ReadManager.Api.DTOs.Genres;
 using ReadManager.Api.Services;
 
@@ -25,7 +26,7 @@ public class GenresController : ControllerBase
     }
 
     // POST api/genres
-    // TODO(auth): gắn [Authorize(Roles = "Admin")] khi PB02/PB03 xong.
+    [Authorize(Roles = "Admin")] // PB03: chỉ Admin
     [HttpPost]
     public async Task<ActionResult<GenreDto>> Create(CreateGenreDto dto)
     {
@@ -41,7 +42,7 @@ public class GenresController : ControllerBase
     }
 
     // DELETE api/genres/5
-    // TODO(auth): gắn [Authorize(Roles = "Admin")] khi PB02/PB03 xong.
+    [Authorize(Roles = "Admin")] // PB03: chỉ Admin
     [HttpDelete("{id:int}")]
     public async Task<IActionResult> Delete(int id)
     {

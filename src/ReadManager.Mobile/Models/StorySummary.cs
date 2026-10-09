@@ -32,4 +32,7 @@ public class StorySummary
     public string MetaText => PublishedChapterCount > 0 ? $"{AuthorName} · {PublishedChapterCount} chương" : AuthorName;
     public string ChapterText => PublishedChapterCount > 0 ? $"Chương {PublishedChapterCount}" : "Chưa có chương";
     public string AgoText => StoryLabels.Ago(UpdatedAt);
+    public string UpdatedText => UpdatedAt.ToLocalTime().ToString("dd/MM/yyyy");
+    public string AdminLine1 => $"{(string.IsNullOrWhiteSpace(AuthorName) ? "Khuyết danh" : AuthorName)} · {AccessLabel} · {StatusLabel}";
+    public string AdminLine2 => $"{PublishedChapterCount} chương · cập nhật {UpdatedText}";
 }

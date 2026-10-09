@@ -6,10 +6,7 @@ public class ChapterService : IChapterService
 {
     private readonly ApiClient _api;
 
-    // TODO: xác nhận lại route với Backend 4 (ChaptersController) —
-    // đang giả định GET api/stories/{storyId}/chapters, GET api/chapters/{chapterId}
-    // API cần tự chặn/permit theo AccessLevel; Sprint 1 mobile chỉ hiển thị nút "Đọc" cho chương Free,
-    // chương Paid hiển thị khoá (chưa xử lý thanh toán ở sprint này).
+    // Routes khớp ChaptersController; quyền đọc do API quyết định qua IsLocked.
     public ChapterService(ApiClient api)
     {
         _api = api;

@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:ReadManager.Mobile.ViewModels"
+             xmlns:models="clr-namespace:ReadManager.Mobile.Models"
+             x:DataType="vm:LibraryViewModel"
+             x:Class="ReadManager.Mobile.Views.LibraryPage"
+             Title="Tủ sách"
+             BackgroundColor="{StaticResource WebBg}">
+
+    <Grid RowDefinitions="Auto,Auto,*">
+
+        <!-- Hai mục: Đã xem gần đây | Yêu thích -->
+        <HorizontalStackLayout Grid.Row="0" Spacing="8" Padding="16,12" BackgroundColor="White">
+            <Button Text="Đã xem gần đây" Style="{StaticResource TabBtn}"
+                    Command="{Binding SelectTabCommand}" CommandParameter="0">
+                <Button.Triggers>
+                    <DataTrigger TargetType="Button" Binding="{Binding IsTab0}" Value="True">
+                        <Setter Property="BackgroundColor" Value="{StaticResource WebNavy}" />
+                        <Setter Property="TextColor" Value="White" />
+                        <Setter Property="BorderColor" Value="{StaticResource WebNavy}" />
+                    </DataTrigger>
+                </Button.Triggers>
+            </Button>
+            <Button Text="Yêu thích" Style="{StaticResource TabBtn}"
+                    Command="{Binding SelectTabCommand}" CommandParameter="1">
+                <Button.Triggers>
+                    <DataTrigger TargetType="Button" Binding="{Binding IsTab1}" Value="True">
+                        <Setter Property="BackgroundColor" Value="{StaticResource WebNavy}" />
+                        <Setter Property="TextColor" Value="White" />
+                        <Setter Property="BorderColor" Value="{StaticResource WebNavy}" />
+                    </DataTrigger>
+                </Button.Triggers>
+            </Button>
+        </HorizontalStackLayout>
+
+        <!-- Số truyện + nút xóa lịch sử -->
+        <Grid Grid.Row="1" ColumnDefinitions="*,Auto" Padding="16,10,16,0">
+            <Label Grid.Column="0" Text="{Binding CountText}" Style="{StaticResource LblMuted}" VerticalOptions="Center" />
+            <Button Grid.Column="1" Text="Xóa lịch sử" Style="{StaticResource BtnLink}"
+                    Command="{Binding ClearHistoryCommand}" IsVisible="{Binding ShowClear}" />
+        </Grid>
+
+        <!-- Danh sách -->
+        <CollectionView Grid.Row="2" ItemsSource="{Binding Items}" SelectionMode="None" Margin="16,6,16,0">
+            <CollectionView.Footer>
+                <BoxView HeightRequest="16" Color="Transparent" />
+            </CollectionView.Footer>
+            <CollectionView.ItemTemplate>
+                <DataTemplate x:DataType="models:LibraryEntry">
+                    <Border Style="{StaticResource Panel}" Padding="12" Margin="0,0,0,10">
+                        <Grid ColumnDefinitions="68,*" ColumnSpacing="12">
+
+                            <!-- Bìa nhỏ -->
+                            <Border Grid.Column="0" HeightRequest="100" StrokeThickness="1"
+                                    Stroke="{StaticResource WebBorder}" VerticalOptions="Start">
+                                <Border.StrokeShape>
+                                    <RoundRectangle CornerRadius="4" />
+                                </Border.StrokeShape>
+                                <Border.GestureRecognizers>
+                                    <TapGestureRecognizer
+                                        Command="{Binding Source={RelativeSource AncestorType={x:Type vm:LibraryViewModel}}, Path=OpenCommand}"
+                                        CommandParameter="{Binding .}" />
+                                </Border.GestureRecognizers>
+                                <Grid>
+                                    <Grid.Background>
+                                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                            <GradientStop Color="#3B4E63" Offset="0.0" />
+                                            <GradientStop Color="#22303F" Offset="1.0" />
+                                        </LinearGradientBrush>
+                                    </Grid.Background>
+                                    <Label Text="{Binding Title}" IsVisible="{Binding HasNoCover}"
+                                           FontFamily="{StaticResource SerifFont}" FontSize="9.5" FontAttributes="Bold"
+                                           TextColor="White" HorizontalTextAlignment="Center"
+                                           VerticalOptions="Center" Margin="4" />
+                                    <Image Source="{Binding CoverUrl}" IsVisible="{Binding HasCover}" Aspect="AspectFill" />
+                                </Grid>
+                            </Border>
+
+                            <VerticalStackLayout Grid.Column="1" Spacing="3">
+                                <Label Text="{Binding Title}" Style="{StaticResource LblCardTitle}" FontSize="15">
+                                    <Label.GestureRecognizers>
+                                        <TapGestureRecognizer
+                                            Command="{Binding Source={RelativeSource AncestorType={x:Type vm:LibraryViewModel}}, Path=OpenCommand}"
+                                            CommandParameter="{Binding .}" />
+                                    </Label.GestureRecognizers>
+                                </Label>
+                                <Label Text="{Binding MetaText}" Style="{StaticResource LblCardMeta}" />
+
+                                <!-- Mục "Đã xem": chương đang đọc + thời điểm xem -->
+                                <VerticalStackLayout Spacing="2"
+                                    IsVisible="{Binding Source={RelativeSource AncestorType={x:Type vm:LibraryViewModel}}, Path=IsTab0}">
+                                    <Label Text="{Binding ProgressText}" FontSize="12" TextColor="{StaticResource WebText}" />
+                                    <Label Text="{Binding ViewedText}" Style="{StaticResource LblCardMeta}" />
+                                </VerticalStackLayout>
+
+                                <!-- Mục "Yêu thích": thời điểm lưu -->
+                                <Label Text="{Binding SavedText}" Style="{StaticResource LblCardMeta}"
+                                       IsVisible="{Binding Source={RelativeSource AncestorType={x:Type vm:LibraryViewModel}}, Path=IsTab1}" />
+
+                                <HorizontalStackLayout Spacing="8" Margin="0,6,0,0">
+                                    <Button Text="Đọc tiếp" Style="{StaticResource BtnBrassSm}"
+                                            IsVisible="{Binding CanContinue}"
+                                            Command="{Binding Source={RelativeSource AncestorType={x:Type vm:LibraryViewModel}}, Path=ContinueReadingCommand}"
+                                            CommandParameter="{Binding .}" />
+                                    <Button Text="Xem truyện" Style="{StaticResource BtnOutlineSm}"
+                                            Command="{Binding Source={RelativeSource AncestorType={x:Type vm:LibraryViewModel}}, Path=OpenCommand}"
+                                            CommandParameter="{Binding .}" />
+                                    <Button Text="Xóa" Style="{StaticResource BtnLink}" TextColor="{StaticResource WebCrimson}"
+                                            Command="{Binding Source={RelativeSource AncestorType={x:Type vm:LibraryViewModel}}, Path=RemoveCommand}"
+                                            CommandParameter="{Binding .}" />
+                                </HorizontalStackLayout>
+                            </VerticalStackLayout>
+                        </Grid>
+                    </Border>
+                </DataTemplate>
+            </CollectionView.ItemTemplate>
+        </CollectionView>
+
+        <!-- Trống -->
+        <VerticalStackLayout Grid.Row="2" IsVisible="{Binding ShowEmpty}" VerticalOptions="Start"
+                             Padding="24,60" Spacing="8" InputTransparent="True">
+            <Label Text="{Binding EmptyTitle}" Style="{StaticResource LblH2}" FontSize="18" HorizontalTextAlignment="Center" />
+            <Label Text="{Binding EmptyHint}" Style="{StaticResource LblMuted}" HorizontalTextAlignment="Center" />
+        </VerticalStackLayout>
+    </Grid>
+</ContentPage>

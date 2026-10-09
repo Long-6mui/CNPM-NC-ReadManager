@@ -12,6 +12,7 @@ public class StoryDetail
     public string Synopsis { get; set; } = string.Empty;
     public string? CoverUrl { get; set; }
     public string PublicationStatus { get; set; } = "Ongoing";
+    public string Visibility { get; set; } = "Draft"; // Draft | Public | Hidden (chỉ API admin trả về)
     public string AccessPolicy { get; set; } = "Free";
     public decimal? CurrentPrice { get; set; }
     public DateTime? FirstPublishedAt { get; set; }

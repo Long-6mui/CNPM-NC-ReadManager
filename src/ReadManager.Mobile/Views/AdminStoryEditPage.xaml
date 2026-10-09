@@ -1,0 +1,160 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:ReadManager.Mobile.ViewModels"
+             xmlns:models="clr-namespace:ReadManager.Mobile.Models"
+             x:DataType="vm:AdminStoryEditViewModel"
+             x:Class="ReadManager.Mobile.Views.AdminStoryEditPage"
+             Title="{Binding PageTitle}"
+             BackgroundColor="{StaticResource WebBg}">
+
+    <ScrollView>
+        <VerticalStackLayout Padding="16,12,16,32" Spacing="14">
+
+            <Button Text="← Danh sách truyện" Style="{StaticResource BtnLink}" HorizontalOptions="Start"
+                    Command="{Binding GoBackCommand}" Padding="0,0" />
+
+            <!-- Form truyện -->
+            <Border Style="{StaticResource Panel}">
+                <VerticalStackLayout Spacing="12">
+
+                    <VerticalStackLayout Spacing="6">
+                        <Label Text="Tên truyện" Style="{StaticResource LblFieldName}" />
+                        <Border Style="{StaticResource FieldBorder}">
+                            <Entry Style="{StaticResource WebEntry}" Text="{Binding Title}" />
+                        </Border>
+                    </VerticalStackLayout>
+
+                    <VerticalStackLayout Spacing="6">
+                        <Label Text="Tác giả" Style="{StaticResource LblFieldName}" />
+                        <Border Style="{StaticResource FieldBorder}">
+                            <Entry Style="{StaticResource WebEntry}" Text="{Binding Author}" />
+                        </Border>
+                    </VerticalStackLayout>
+
+                    <VerticalStackLayout Spacing="6">
+                        <Label Text="Trạng thái" Style="{StaticResource LblFieldName}" />
+                        <Border Style="{StaticResource FieldBorder}" HeightRequest="44">
+                            <Picker ItemsSource="{Binding StatusOptions}" SelectedIndex="{Binding StatusIndex}"
+                                    FontSize="14" TextColor="{StaticResource WebText}" BackgroundColor="Transparent" />
+                        </Border>
+                    </VerticalStackLayout>
+
+                    <VerticalStackLayout Spacing="6">
+                        <Label Text="Giới thiệu" Style="{StaticResource LblFieldName}" />
+                        <Border Style="{StaticResource FieldBorder}" Padding="12,6">
+                            <Editor Text="{Binding Synopsis}" HeightRequest="110" FontSize="14"
+                                    TextColor="{StaticResource WebText}" BackgroundColor="Transparent" />
+                        </Border>
+                    </VerticalStackLayout>
+
+                    <VerticalStackLayout Spacing="6">
+                        <Label Text="Thể loại" Style="{StaticResource LblFieldName}" />
+                        <FlexLayout Wrap="Wrap" IsVisible="{Binding HasGenres}"
+                                    BindableLayout.ItemsSource="{Binding Genres}">
+                            <BindableLayout.ItemTemplate>
+                                <DataTemplate x:DataType="models:SelectableGenre">
+                                    <HorizontalStackLayout Margin="0,0,16,4" Spacing="2">
+                                        <CheckBox IsChecked="{Binding IsSelected}" Color="{StaticResource WebRoyal}" VerticalOptions="Center" />
+                                        <Label Text="{Binding Name}" FontSize="14" TextColor="{StaticResource WebText}" VerticalOptions="Center" />
+                                    </HorizontalStackLayout>
+                                </DataTemplate>
+                            </BindableLayout.ItemTemplate>
+                        </FlexLayout>
+                        <Label Text="Chưa có thể loại nào — tạo ở mục Thể loại." Style="{StaticResource LblMuted}"
+                               IsVisible="{Binding HasNoGenres}" />
+                    </VerticalStackLayout>
+
+                    <BoxView HeightRequest="1" Color="{StaticResource WebBorder}" />
+
+                    <VerticalStackLayout Spacing="6">
+                        <Label Text="Chính sách truy cập" Style="{StaticResource LblFieldName}" />
+                        <Border Style="{StaticResource FieldBorder}" HeightRequest="44">
+                            <Picker ItemsSource="{Binding AccessOptions}" SelectedIndex="{Binding AccessIndex}"
+                                    FontSize="14" TextColor="{StaticResource WebText}" BackgroundColor="Transparent" />
+                        </Border>
+                    </VerticalStackLayout>
+
+                    <VerticalStackLayout Spacing="6">
+                        <Label Text="Giá truyện (VNĐ, chỉ cần khi chọn Kết hợp hoặc Trả phí)" Style="{StaticResource LblFieldName}" />
+                        <Border Style="{StaticResource FieldBorder}">
+                            <Entry Style="{StaticResource WebEntry}" Text="{Binding PriceText}" Keyboard="Numeric" Placeholder="0" />
+                        </Border>
+                    </VerticalStackLayout>
+
+                    <VerticalStackLayout Spacing="6">
+                        <Label Text="Hiển thị" Style="{StaticResource LblFieldName}" />
+                        <Border Style="{StaticResource FieldBorder}" HeightRequest="44">
+                            <Picker ItemsSource="{Binding VisibilityOptions}" SelectedIndex="{Binding VisibilityIndex}"
+                                    FontSize="14" TextColor="{StaticResource WebText}" BackgroundColor="Transparent" />
+                        </Border>
+                    </VerticalStackLayout>
+
+                    <BoxView HeightRequest="1" Color="{StaticResource WebBorder}" />
+
+                    <VerticalStackLayout Spacing="6">
+                        <Label Text="Ảnh bìa (URL, tùy chọn)" Style="{StaticResource LblFieldName}" />
+                        <Border Style="{StaticResource FieldBorder}">
+                            <Entry Style="{StaticResource WebEntry}" Text="{Binding CoverUrl}" Keyboard="Url" Placeholder="https://…" />
+                        </Border>
+                        <Label Text="Để trống sẽ dùng bìa tự sinh theo tên truyện." Style="{StaticResource LblMuted}" FontSize="12" />
+                    </VerticalStackLayout>
+
+                    <Label Text="{Binding ErrorMessage}" TextColor="{StaticResource WebCrimson}" FontSize="13"
+                           IsVisible="{Binding ErrorMessage, Converter={StaticResource StringToBoolConverter}}" />
+                    <Label Text="{Binding ToastMessage}" TextColor="{StaticResource WebSage}" FontSize="13"
+                           IsVisible="{Binding ToastMessage, Converter={StaticResource StringToBoolConverter}}" />
+                    <ActivityIndicator IsRunning="{Binding IsBusy}" IsVisible="{Binding IsBusy}" Color="{StaticResource WebRoyal}" />
+
+                    <Button Text="{Binding SaveText}" Style="{StaticResource BtnBrass}" Command="{Binding SaveCommand}"
+                            IsEnabled="{Binding IsBusy, Converter={StaticResource InvertedBoolConverter}}" />
+                </VerticalStackLayout>
+            </Border>
+
+            <!-- Truyện mới: chưa có chương -->
+            <Border Style="{StaticResource Panel}" IsVisible="{Binding IsNew}">
+                <Label Text="Lưu truyện trước, sau đó bạn có thể thêm chương ở đây." Style="{StaticResource LblMuted}" />
+            </Border>
+
+            <!-- Chương của truyện -->
+            <Border Style="{StaticResource Panel}" IsVisible="{Binding IsEditing}">
+                <VerticalStackLayout Spacing="10">
+                    <Grid ColumnDefinitions="*,Auto">
+                        <Label Text="{Binding ChaptersHeader}" FontSize="16" FontAttributes="Bold"
+                               TextColor="{StaticResource WebText}" VerticalOptions="Center" />
+                        <Button Grid.Column="1" Text="Tải nhiều chương" Style="{StaticResource BtnOutlineSm}"
+                                Command="{Binding BulkImportCommand}" />
+                    </Grid>
+
+                    <VerticalStackLayout BindableLayout.ItemsSource="{Binding Chapters}">
+                        <BindableLayout.ItemTemplate>
+                            <DataTemplate x:DataType="models:AdminChapterRow">
+                                <Grid ColumnDefinitions="*,Auto,Auto" RowDefinitions="Auto,1" ColumnSpacing="6">
+                                    <VerticalStackLayout Grid.Column="0" Padding="0,10" Spacing="2">
+                                        <Label Text="{Binding Header}" FontSize="14" FontAttributes="Bold"
+                                               TextColor="{StaticResource WebText}" MaxLines="2" LineBreakMode="TailTruncation" />
+                                        <Label Text="{Binding SubLine}" Style="{StaticResource LblCardMeta}" />
+                                    </VerticalStackLayout>
+                                    <Button Grid.Column="1" Text="Sửa" Style="{StaticResource BtnOutlineSm}" VerticalOptions="Center"
+                                            Command="{Binding Source={RelativeSource AncestorType={x:Type vm:AdminStoryEditViewModel}}, Path=EditChapterCommand}"
+                                            CommandParameter="{Binding .}" />
+                                    <Button Grid.Column="2" Text="Xóa" Style="{StaticResource BtnOutlineSm}" VerticalOptions="Center"
+                                            TextColor="{StaticResource WebCrimson}"
+                                            Command="{Binding Source={RelativeSource AncestorType={x:Type vm:AdminStoryEditViewModel}}, Path=DeleteChapterCommand}"
+                                            CommandParameter="{Binding .}" />
+                                    <BoxView Grid.Row="1" Grid.ColumnSpan="3" HeightRequest="1" Color="{StaticResource WebBorder}" />
+                                </Grid>
+                            </DataTemplate>
+                        </BindableLayout.ItemTemplate>
+                    </VerticalStackLayout>
+
+                    <Label Text="Chưa có chương nào." Style="{StaticResource LblMuted}" HorizontalTextAlignment="Center"
+                           IsVisible="{Binding HasNoChapters}" Margin="0,8" />
+
+                    <Button Text="+ Thêm chương mới" Style="{StaticResource BtnBrass}" Command="{Binding AddChapterCommand}" />
+                </VerticalStackLayout>
+            </Border>
+
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

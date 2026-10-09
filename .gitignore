@@ -482,3 +482,8 @@ $RECYCLE.BIN/
 
 # Vim temporary swap files
 *.swp
+
+# Local SQLite artifacts (shared backend uses MySQL)
+*.db
+*.db-shm
+*.db-wal

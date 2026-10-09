@@ -13,7 +13,6 @@
             <Border Style="{StaticResource Panel}">
                 <VerticalStackLayout Spacing="14">
                     <Label Text="Tạo tài khoản" Style="{StaticResource LblH2}" />
-                    <Label Text="Bản xem trước biểu mẫu — chưa tạo tài khoản thật." Style="{StaticResource LblMuted}" Margin="0,-8,0,4" />
 
                     <VerticalStackLayout Spacing="6">
                         <Label Text="Tên hiển thị" Style="{StaticResource LblFieldName}" />

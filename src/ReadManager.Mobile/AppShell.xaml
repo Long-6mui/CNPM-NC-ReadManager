@@ -15,7 +15,7 @@
     FlyoutBehavior="Disabled"
     Title="Chữ &amp; Đêm">
 
-    <!-- Thanh điều hướng dưới cùng: Trang chủ | Khám phá | Tài khoản (giống menu của web) -->
+    <!-- Thanh điều hướng dưới cùng: Trang chủ | Khám phá | Tủ sách | Tài khoản (giống menu của web) -->
     <TabBar>
         <ShellContent
             Title="Trang chủ"
@@ -30,10 +30,32 @@
             Route="BrowsePage" />
 
         <ShellContent
+            Title="Tủ sách"
+            Icon="tab_library.png"
+            ContentTemplate="{DataTemplate views:LibraryPage}"
+            Route="LibraryPage" />
+
+        <ShellContent
             Title="Tài khoản"
             Icon="tab_account.png"
             ContentTemplate="{DataTemplate views:AccountPage}"
             Route="AccountPage" />
+    </TabBar>
+
+    <!-- Khu QUẢN TRỊ (chỉ Admin): thanh tab riêng. Vào bằng "//AdminStoriesPage" (Admin đăng nhập xong tự vào đây),
+         thoát về trang chủ bằng nút "Trang chủ" trên thanh tiêu đề. -->
+    <TabBar Route="AdminArea">
+        <ShellContent
+            Title="Truyện"
+            Icon="tab_stories.png"
+            ContentTemplate="{DataTemplate views:AdminStoriesPage}"
+            Route="AdminStoriesPage" />
+
+        <ShellContent
+            Title="Thể loại"
+            Icon="tab_genres.png"
+            ContentTemplate="{DataTemplate views:AdminGenresPage}"
+            Route="AdminGenresPage" />
     </TabBar>
 
     <!-- Đăng nhập nằm ngoài TabBar nên không hiện thanh tab. Vào bằng "//LoginPage", thoát bằng "//StoryListPage". -->

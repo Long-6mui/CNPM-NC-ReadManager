@@ -55,8 +55,10 @@ public partial class RegisterViewModel : BaseViewModel
                 Password = Password
             });
 
-            // Đăng ký xong -> tự đăng nhập luôn (AuthService đã lưu token) -> vào trang chủ
-            await Shell.Current.GoToAsync("//StoryListPage");
+            Password = string.Empty;
+            ConfirmPassword = string.Empty;
+            await Shell.Current.DisplayAlert("Đăng ký thành công", "Bạn có thể đăng nhập bằng tài khoản vừa tạo.", "OK");
+            await Shell.Current.GoToAsync("//LoginPage");
         });
     }
 

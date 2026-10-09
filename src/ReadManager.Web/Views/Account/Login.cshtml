@@ -3,7 +3,12 @@
 <div class="auth-wrap">
     <div class="panel">
         <h2 style="font-size:20px; margin-bottom:6px;">Đăng nhập</h2>
-        <p style="font-size:13px; color:var(--muted); margin-bottom:18px;">Chào mừng bạn quay lại Chữ &amp; Đêm.</p>
+        <p style="font-size:13px; color:var(--muted); margin-bottom:18px;">Chào mừng bạn quay lại Chủ & Đêm.</p>
+        @if(TempData["RegistrationSuccess"] is string successMsg){
+            <div style="margin-bottom:18px; padding:12px; background-color:#d4edda; border:1px solid #c3e6cb; border-radius:4px; color:#155724;">
+                ✓ @successMsg
+            </div>
+        }
         <form asp-action="Login" method="post">
             <input type="hidden" asp-for="ReturnUrl" />
             <div asp-validation-summary="ModelOnly" class="validation-summary-errors"></div>
