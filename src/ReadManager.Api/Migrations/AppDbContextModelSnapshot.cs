@@ -112,6 +112,94 @@ namespace ReadManager.Api.Migrations
                     b.ToTable("Genres", (string)null);
                 });
 
+            modelBuilder.Entity("ReadManager.Api.Entities.PlanVersionStory", b =>
+                {
+                    b.Property<int>("PlanVersionId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("StoryId")
+                        .HasColumnType("int");
+
+                    b.HasKey("PlanVersionId", "StoryId");
+
+                    b.HasIndex("StoryId");
+
+                    b.ToTable("PlanVersionStories", (string)null);
+                });
+
+            modelBuilder.Entity("ReadManager.Api.Entities.ReadingPlan", b =>
+                {
+                    b.Property<int>("PlanId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("PlanId"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<bool>("IsAvailable")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("varchar(150)");
+
+                    b.HasKey("PlanId");
+
+                    b.ToTable("ReadingPlans", (string)null);
+                });
+
+            modelBuilder.Entity("ReadManager.Api.Entities.ReadingPlanVersion", b =>
+                {
+                    b.Property<int>("PlanVersionId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("PlanVersionId"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<int>("DurationMonths")
+                        .HasColumnType("int");
+
+                    b.Property<int>("PlanId")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("Price")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTime?>("PublishedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("ScopeType")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)");
+
+                    b.Property<int>("VersionNumber")
+                        .HasColumnType("int");
+
+                    b.HasKey("PlanVersionId");
+
+                    b.HasIndex("PlanId", "VersionNumber")
+                        .IsUnique();
+
+                    b.ToTable("ReadingPlanVersions", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_ReadingPlanVersions_DurationMonths", "`DurationMonths` > 0");
+
+                            t.HasCheckConstraint("CK_ReadingPlanVersions_Price", "`Price` > 0");
+
+                            t.HasCheckConstraint("CK_ReadingPlanVersions_ScopeType", "`ScopeType` IN ('All', 'Selected')");
+
+                            t.HasCheckConstraint("CK_ReadingPlanVersions_VersionNumber", "`VersionNumber` > 0");
+                        });
+                });
+
             modelBuilder.Entity("ReadManager.Api.Entities.Story", b =>
                 {
                     b.Property<int>("StoryId")
@@ -287,6 +375,36 @@ namespace ReadManager.Api.Migrations
                     b.Navigation("Story");
                 });
 
+            modelBuilder.Entity("ReadManager.Api.Entities.PlanVersionStory", b =>
+                {
+                    b.HasOne("ReadManager.Api.Entities.ReadingPlanVersion", "PlanVersion")
+                        .WithMany("PlanVersionStories")
+                        .HasForeignKey("PlanVersionId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("ReadManager.Api.Entities.Story", "Story")
+                        .WithMany()
+                        .HasForeignKey("StoryId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("PlanVersion");
+
+                    b.Navigation("Story");
+                });
+
+            modelBuilder.Entity("ReadManager.Api.Entities.ReadingPlanVersion", b =>
+                {
+                    b.HasOne("ReadManager.Api.Entities.ReadingPlan", "Plan")
+                        .WithMany("Versions")
+                        .HasForeignKey("PlanId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Plan");
+                });
+
             modelBuilder.Entity("ReadManager.Api.Entities.Story", b =>
                 {
                     b.HasOne("ReadManager.Api.Entities.User", "Creator")
@@ -315,6 +433,16 @@ namespace ReadManager.Api.Migrations
                     b.Navigation("Genre");
 
                     b.Navigation("Story");
+                });
+
+            modelBuilder.Entity("ReadManager.Api.Entities.ReadingPlan", b =>
+                {
+                    b.Navigation("Versions");
+                });
+
+            modelBuilder.Entity("ReadManager.Api.Entities.ReadingPlanVersion", b =>
+                {
+                    b.Navigation("PlanVersionStories");
                 });
 #pragma warning restore 612, 618
         }
