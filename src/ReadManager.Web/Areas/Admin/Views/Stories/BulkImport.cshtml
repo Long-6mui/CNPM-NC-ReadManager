@@ -4,13 +4,10 @@
     ViewBag.ActiveNav = "stories";
 }
 @*
-    =====================================================================
     TRANG TẢI NHIỀU CHƯƠNG (PB08)
     - Chọn file .txt / .zip, hoặc dán văn bản, hoặc cả hai.
-    - Bấm "Kiểm tra" → hiện bảng xem trước + danh sách lỗi (CHƯA lưu).
-    - Không còn lỗi → nút "Lưu" mới bấm được.
-    Trang dùng JavaScript gửi dữ liệu (không tải lại trang) để file đã chọn không bị mất.
-    =====================================================================
+    - Chọn cách công bố: Lưu nháp / Công khai ngay / Hẹn giờ ra mắt.
+    - Bấm "Kiểm tra" → hiện bảng xem trước + lỗi (CHƯA lưu). Không còn lỗi → nút "Lưu" mới bấm được.
 *@
 <style>
     .upload-grid {
@@ -28,6 +25,31 @@
     .upload-grid .field {
         margin-bottom: 0;
     }
+
+    /* Khung hướng dẫn */
+    .guide {
+        background: var(--surface-2);
+        border-radius: 6px;
+        padding: 12px 16px;
+        margin-bottom: 16px;
+        font-size: 13px;
+        color: var(--muted);
+    }
+
+        .guide ul {
+            margin: 6px 0 0 18px;
+        }
+
+        .guide li {
+            margin: 3px 0;
+        }
+
+        .guide code {
+            white-space: nowrap;
+            font-size: 12.5px;
+        }
+    /* không cho tên file bị cắt xuống dòng */
+
     /* Khung chọn file và ô dán cao bằng nhau */
     .drop-zone {
         border: 2px dashed var(--border);
@@ -42,18 +64,12 @@
         justify-content: center;
     }
 
+        .drop-zone.dragging {
+            border-color: var(--brass);
+        }
+
     .paste-box {
         min-height: 220px !important;
-    }
-    /* Nút bị khóa (chưa Kiểm tra / còn lỗi) → mờ đi, không bấm được */
-    .actions-row .btn:disabled {
-        opacity: .45;
-        cursor: not-allowed;
-        filter: grayscale(.4);
-    }
-
-    .drop-zone.dragging {
-        border-color: var(--brass);
     }
 
     .file-list {
@@ -66,6 +82,64 @@
             margin: 2px 0;
         }
 
+    /* Tùy chọn công bố */
+    .options {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+        margin-top: 16px;
+    }
+
+    @@media (max-width: 800px) {
+        .options {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    .opt-title {
+        font-weight: 600;
+        font-size: 13px;
+        margin-bottom: 6px;
+    }
+
+    .publish-mode label {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin: 4px 0;
+        font-size: 14px;
+        cursor: pointer;
+    }
+
+    .publish-mode input[type=radio] {
+        width: auto;
+    }
+
+    #scheduleBox {
+        margin: 6px 0 0 26px;
+        display: none;
+    }
+
+        #scheduleBox input {
+            max-width: 260px;
+        }
+
+    /* Nút bị khóa → mờ đi */
+    .actions-row {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        margin-top: 16px;
+        flex-wrap: wrap;
+    }
+
+        .actions-row .btn:disabled {
+            opacity: .45;
+            cursor: not-allowed;
+            filter: grayscale(.4);
+        }
+
+    /* Kết quả */
     .msg-box {
         border-radius: 5px;
         padding: 12px 16px;
@@ -124,14 +198,6 @@
         font-size: 12px;
         color: var(--muted);
     }
-
-    .actions-row {
-        display: flex;
-        gap: 10px;
-        align-items: center;
-        margin-top: 14px;
-        flex-wrap: wrap;
-    }
 </style>
 
 <div class="container section">
@@ -147,12 +213,14 @@
                 <input type="hidden" name="storyId" value="@Model.StoryId" />
 
                 <!-- ===== Hướng dẫn ===== -->
-                <p class="hint" style="margin-bottom:14px;">
-                    Mỗi chương cần bắt đầu bằng một dòng dạng <b>"Chương 3: Tên chương"</b>.
-                    Nếu file không có dòng này, cả file được tính là 1 chương và số chương lấy từ <b>tên file</b>
-                    (vd: <code>chuong-03.txt</code>, <code>03 - Gặp gỡ.txt</code>).
-                    File phải lưu dạng <b>UTF-8</b>.
-                </p>
+                <div class="guide">
+                    <b>Cách chia chương:</b>
+                    <ul>
+                        <li>Mỗi chương bắt đầu bằng một dòng dạng <b>Chương 3: Tên chương</b>.</li>
+                        <li>File không có dòng này → cả file là 1 chương, số chương lấy từ tên file, vd: <code>chuong-03.txt</code> hoặc <code>03 - Gặp gỡ.txt</code>.</li>
+                        <li>File phải lưu dạng <b>UTF-8</b>.</li>
+                    </ul>
+                </div>
 
                 <div class="upload-grid">
                     <!-- ===== Khung chọn file ===== -->
@@ -174,15 +242,30 @@
                 </div>
 
                 <!-- ===== Tùy chọn ===== -->
-                <label class="checkline" style="margin-top:12px;">
-                    <input type="checkbox" name="markFree" value="true" style="width:auto;" /> Đánh dấu tất cả chương là miễn phí
-                </label>
-                <label class="checkline">
-                    <input type="checkbox" name="publish" value="true" checked style="width:auto;" /> Công khai ngay (bỏ chọn = lưu nháp)
-                </label>
-                <label class="checkline">
-                    <input type="checkbox" name="overwriteExisting" value="true" style="width:auto;" /> Ghi đè chương đã có cùng số (bỏ chọn = bỏ qua chương trùng)
-                </label>
+                <div class="options">
+                    <!-- Cách công bố: nháp / ngay / hẹn giờ -->
+                    <div class="publish-mode">
+                        <div class="opt-title">Công bố chương</div>
+                        <label><input type="radio" name="publishMode" value="draft" /> Lưu nháp (độc giả chưa thấy)</label>
+                        <label><input type="radio" name="publishMode" value="now" checked /> Công khai ngay</label>
+                        <label><input type="radio" name="publishMode" value="schedule" /> Hẹn giờ ra mắt</label>
+                        <div id="scheduleBox">
+                            <input type="datetime-local" name="publishAt" id="publishAt" />
+                            <div class="muted-sm" style="margin-top:4px;">Trước giờ này độc giả thấy chương nhưng chưa đọc được; tới giờ tự mở.</div>
+                        </div>
+                    </div>
+
+                    <!-- Các tùy chọn khác -->
+                    <div>
+                        <div class="opt-title">Tùy chọn khác</div>
+                        <label class="checkline">
+                            <input type="checkbox" name="markFree" value="true" style="width:auto;" /> Đánh dấu tất cả chương là miễn phí
+                        </label>
+                        <label class="checkline">
+                            <input type="checkbox" name="overwriteExisting" value="true" style="width:auto;" /> Ghi đè chương đã có cùng số (bỏ chọn = bỏ qua chương trùng)
+                        </label>
+                    </div>
+                </div>
 
                 <div class="actions-row">
                     <button type="button" id="btnCheck" class="btn btn-outline">🔍 Kiểm tra</button>
@@ -208,10 +291,27 @@
             const btnSave = document.getElementById('btnSave');
             const busy = document.getElementById('busy');
             const result = document.getElementById('result');
+            const scheduleBox = document.getElementById('scheduleBox');
+            const publishAt = document.getElementById('publishAt');
             const editUrl = '@Url.Action("Edit", new { id = Model.StoryId })';
 
             // Chống chèn mã HTML khi hiện chữ lấy từ file
             const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+            // ---------- Hẹn giờ: chỉ hiện ô chọn giờ khi chọn "Hẹn giờ ra mắt" ----------
+            const mode = () => form.querySelector('input[name=publishMode]:checked').value;
+            function toggleSchedule() {
+                const on = mode() === 'schedule';
+                scheduleBox.style.display = on ? 'block' : 'none';
+                if (on && !publishAt.value) {
+                    // Gợi ý sẵn: 1 giờ sau, làm tròn phút
+                    const d = new Date(Date.now() + 60 * 60 * 1000);
+                    d.setSeconds(0, 0);
+                    publishAt.value = new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+                }
+            }
+            form.querySelectorAll('input[name=publishMode]').forEach(r => r.addEventListener('change', toggleSchedule));
+            toggleSchedule();
 
             // ---------- Chọn file / kéo thả ----------
             dropZone.addEventListener('click', e => { if (e.target !== fileInput) fileInput.click(); });
@@ -225,6 +325,7 @@
             });
             fileInput.addEventListener('change', onInputChanged);
             form.addEventListener('input', onInputChanged);
+            form.addEventListener('change', onInputChanged);
 
             function onInputChanged() {
                 fileList.innerHTML = [...fileInput.files]
@@ -237,7 +338,8 @@
 
             btnCheck.addEventListener('click', () => send(false));
             btnSave.addEventListener('click', () => {
-                if (confirm('Lưu các chương vào truyện?')) send(true);
+                const note = mode() === 'schedule' ? '\nCác chương sẽ ra mắt lúc ' + publishAt.value.replace('T', ' ') : '';
+                if (confirm('Lưu các chương vào truyện?' + note)) send(true);
             });
 
             // ---------- Gửi lên server ----------
@@ -270,12 +372,14 @@
             // ---------- Vẽ kết quả ----------
             function render(r) {
                 let html = '';
+                const when = mode() === 'schedule' && publishAt.value
+                    ? ` <br>⏳ Các chương sẽ ra mắt lúc <b>${esc(publishAt.value.replace('T', ' '))}</b>.` : '';
 
                 if (r.saved) {
-                    html += `<div class="msg-box msg-ok">✅ <b>Đã lưu.</b> ${esc(r.message)} Đang quay về trang truyện…</div>`;
+                    html += `<div class="msg-box msg-ok">✅ <b>Đã lưu.</b> ${esc(r.message)}${when} Đang quay về trang truyện…</div>`;
                 } else if (r.message) {
                     const cls = (r.errors && r.errors.length) ? 'msg-error' : 'msg-ok';
-                    html += `<div class="msg-box ${cls}"><b>${esc(r.message)}</b></div>`;
+                    html += `<div class="msg-box ${cls}"><b>${esc(r.message)}</b>${when}</div>`;
                 }
 
                 // Lỗi chung (màu đỏ) — phải sửa mới lưu được

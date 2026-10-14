@@ -74,10 +74,16 @@ public class ChapterService : IChapterService
                 AccessLevel = c.AccessLevel,
                 PublicationStatus = c.PublicationStatus,
                 PublishedAt = c.PublishedAt,
+                ScheduledAt = c.ScheduledAt,
                 CreatedAt = c.CreatedAt,
                 UpdatedAt = c.UpdatedAt
             })
             .ToListAsync();
+
+        // Hẹn giờ: chương công khai nhưng chưa tới giờ ra mắt → đánh dấu "sắp ra mắt"
+        var nowUtc = DateTime.UtcNow;
+        foreach (var row in rows)
+            row.IsUpcoming = IsUpcoming(row.PublicationStatus, row.ScheduledAt, nowUtc);
 
         // 4. PB10 — với độc giả: đánh dấu chương nào bị khóa (hiện 🔒)
         if (!includeDrafts)
@@ -116,9 +122,9 @@ public class ChapterService : IChapterService
         return chapter is null ? null : await BuildReadDtoAsync(chapter, isAdmin);
     }
 
-  
+
     // HÀM PHỤ: dựng dữ liệu cho màn hình đọc (dùng chung cho 2 hàm trên)
- 
+
     private async Task<ChapterReadDto?> BuildReadDtoAsync(Chapter chapter, bool isAdmin)
     {
         // 1. Độc giả chỉ được xem chương ĐÃ CÔNG KHAI của truyện ĐÃ CÔNG KHAI.
@@ -129,6 +135,10 @@ public class ChapterService : IChapterService
 
         // 2. PB10 — KIỂM TRA QUYỀN ĐỌC MIỄN PHÍ. Admin luôn đọc được.
         var locked = !isAdmin && IsLocked(chapter.Story.AccessPolicy, chapter.AccessLevel);
+
+        // Hẹn giờ: chưa tới giờ ra mắt → độc giả chưa đọc được (admin vẫn xem trước được)
+        var upcoming = IsUpcoming(chapter.PublicationStatus, chapter.ScheduledAt, DateTime.UtcNow);
+        var hideContent = locked || (upcoming && !isAdmin);
 
         // 3. Tìm chương TRƯỚC và chương SAU để làm nút chuyển chương.
         var siblings = _db.Chapters.AsNoTracking().Where(c => c.StoryId == chapter.StoryId);
@@ -155,10 +165,12 @@ public class ChapterService : IChapterService
             StoryTitle = NormalizeTitle(chapter.Story.Title),
             ChapterNumber = chapter.ChapterNumber,
             Title = NormalizeTitle(chapter.Title),                                  // sửa dấu cho dữ liệu cũ
-            Content = locked ? string.Empty : NormalizeContent(chapter.Content),   // BỊ KHÓA → KHÔNG trả nội dung
+            Content = hideContent ? string.Empty : NormalizeContent(chapter.Content),   // BỊ KHÓA / CHƯA TỚI GIỜ → KHÔNG trả nội dung
             AccessLevel = chapter.AccessLevel,
             PublicationStatus = chapter.PublicationStatus,
             IsLocked = locked,
+            IsUpcoming = upcoming,
+            ScheduledAt = chapter.ScheduledAt,
             PreviousChapterId = prev?.ChapterId,                 // "?." = nếu prev là null thì kết quả cũng null
             PreviousChapterNumber = prev?.ChapterNumber,
             NextChapterId = next?.ChapterId,
@@ -173,7 +185,7 @@ public class ChapterService : IChapterService
     // PB07 — TẠO CHƯƠNG MỚI
     // Trả null = không tìm thấy truyện.
     // Ném lỗi InvalidOperationException = trùng số chương (Controller bắt → 409).
-  
+
     public async Task<ChapterListItemDto?> CreateAsync(int storyId, CreateChapterDto dto)
     {
         // 1. Truyện phải tồn tại
@@ -186,6 +198,7 @@ public class ChapterService : IChapterService
 
         // 3. Tạo object chương mới
         var now = DateTime.UtcNow;
+        var scheduledAt = ResolveSchedule(dto.PublicationStatus, dto.ScheduledAt, now);
         var chapter = new Chapter
         {
             StoryId = storyId,
@@ -194,7 +207,9 @@ public class ChapterService : IChapterService
             Content = NormalizeContent(dto.Content),
             AccessLevel = ResolveAccessLevel(story, dto.AccessLevel),
             PublicationStatus = dto.PublicationStatus,
-            PublishedAt = dto.PublicationStatus == Published ? now : null,   // công khai ngay thì ghi ngày
+            ScheduledAt = scheduledAt,
+            // Ngày ra mắt: hẹn giờ thì lấy giờ hẹn, không thì lấy lúc này
+            PublishedAt = dto.PublicationStatus == Published ? scheduledAt ?? now : null,
             CreatedAt = now,
             UpdatedAt = now
         };
@@ -203,7 +218,7 @@ public class ChapterService : IChapterService
 
         // 4. Có chương mới công khai → cập nhật ngày của truyện
         //    để truyện nổi lên mục "Mới cập nhật" ở trang chủ.
-        if (chapter.PublicationStatus == Published)
+        if (chapter.PublicationStatus == Published && scheduledAt is null)
             story.UpdatedAt = now;
 
         // 5. Lưu vào database
@@ -211,7 +226,7 @@ public class ChapterService : IChapterService
         return ToListItem(chapter);
     }
 
-    
+
     // PB08 — SỬA CHƯƠNG (đổi được cả số chương)
 
     public async Task<ChapterListItemDto?> UpdateAsync(int chapterId, UpdateChapterDto dto)
@@ -236,12 +251,16 @@ public class ChapterService : IChapterService
         var content = NormalizeContent(dto.Content);
         var access = ResolveAccessLevel(story, dto.AccessLevel);
         var status = dto.PublicationStatus;
-        var publishedAt = status == Published ? current.PublishedAt ?? now : current.PublishedAt;
+        var scheduledAt = ResolveSchedule(status, dto.ScheduledAt, now);
+        // Ngày ra mắt: hẹn giờ → giờ hẹn; đang hẹn giờ mà bỏ hẹn → ra mắt ngay; còn lại giữ ngày cũ
+        var wasUpcoming = IsUpcoming(current.PublicationStatus, current.ScheduledAt, now);
+        var publishedAt = status != Published ? current.PublishedAt
+            : scheduledAt ?? (wasUpcoming ? now : current.PublishedAt ?? now);
 
         await using var tx = await _db.Database.BeginTransactionAsync();
         try
         {
-         
+
             await _db.Chapters
                 .Where(c => c.ChapterId == chapterId)
                 .ExecuteUpdateAsync(s => s
@@ -251,6 +270,7 @@ public class ChapterService : IChapterService
                     .SetProperty(c => c.AccessLevel, access)
                     .SetProperty(c => c.PublicationStatus, status)
                     .SetProperty(c => c.PublishedAt, publishedAt)
+                    .SetProperty(c => c.ScheduledAt, scheduledAt)
                     .SetProperty(c => c.UpdatedAt, now));
         }
         catch (Exception ex) when (IsDuplicateKey(ex))
@@ -348,8 +368,10 @@ public class ChapterService : IChapterService
                 chapter.Title = NormalizeTitle(item.Title);
                 chapter.Content = NormalizeContent(item.Content);
                 chapter.AccessLevel = access;
-                if (item.PublicationStatus == Published && chapter.PublishedAt is null)
-                    chapter.PublishedAt = now;
+                var itemSchedule = ResolveSchedule(item.PublicationStatus, item.ScheduledAt, now);
+                chapter.ScheduledAt = itemSchedule;
+                if (item.PublicationStatus == Published && (itemSchedule is not null || chapter.PublishedAt is null))
+                    chapter.PublishedAt = itemSchedule ?? now;
                 chapter.PublicationStatus = item.PublicationStatus;
                 chapter.UpdatedAt = now;
                 result.Updated++;
@@ -365,7 +387,9 @@ public class ChapterService : IChapterService
                     Content = NormalizeContent(item.Content),
                     AccessLevel = access,
                     PublicationStatus = item.PublicationStatus,
-                    PublishedAt = item.PublicationStatus == Published ? now : null,
+                    ScheduledAt = ResolveSchedule(item.PublicationStatus, item.ScheduledAt, now),
+                    PublishedAt = item.PublicationStatus == Published
+                        ? ResolveSchedule(item.PublicationStatus, item.ScheduledAt, now) ?? now : null,
                     CreatedAt = now,
                     UpdatedAt = now
                 });
@@ -550,6 +574,11 @@ public class ChapterService : IChapterService
         var skipCount = preview.Count(p => p.Action == "Bỏ qua");
         var errorCount = preview.Count(p => p.Action == "Lỗi");
 
+        // Hẹn giờ: giờ hẹn phải ở tương lai
+        if (dto.PublicationStatus == Published && dto.ScheduledAt.HasValue
+            && ResolveSchedule(dto.PublicationStatus, dto.ScheduledAt, DateTime.UtcNow) is null)
+            result.Errors.Add("Giờ ra mắt phải sau thời điểm hiện tại. Bỏ chọn hẹn giờ nếu muốn ra mắt ngay.");
+
         // Được lưu khi: không có lỗi chung, không có chương lỗi, và có ít nhất 1 chương để lưu
         result.CanSave = result.Errors.Count == 0 && errorCount == 0 && newCount + overwriteCount > 0;
 
@@ -560,7 +589,7 @@ public class ChapterService : IChapterService
             result.Errors.Add("Không có chương nào để lưu (tất cả đều đã có trong truyện). Tick \"Ghi đè\" nếu muốn thay nội dung.");
 
         if (!dto.Save)
-            return result;   
+            return result;
 
         if (!result.CanSave)
         {
@@ -577,7 +606,8 @@ public class ChapterService : IChapterService
                 Title = c.Title,
                 Content = c.Content,
                 AccessLevel = dto.AccessLevel,
-                PublicationStatus = dto.PublicationStatus
+                PublicationStatus = dto.PublicationStatus,
+                ScheduledAt = dto.ScheduledAt          // hẹn giờ ra mắt (null = ngay)
             }).ToList()
         };
 
@@ -601,9 +631,25 @@ public class ChapterService : IChapterService
     }
 
     // PHẦN 3: CÁC HÀM PHỤ
-  
+
+    // HẸN GIỜ RA MẮT
+    // Chương "sắp ra mắt" = đã công khai nhưng giờ hẹn còn ở tương lai.
+    private static bool IsUpcoming(string publicationStatus, DateTime? scheduledAt, DateTime nowUtc)
+        => publicationStatus == Published && scheduledAt.HasValue && scheduledAt.Value > nowUtc;
+
+    // Giờ hẹn hợp lệ: chỉ khi Published + ở tương lai. Nháp hoặc giờ đã qua → không hẹn (null).
+    private static DateTime? ResolveSchedule(string publicationStatus, DateTime? requested, DateTime nowUtc)
+    {
+        if (publicationStatus != Published || requested is null)
+            return null;
+        var utc = requested.Value.Kind == DateTimeKind.Local
+            ? requested.Value.ToUniversalTime()
+            : DateTime.SpecifyKind(requested.Value, DateTimeKind.Utc);
+        return utc > nowUtc ? utc : null;
+    }
+
     // PB10
-  
+
     private static bool IsLocked(string storyAccessPolicy, string chapterAccessLevel)
         => storyAccessPolicy != Free && chapterAccessLevel != Free;
 
@@ -672,6 +718,8 @@ public class ChapterService : IChapterService
         AccessLevel = c.AccessLevel,
         PublicationStatus = c.PublicationStatus,
         PublishedAt = c.PublishedAt,
+        ScheduledAt = c.ScheduledAt,
+        IsUpcoming = IsUpcoming(c.PublicationStatus, c.ScheduledAt, DateTime.UtcNow),
         CreatedAt = c.CreatedAt,
         UpdatedAt = c.UpdatedAt
     };

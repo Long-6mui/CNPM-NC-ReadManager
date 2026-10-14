@@ -29,13 +29,15 @@ public record ApiResult(bool Ok, string Message, int? Id = null);
 // UploadChaptersResultApi ↔ UploadChaptersResultDto (kết quả tải nhiều chương)
 public record ChapterListItemApi(
     int ChapterId, int StoryId, int ChapterNumber, string Title, string AccessLevel,
-    string PublicationStatus, bool IsLocked, DateTime? PublishedAt, DateTime CreatedAt, DateTime UpdatedAt);
+    string PublicationStatus, bool IsLocked, DateTime? PublishedAt, DateTime CreatedAt, DateTime UpdatedAt,
+    DateTime? ScheduledAt = null, bool IsUpcoming = false);   // hẹn giờ ra mắt (giờ UTC)
 
 public record ChapterReadApi(
     int ChapterId, int StoryId, string StoryTitle, int ChapterNumber, string Title, string Content,
     string AccessLevel, string PublicationStatus, bool IsLocked,
     int? PreviousChapterId, int? NextChapterId, int? PreviousChapterNumber, int? NextChapterNumber,
-    DateTime? PublishedAt, DateTime UpdatedAt);
+    DateTime? PublishedAt, DateTime UpdatedAt,
+    DateTime? ScheduledAt = null, bool IsUpcoming = false);   // hẹn giờ ra mắt (giờ UTC)
 
 public record UploadChaptersResultApi(int Created, int Updated, List<int> SkippedNumbers, string Message);
 
@@ -243,8 +245,14 @@ public class StoriesApiClient(HttpClient http)
         Title = c.Title,
         IsFree = c.AccessLevel == "Free",
         Status = c.PublicationStatus == "Published" ? ChapterStatus.Reviewed : ChapterStatus.Draft,
-        CreatedAt = c.PublishedAt ?? c.CreatedAt
+        CreatedAt = c.PublishedAt ?? c.CreatedAt,
+        // Giờ hẹn ra mắt (UTC) — chỉ có khi chưa tới giờ, để bảng Admin hiện huy hiệu "Hẹn giờ"
+        PublishAt = c.IsUpcoming && c.ScheduledAt.HasValue ? DateTime.SpecifyKind(c.ScheduledAt.Value, DateTimeKind.Utc) : null
     };
+
+    // Đổi giờ UTC từ API sang giờ máy (giờ Việt Nam) để hiển thị
+    public static DateTime? ToLocal(DateTime? utc)
+        => utc.HasValue ? DateTime.SpecifyKind(utc.Value, DateTimeKind.Utc).ToLocalTime() : null;
 
     public static Story ToStory(StoryDetailApi d) => new()
     {

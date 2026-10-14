@@ -51,12 +51,14 @@ public class StoriesController(StoriesApiClient api) : Controller
                         No = c.ChapterNumber,
                         Title = c.Title,
                         Locked = c.IsLocked,               // PB10 — hiện 🔒
+                        UpcomingAt = c.IsUpcoming ? StoriesApiClient.ToLocal(c.ScheduledAt) : null,   // hẹn giờ ra mắt
                         CreatedAt = c.PublishedAt ?? c.CreatedAt
                     }).ToList(),
                 TotalChapters = chapters.Count,
                 ChapterPage = page,
                 ChapterPageCount = pageCount,
-                FirstVisibleChapterNo = chapters.FirstOrDefault()?.ChapterNumber   // nút "Đọc từ đầu"
+                // nút "Đọc từ đầu" → chương đầu tiên đã ra mắt (bỏ qua chương còn hẹn giờ)
+                FirstVisibleChapterNo = chapters.FirstOrDefault(c => !c.IsUpcoming)?.ChapterNumber
             });
         }
         catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException)
@@ -93,6 +95,7 @@ public class StoriesController(StoriesApiClient api) : Controller
                     IsFree = c.AccessLevel == "Free"
                 },
                 Locked = c.IsLocked,                                  // true → hiện hộp "cần mở khóa"
+                UpcomingAt = c.IsUpcoming ? StoriesApiClient.ToLocal(c.ScheduledAt) : null,   // chưa tới giờ ra mắt
                 NotYetPublicPreview = c.PublicationStatus != "Published",
                 PrevNo = c.PreviousChapterNumber,                     // nút "Chương trước"
                 NextNo = c.NextChapterNumber                          // nút "Chương sau"

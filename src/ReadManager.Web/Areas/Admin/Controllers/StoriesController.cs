@@ -187,7 +187,9 @@ public class StoriesController(IWebHostEnvironment environment, StoriesApiClient
                 Title = c.Title,
                 Content = c.Content,
                 IsFree = c.AccessLevel == "Free",
-                Status = c.PublicationStatus == "Published" ? ChapterStatus.Reviewed : ChapterStatus.Draft
+                Status = c.PublicationStatus == "Published" ? ChapterStatus.Reviewed : ChapterStatus.Draft,
+                // Đang hẹn giờ → đổ giờ hẹn (giờ Việt Nam) vào ô hẹn giờ
+                PublishAt = c.IsUpcoming ? StoriesApiClient.ToLocal(c.ScheduledAt) : null
             });
         }
         catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException)
@@ -201,6 +203,17 @@ public class StoriesController(IWebHostEnvironment environment, StoriesApiClient
     [HttpPost, ValidateAntiForgeryToken]
     public async Task<IActionResult> ChapterSave(ChapterFormVm vm)
     {
+        // Hẹn giờ ra mắt: chỉ áp dụng khi chọn "Công khai", và phải là thời điểm trong tương lai
+        DateTime? scheduledAtUtc = null;
+        if (vm.Status == ChapterStatus.Reviewed && vm.PublishAt.HasValue)
+        {
+            var local = DateTime.SpecifyKind(vm.PublishAt.Value, DateTimeKind.Local);
+            if (local <= DateTime.Now)
+                ModelState.AddModelError(nameof(vm.PublishAt), "Giờ ra mắt phải sau thời điểm hiện tại. Để trống nếu muốn ra mắt ngay.");
+            else
+                scheduledAtUtc = local.ToUniversalTime();
+        }
+
         if (!ModelState.IsValid) return View("ChapterEdit", vm);
         try
         {
@@ -210,7 +223,8 @@ public class StoriesController(IWebHostEnvironment environment, StoriesApiClient
                 title = vm.Title.Trim(),
                 content = vm.Content,
                 accessLevel = vm.IsFree ? "Free" : "Paid",                                         // PB10
-                publicationStatus = vm.Status == ChapterStatus.Reviewed ? "Published" : "Draft"
+                publicationStatus = vm.Status == ChapterStatus.Reviewed ? "Published" : "Draft",
+                scheduledAt = scheduledAtUtc                                                       // null = ra mắt ngay
             };
             var result = await api.SaveChapterAsync(vm.StoryId, vm.Id, body, await Token());
             if (result.Ok)
@@ -266,8 +280,21 @@ public class StoriesController(IWebHostEnvironment environment, StoriesApiClient
     [RequestSizeLimit(50 * 1024 * 1024)]
     [RequestFormLimits(MultipartBodyLengthLimit = 50 * 1024 * 1024)]
     public async Task<IActionResult> BulkImportCheck(int storyId, List<IFormFile> files, string? text,
-        bool markFree, bool publish, bool overwriteExisting, bool save)
+        bool markFree, string publishMode, DateTime? publishAt, bool overwriteExisting, bool save)
     {
+        // publishMode: "draft" = lưu nháp | "now" = công khai ngay | "schedule" = hẹn giờ ra mắt
+        var publish = publishMode is "now" or "schedule";
+        DateTime? scheduledAtUtc = null;
+        if (publishMode == "schedule")
+        {
+            if (publishAt is null)
+                return Json(ErrorJson("Hãy chọn ngày giờ ra mắt, hoặc chọn \"Công khai ngay\"."));
+            var local = DateTime.SpecifyKind(publishAt.Value, DateTimeKind.Local);
+            if (local <= DateTime.Now)
+                return Json(ErrorJson("Giờ ra mắt phải sau thời điểm hiện tại."));
+            scheduledAtUtc = local.ToUniversalTime();
+        }
+
         try
         {
             // Gói lại thành form để chuyển tiếp sang API
@@ -281,6 +308,8 @@ public class StoriesController(IWebHostEnvironment environment, StoriesApiClient
             if (!string.IsNullOrWhiteSpace(text)) form.Add(new StringContent(text), "Text");
             form.Add(new StringContent(markFree ? "Free" : "Paid"), "AccessLevel");
             form.Add(new StringContent(publish ? "Published" : "Draft"), "PublicationStatus");
+            if (scheduledAtUtc.HasValue)   // gửi giờ UTC dạng ISO, vd 2026-10-10T13:00:00.0000000Z
+                form.Add(new StringContent(scheduledAtUtc.Value.ToString("o")), "ScheduledAt");
             form.Add(new StringContent(overwriteExisting ? "true" : "false"), "OverwriteExisting");
             form.Add(new StringContent(save ? "true" : "false"), "Save");
 

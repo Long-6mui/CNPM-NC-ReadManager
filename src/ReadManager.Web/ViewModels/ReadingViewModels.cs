@@ -19,6 +19,7 @@ public class ChapterRowVm
     public bool NotYetPublicPreview { get; set; } // chỉ true khi admin xem trước chương chưa công khai
     public string? StatusLabel { get; set; }
     public DateTime CreatedAt { get; set; }
+    public DateTime? UpcomingAt { get; set; }   // có giá trị = chương sắp ra mắt (giờ Việt Nam), chưa đọc được
 }
 
 public class StoryDetailVm
@@ -45,6 +46,7 @@ public class ReadVm
     public Chapter Chapter { get; set; } = null!;
     public bool Locked { get; set; }
     public bool NotYetPublicPreview { get; set; }
+    public DateTime? UpcomingAt { get; set; }   // có giá trị = chưa tới giờ ra mắt (giờ Việt Nam)
     public int? PrevNo { get; set; }
     public int? NextNo { get; set; }
 }

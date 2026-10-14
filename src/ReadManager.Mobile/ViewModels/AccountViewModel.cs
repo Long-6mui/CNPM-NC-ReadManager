@@ -92,7 +92,7 @@ public partial class AccountViewModel : BaseViewModel
         Fill(FavoritePreview, _library.GetFavorites());
         HasHistory = HistoryPreview.Count > 0;
         HasFavorites = FavoritePreview.Count > 0;
-    }
+    });
 
     // "Đổi ảnh đại diện" — ảnh lưu trên thiết bị này (giống web: lưu trên trình duyệt)
     [RelayCommand]

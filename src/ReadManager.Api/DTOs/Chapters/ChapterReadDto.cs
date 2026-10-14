@@ -27,6 +27,10 @@ public class ChapterReadDto
     public int? PreviousChapterNumber { get; set; }
     public int? NextChapterNumber { get; set; }
 
+    // Hẹn giờ ra mắt: IsUpcoming = true → chưa tới giờ, độc giả chưa đọc được (giờ ra mắt ở ScheduledAt, UTC)
+    public DateTime? ScheduledAt { get; set; }
+    public bool IsUpcoming { get; set; }
+
     public DateTime? PublishedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
 }

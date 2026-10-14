@@ -24,6 +24,10 @@ public class UploadChapterFilesDto
     [RegularExpression("^(Draft|Published)$", ErrorMessage = "PublicationStatus phải là Draft hoặc Published.")]
     public string PublicationStatus { get; set; } = "Published";
 
+    // Hẹn giờ ra mắt cho TẤT CẢ chương lần này (giờ UTC). Để trống = ra mắt ngay.
+    // Chỉ có tác dụng khi PublicationStatus = Published.
+    public DateTime? ScheduledAt { get; set; }
+
     // Chương trùng số với chương đã có: true = ghi đè, false = bỏ qua
     public bool OverwriteExisting { get; set; }
 

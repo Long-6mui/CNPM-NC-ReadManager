@@ -59,7 +59,7 @@ public class ChapterFormVm
     public bool IsFree { get; set; }                                         // PB10 — miễn phí?
     public ChapterStatus Status { get; set; } = ChapterStatus.Reviewed;      // Reviewed = công khai
 
-    [Display(Name = "Hẹn giờ đăng (để trống = đăng ngay)")]
+    [Display(Name = "Hẹn giờ ra mắt (để trống = ra mắt ngay)")]
     [DataType(DataType.DateTime)]
     public DateTime? PublishAt { get; set; }
 }
