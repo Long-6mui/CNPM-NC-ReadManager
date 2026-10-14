@@ -14,6 +14,14 @@ public class AppDbContext : DbContext
     public DbSet<Genre> Genres => Set<Genre>();
     public DbSet<StoryGenre> StoryGenres => Set<StoryGenre>();
 
+    public DbSet<ReadingPlan> ReadingPlans => Set<ReadingPlan>();
+
+    public DbSet<ReadingPlanVersion> ReadingPlanVersions
+        => Set<ReadingPlanVersion>();
+
+    public DbSet<PlanVersionStory> PlanVersionStories
+        => Set<PlanVersionStory>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
@@ -108,6 +116,82 @@ public class AppDbContext : DbContext
             entity.HasOne(x => x.Genre)
                 .WithMany()
                 .HasForeignKey(x => x.GenreId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<ReadingPlan>(entity =>
+        {
+            entity.ToTable("ReadingPlans");
+
+            entity.HasKey(x => x.PlanId);
+
+            entity.Property(x => x.Name)
+                .HasMaxLength(150)
+                .IsRequired();
+
+            entity.Property(x => x.CreatedAt)
+                .HasColumnType("datetime(6)");
+        });
+
+        modelBuilder.Entity<ReadingPlanVersion>(entity =>
+        {
+            entity.ToTable("ReadingPlanVersions", table =>
+            {
+                table.HasCheckConstraint(
+                    "CK_ReadingPlanVersions_Price",
+                    "`Price` > 0");
+
+                table.HasCheckConstraint(
+                    "CK_ReadingPlanVersions_DurationMonths",
+                    "`DurationMonths` > 0");
+
+                table.HasCheckConstraint(
+                    "CK_ReadingPlanVersions_VersionNumber",
+                    "`VersionNumber` > 0");
+
+                table.HasCheckConstraint(
+                    "CK_ReadingPlanVersions_ScopeType",
+                    "`ScopeType` IN ('All', 'Selected')");
+            });
+
+            entity.HasKey(x => x.PlanVersionId);
+
+            entity.HasIndex(x => new { x.PlanId, x.VersionNumber })
+                .IsUnique();
+
+            entity.Property(x => x.Price)
+                .HasPrecision(18, 2);
+
+            entity.Property(x => x.ScopeType)
+                .HasMaxLength(20)
+                .IsRequired();
+
+            entity.Property(x => x.CreatedAt)
+                .HasColumnType("datetime(6)");
+
+            entity.Property(x => x.PublishedAt)
+                .HasColumnType("datetime(6)");
+
+            entity.HasOne(x => x.Plan)
+                .WithMany(x => x.Versions)
+                .HasForeignKey(x => x.PlanId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<PlanVersionStory>(entity =>
+        {
+            entity.ToTable("PlanVersionStories");
+
+            entity.HasKey(x => new { x.PlanVersionId, x.StoryId });
+
+            entity.HasOne(x => x.PlanVersion)
+                .WithMany(x => x.PlanVersionStories)
+                .HasForeignKey(x => x.PlanVersionId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(x => x.Story)
+                .WithMany()
+                .HasForeignKey(x => x.StoryId)
                 .OnDelete(DeleteBehavior.Restrict);
         });
     }
