@@ -1,4 +1,4 @@
-﻿namespace ReadManager.Api.Entities;
+namespace ReadManager.Api.Entities;
 
 // PB32 — BÌNH LUẬN của độc giả trên truyện (hoặc trên 1 chương cụ thể).
 // Status: "Visible" = hiện | "Hidden" = bị ẩn (do admin xử lý báo cáo / người viết xóa)

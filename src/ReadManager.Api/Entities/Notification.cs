@@ -1,4 +1,4 @@
-﻿namespace ReadManager.Api.Entities;
+namespace ReadManager.Api.Entities;
 
 // PB31 — THÔNG BÁO gửi cho 1 người dùng (vd: "Truyện X vừa ra Chương 5").
 // Chương hẹn giờ: CreatedAt = giờ ra mắt → chỉ hiện khi CreatedAt <= bây giờ.

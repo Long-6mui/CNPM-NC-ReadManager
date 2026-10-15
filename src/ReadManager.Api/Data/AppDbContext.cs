@@ -16,19 +16,17 @@ public class AppDbContext : DbContext
 
     public DbSet<ReadingPlan> ReadingPlans => Set<ReadingPlan>();
 
-
     public DbSet<ReadingPlanVersion> ReadingPlanVersions
         => Set<ReadingPlanVersion>();
 
     public DbSet<PlanVersionStory> PlanVersionStories
         => Set<PlanVersionStory>();
+
     // ----- BE4: Tương tác (PB31–33) -----
     public DbSet<StoryFollow> StoryFollows => Set<StoryFollow>();
     public DbSet<Notification> Notifications => Set<Notification>();
     public DbSet<Comment> Comments => Set<Comment>();
     public DbSet<Report> Reports => Set<Report>();
-
-
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -256,6 +254,5 @@ public class AppDbContext : DbContext
             entity.HasIndex(x => new { x.Status, x.CreatedAt });   // admin lọc báo cáo chờ xử lý
             entity.HasOne(x => x.Reporter).WithMany().HasForeignKey(x => x.ReporterId).OnDelete(DeleteBehavior.Restrict);
         });
-
     }
 }

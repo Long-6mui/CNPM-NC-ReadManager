@@ -1,4 +1,4 @@
-﻿using System.Text;
+using System.Text;
 using Microsoft.EntityFrameworkCore;
 using ReadManager.Api.Data;
 using ReadManager.Api.DTOs.Community;

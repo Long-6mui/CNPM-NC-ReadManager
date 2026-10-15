@@ -1,4 +1,4 @@
-﻿namespace ReadManager.Api.DTOs.Community;
+namespace ReadManager.Api.DTOs.Community;
 
 // PB32 — 1 BÌNH LUẬN trả về cho Web/Mobile hiển thị.
 public class CommentDto

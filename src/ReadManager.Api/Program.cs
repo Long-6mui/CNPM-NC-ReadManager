@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Authentication;
+﻿using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
 using ReadManager.Api.Authentication;
@@ -21,9 +21,10 @@ builder.Services.AddScoped<IStoryService, StoryService>();
 builder.Services.AddScoped<IGenreService, GenreService>();
 builder.Services.AddScoped<IChapterService, ChapterService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
-builder.Services.AddScoped<ICommentService, CommentService>();   
-
-
+builder.Services.AddScoped<ICommentService, CommentService>();             // BE4 — PB32 bình luận
+builder.Services.AddScoped<IReportService, ReportService>();               // BE4 — PB33 báo cáo vi phạm
+builder.Services.AddScoped<IFollowService, FollowService>();               // BE4 — PB31 theo dõi truyện
+builder.Services.AddScoped<INotificationService, NotificationService>();   // BE4 — PB31 thông báo chương mới
 
 builder.Services.AddDataProtection()
     .SetApplicationName("ReadManager.Api");
@@ -35,12 +36,10 @@ builder.Services.AddAuthentication(ApiSessionHandler.SchemeName)
 
 builder.Services.AddAuthorization();
 
-
 builder.Services.AddRateLimiter(options =>
 {
     options.RejectionStatusCode = 429;
 
-    // Đăng nhập: tối đa 10 lần / phút / IP
     options.AddPolicy("login", context =>
         RateLimitPartition.GetFixedWindowLimiter(
             context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
@@ -51,7 +50,7 @@ builder.Services.AddRateLimiter(options =>
                 QueueLimit = 0
             }));
 
-    // BE4 — chống spam bình luận: mỗi tài khoản tối đa 5 bình luận / phút
+    // BE4 — chống spam bình luận / báo cáo: mỗi tài khoản tối đa 5 lần / phút
     options.AddPolicy("comment", context =>
         RateLimitPartition.GetFixedWindowLimiter(
             context.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value
@@ -63,6 +62,7 @@ builder.Services.AddRateLimiter(options =>
                 QueueLimit = 0
             }));
 });
+
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();

@@ -1,4 +1,4 @@
-﻿namespace ReadManager.Api.Entities;
+namespace ReadManager.Api.Entities;
 
 // PB33 — BÁO CÁO VI PHẠM do độc giả gửi.
 // TargetType + TargetId cho biết báo cáo cái gì: "Story" | "Chapter" | "Comment" + Id tương ứng.

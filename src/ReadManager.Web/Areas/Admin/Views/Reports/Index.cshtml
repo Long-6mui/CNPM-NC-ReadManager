@@ -1,0 +1,124 @@
+@model AdminReportsVm
+@{
+    ViewData["Title"] = "Báo cáo vi phạm";
+    ViewBag.ActiveNav = "reports";
+
+    // Bộ lọc trạng thái (giá trị rỗng = tất cả)
+    var filters = new (string Value, string Label)[]
+    {
+        ("Pending", "Chờ xử lý"), ("Resolved", "Đã xử lý"), ("Rejected", "Đã bác bỏ"), ("", "Tất cả")
+    };
+    string TypeLabel(string t) => t switch { "Story" => "Truyện", "Chapter" => "Chương", "Comment" => "Bình luận", _ => t };
+    string StatusBadge(string s) => s switch { "Pending" => "badge-gold", "Resolved" => "badge-green", _ => "badge-gray" };
+    string StatusLabel(string s) => s switch { "Pending" => "Chờ xử lý", "Resolved" => "Đã xử lý", "Rejected" => "Đã bác bỏ", _ => s };
+    string Local(DateTime utc) => ReadManager.Web.Services.StoriesApiClient.ToLocal(utc)?.ToString("HH:mm dd/MM/yyyy") ?? "";
+}
+<div class="container section">
+    <div class="section-head"><h2>Trang quản trị</h2></div>
+    <div class="admin-shell">
+        <partial name="_AdminNav" />
+        <div>
+            <div class="pillbar">
+                @foreach (var f in filters)
+                {
+                    <a class="pill @((Model.Status ?? "") == f.Value ? "active" : "")"
+                       asp-action="Index" asp-route-status="@f.Value">@f.Label</a>
+                }
+            </div>
+
+            <div class="table-wrap">
+                <table class="data">
+                    <thead>
+                        <tr><th>Thời gian</th><th>Loại</th><th>Nội dung bị báo cáo</th><th>Lý do</th><th>Người báo cáo</th><th>Trạng thái</th><th></th></tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var r in Model.Items)
+                        {
+                            <tr>
+                                <td style="white-space:nowrap;">@Local(r.CreatedAt)</td>
+                                <td>@TypeLabel(r.TargetType)</td>
+                                <td style="max-width:320px;">
+                                    @if (r.StoryId.HasValue && r.ChapterNumber.HasValue)
+                                    {
+                                        <a asp-area="" asp-controller="Stories" asp-action="Read"
+                                           asp-route-storyId="@r.StoryId" asp-route-no="@r.ChapterNumber" target="_blank">@r.TargetPreview</a>
+                                    }
+                                    else if (r.StoryId.HasValue)
+                                    {
+                                        <a asp-area="" asp-controller="Stories" asp-action="Details" asp-route-id="@r.StoryId" target="_blank">@r.TargetPreview</a>
+                                    }
+                                    else
+                                    {
+                                        <span style="color:var(--muted);">@r.TargetPreview</span>
+                                    }
+                                </td>
+                                <td>
+                                    @r.Reason
+                                    @if (!string.IsNullOrEmpty(r.Note))
+                                    {
+                                        <div class="hint">“@r.Note”</div>
+                                    }
+                                </td>
+                                <td>@r.ReporterName</td>
+                                <td>
+                                    <span class="badge @StatusBadge(r.Status)">@StatusLabel(r.Status)</span>
+                                    @if (r.HandledAt.HasValue)
+                                    {
+                                        <div class="hint">@Local(r.HandledAt.Value)</div>
+                                    }
+                                </td>
+                                <td class="row-actions" style="white-space:nowrap;">
+                                    @if (r.Status == "Pending")
+                                    {
+                                        @if (r.TargetType == "Comment" && r.TargetExists)
+                                        {
+                                            <form asp-action="Handle" method="post" style="display:inline;" onsubmit="return confirm('Xác nhận vi phạm và ẨN bình luận này?');">
+                                                <input type="hidden" name="id" value="@r.ReportId" />
+                                                <input type="hidden" name="decision" value="Resolved" />
+                                                <input type="hidden" name="hideComment" value="true" />
+                                                <input type="hidden" name="status" value="@Model.Status" />
+                                                <input type="hidden" name="page" value="@Model.Page" />
+                                                <button type="submit" class="btn btn-danger btn-sm">Ẩn bình luận</button>
+                                            </form>
+                                        }
+                                        else
+                                        {
+                                            <form asp-action="Handle" method="post" style="display:inline;">
+                                                <input type="hidden" name="id" value="@r.ReportId" />
+                                                <input type="hidden" name="decision" value="Resolved" />
+                                                <input type="hidden" name="status" value="@Model.Status" />
+                                                <input type="hidden" name="page" value="@Model.Page" />
+                                                <button type="submit" class="btn btn-danger btn-sm" title="Đã sửa/xử lý nội dung vi phạm">Đã xử lý</button>
+                                            </form>
+                                        }
+                                        <form asp-action="Handle" method="post" style="display:inline;">
+                                            <input type="hidden" name="id" value="@r.ReportId" />
+                                            <input type="hidden" name="decision" value="Rejected" />
+                                            <input type="hidden" name="status" value="@Model.Status" />
+                                            <input type="hidden" name="page" value="@Model.Page" />
+                                            <button type="submit" class="btn btn-outline btn-sm">Bác bỏ</button>
+                                        </form>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                        @if (!Model.Items.Any())
+                        {
+                            <tr><td colspan="7" style="text-align:center; color:var(--muted); padding:20px;">Không có báo cáo nào.</td></tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+            @if (Model.PageCount > 1)
+            {
+                <div class="pillbar" style="justify-content:center; margin-top:16px;">
+                    @for (var p = 1; p <= Model.PageCount; p++)
+                    {
+                        <a class="pill @(p == Model.Page ? "active" : "")" asp-action="Index" asp-route-status="@(Model.Status ?? "")" asp-route-page="@p">@p</a>
+                    }
+                </div>
+            }
+        </div>
+    </div>
+</div>
