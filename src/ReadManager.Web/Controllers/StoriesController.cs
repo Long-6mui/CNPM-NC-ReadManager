@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ReadManager.Web.Services;
 using ReadManager.Web.ViewModels;
@@ -82,7 +83,7 @@ public class StoriesController(StoriesApiClient api) : Controller
                 return RedirectToAction(nameof(Details), new { id = storyId });
             }
 
-            return View(new ReadVm
+            var vm = new ReadVm
             {
                 Story = new Story { Id = c.StoryId, Title = c.StoryTitle },
                 Chapter = new Chapter
@@ -99,12 +100,64 @@ public class StoriesController(StoriesApiClient api) : Controller
                 NotYetPublicPreview = c.PublicationStatus != "Published",
                 PrevNo = c.PreviousChapterNumber,                     // nút "Chương trước"
                 NextNo = c.NextChapterNumber                          // nút "Chương sau"
-            });
+            };
+
+            // PB32 — chương đã ra mắt thì tải bình luận
+            if (!c.IsUpcoming)
+            {
+                var comments = await api.CommentsAsync(storyId, c.ChapterId, token);
+                vm.Comments = comments.Items;
+                vm.CommentTotal = comments.TotalCount;
+            }
+
+            return View(vm);
         }
         catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException)
         {
             TempData["Toast"] = "Không kết nối được API. Hãy chạy ReadManager.Api rồi thử lại.";
             return RedirectToAction(nameof(Details), new { id = storyId });
         }
+    }
+
+    // ===== PB32 — ĐĂNG / XÓA BÌNH LUẬN (gọi API rồi quay lại trang đọc, nhảy tới mục bình luận) =====
+    [Authorize]
+    [HttpPost, ValidateAntiForgeryToken]
+    public async Task<IActionResult> PostComment(int storyId, int no, int chapterId, string? content)
+    {
+        if (string.IsNullOrWhiteSpace(content))
+        {
+            TempData["Toast"] = "Vui lòng nhập nội dung bình luận.";
+        }
+        else
+        {
+            try
+            {
+                var token = await HttpContext.GetTokenAsync("access_token");
+                var result = await api.PostCommentAsync(storyId, chapterId, content, token);
+                TempData["Toast"] = result.Message;
+            }
+            catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException)
+            {
+                TempData["Toast"] = "Không kết nối được API. Hãy chạy ReadManager.Api rồi thử lại.";
+            }
+        }
+        return Redirect(Url.Action(nameof(Read), new { storyId, no }) + "#comments");
+    }
+
+    [Authorize]
+    [HttpPost, ValidateAntiForgeryToken]
+    public async Task<IActionResult> DeleteComment(int commentId, int storyId, int no)
+    {
+        try
+        {
+            var token = await HttpContext.GetTokenAsync("access_token");
+            var result = await api.DeleteCommentAsync(commentId, token);
+            TempData["Toast"] = result.Message;
+        }
+        catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException)
+        {
+            TempData["Toast"] = "Không kết nối được API. Hãy chạy ReadManager.Api rồi thử lại.";
+        }
+        return Redirect(Url.Action(nameof(Read), new { storyId, no }) + "#comments");
     }
 }

@@ -49,4 +49,7 @@ public class ReadVm
     public DateTime? UpcomingAt { get; set; }   // có giá trị = chưa tới giờ ra mắt (giờ Việt Nam)
     public int? PrevNo { get; set; }
     public int? NextNo { get; set; }
+
+    public List<ReadManager.Web.Services.CommentApi> Comments { get; set; } = new();
+    public int CommentTotal { get; set; }
 }

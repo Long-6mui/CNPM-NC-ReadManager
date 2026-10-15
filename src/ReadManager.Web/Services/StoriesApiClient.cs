@@ -23,10 +23,7 @@ public record PagedApi<T>(List<T> Items, int TotalCount, int Page, int PageSize)
 public record ApiError(string? Message);
 public record ApiResult(bool Ok, string Message, int? Id = null);
 
-// ----- Chương (Backend 4) — các record này khớp với DTO bên API -----
-// ChapterListItemApi  ↔ ChapterListItemDto   (1 dòng trong danh sách chương)
-// ChapterReadApi      ↔ ChapterReadDto       (màn hình đọc chương)
-// UploadChaptersResultApi ↔ UploadChaptersResultDto (kết quả tải nhiều chương)
+
 public record ChapterListItemApi(
     int ChapterId, int StoryId, int ChapterNumber, string Title, string AccessLevel,
     string PublicationStatus, bool IsLocked, DateTime? PublishedAt, DateTime CreatedAt, DateTime UpdatedAt,
@@ -38,7 +35,10 @@ public record ChapterReadApi(
     int? PreviousChapterId, int? NextChapterId, int? PreviousChapterNumber, int? NextChapterNumber,
     DateTime? PublishedAt, DateTime UpdatedAt,
     DateTime? ScheduledAt = null, bool IsUpcoming = false);   // hẹn giờ ra mắt (giờ UTC)
-
+public record CommentApi(
+    int CommentId, int StoryId, int? ChapterId, int? ChapterNumber,
+    int UserId, string DisplayName, string? AvatarUrl,
+    string Content, DateTime CreatedAt, bool CanDelete);
 public record UploadChaptersResultApi(int Created, int Updated, List<int> SkippedNumbers, string Message);
 
 public class StoriesApiClient(HttpClient http)
@@ -51,7 +51,6 @@ public class StoriesApiClient(HttpClient http)
         return (await res.Content.ReadFromJsonAsync<PagedApi<StoryListItemApi>>())!;
     }
 
-    // ---------- Phần công khai (ai cũng xem được) ----------
     public async Task<PagedApi<StoryListItemApi>> ListAsync(
         string? q, int? genreId, string? status, string? access,
         string sort = "updated", int page = 1, int pageSize = 12)
@@ -68,7 +67,6 @@ public class StoriesApiClient(HttpClient http)
     public async Task<List<GenreDto>> GenresAsync()
         => await http.GetFromJsonAsync<List<GenreDto>>("api/genres") ?? [];
 
-    // Trả về null nếu truyện không tồn tại (hoặc chưa công khai)
     public async Task<StoryDetailApi?> GetStoryAsync(int id)
     {
         using var res = await http.GetAsync($"api/stories/{id}");
@@ -77,7 +75,6 @@ public class StoriesApiClient(HttpClient http)
         return await res.Content.ReadFromJsonAsync<StoryDetailApi>();
     }
 
-    // ---------- Phần quản trị (gửi kèm token của admin) ----------
     public async Task<StoryDetailApi?> GetStoryForAdminAsync(int id, string? token)
     {
         using var req = Build(HttpMethod.Get, $"api/stories/{id}/admin", token);
@@ -114,8 +111,7 @@ public class StoriesApiClient(HttpClient http)
         return await ToResultAsync(res, "Đã xóa thể loại.");
     }
 
-    // ---------- Chương (Backend 4) ----------
-    // Danh sách chương đã công khai cho độc giả. Truyện không tồn tại / chưa công khai → rỗng.
+   
     public async Task<List<ChapterListItemApi>> ChaptersAsync(int storyId)
     {
         using var res = await http.GetAsync($"api/stories/{storyId}/chapters");
@@ -124,7 +120,6 @@ public class StoriesApiClient(HttpClient http)
         return await res.Content.ReadFromJsonAsync<List<ChapterListItemApi>>() ?? [];
     }
 
-    // Mọi chương, kể cả nháp — cho trang quản trị.
     public async Task<List<ChapterListItemApi>> ChaptersForAdminAsync(int storyId, string? token)
     {
         using var req = Build(HttpMethod.Get, $"api/stories/{storyId}/chapters/admin", token);
@@ -134,7 +129,6 @@ public class StoriesApiClient(HttpClient http)
         return await res.Content.ReadFromJsonAsync<List<ChapterListItemApi>>() ?? [];
     }
 
-    // Đọc 1 chương theo số. Gửi kèm token admin thì xem được cả chương nháp/trả phí.
     public async Task<ChapterReadApi?> GetChapterAsync(int storyId, int chapterNumber, string? token)
     {
         using var req = Build(HttpMethod.Get, $"api/stories/{storyId}/chapters/{chapterNumber}", token);
@@ -174,8 +168,6 @@ public class StoriesApiClient(HttpClient http)
         return string.IsNullOrWhiteSpace(bulk?.Message) ? result : result with { Message = bulk.Message };
     }
 
-    // Tải chương bằng file .txt/.zip. Trả nguyên JSON của API để trang web tự vẽ bảng xem trước.
-    // StatusCode khác 200 → trang web hiện lỗi theo mã (hết phiên, không có quyền...).
     public async Task<(HttpStatusCode Status, string Body)> UploadChapterFilesAsync(
         int storyId, MultipartFormDataContent form, string? token)
     {
@@ -185,7 +177,29 @@ public class StoriesApiClient(HttpClient http)
         return (res.StatusCode, await res.Content.ReadAsStringAsync());
     }
 
-    // ---------- Hàm phụ ----------
+    public async Task<PagedApi<CommentApi>> CommentsAsync(int storyId, int chapterId, string? token, int page = 1)
+    {
+        using var req = Build(HttpMethod.Get, $"api/stories/{storyId}/comments?chapterId={chapterId}&page={page}&pageSize=50", token);
+        using var res = await http.SendAsync(req);
+        if (!res.IsSuccessStatusCode) return new PagedApi<CommentApi>([], 0, page, 50);
+        return await res.Content.ReadFromJsonAsync<PagedApi<CommentApi>>() ?? new PagedApi<CommentApi>([], 0, page, 50);
+    }
+
+    public async Task<ApiResult> PostCommentAsync(int storyId, int chapterId, string content, string? token)
+    {
+        using var req = Build(HttpMethod.Post, $"api/stories/{storyId}/comments", token, new { chapterId, content });
+        using var res = await http.SendAsync(req);
+        if (res.StatusCode == HttpStatusCode.TooManyRequests)
+            return new ApiResult(false, "Bạn bình luận nhanh quá. Vui lòng chờ 1 phút.");
+        return await ToResultAsync(res, "Đã đăng bình luận.");
+    }
+
+    public async Task<ApiResult> DeleteCommentAsync(int commentId, string? token)
+    {
+        using var req = Build(HttpMethod.Delete, $"api/comments/{commentId}", token);
+        using var res = await http.SendAsync(req);
+        return await ToResultAsync(res, "Đã xóa bình luận.");
+    }
     private static HttpRequestMessage Build(HttpMethod method, string url, string? token, object? body = null)
     {
         var req = new HttpRequestMessage(method, url);
@@ -210,7 +224,6 @@ public class StoriesApiClient(HttpClient http)
         });
     }
 
-    // ---------- Đổi dữ liệu API sang dữ liệu giao diện ----------
     public static StoryCardVm ToCard(StoryListItemApi s) => new()
     {
         Id = s.StoryId,
@@ -246,11 +259,9 @@ public class StoriesApiClient(HttpClient http)
         IsFree = c.AccessLevel == "Free",
         Status = c.PublicationStatus == "Published" ? ChapterStatus.Reviewed : ChapterStatus.Draft,
         CreatedAt = c.PublishedAt ?? c.CreatedAt,
-        // Giờ hẹn ra mắt (UTC) — chỉ có khi chưa tới giờ, để bảng Admin hiện huy hiệu "Hẹn giờ"
         PublishAt = c.IsUpcoming && c.ScheduledAt.HasValue ? DateTime.SpecifyKind(c.ScheduledAt.Value, DateTimeKind.Utc) : null
     };
 
-    // Đổi giờ UTC từ API sang giờ máy (giờ Việt Nam) để hiển thị
     public static DateTime? ToLocal(DateTime? utc)
         => utc.HasValue ? DateTime.SpecifyKind(utc.Value, DateTimeKind.Utc).ToLocalTime() : null;
 
@@ -267,4 +278,5 @@ public class StoriesApiClient(HttpClient http)
         FreeChapterCount = d.FreeChapterCount,
         UpdatedAt = d.UpdatedAt
     };
+
 }
