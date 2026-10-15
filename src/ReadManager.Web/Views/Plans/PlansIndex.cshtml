@@ -1,0 +1,24 @@
+@model List<ReadManager.Web.Services.PlanItem>
+@{ ViewData["Title"] = "Gói đọc"; }
+<link rel="stylesheet" href="~/css/plans.css" asp-append-version="true" />
+<div class="container pl">
+    <h1>Gói đọc</h1>
+    <p class="pl-sub">Chọn gói để mở khóa truyện trả phí. Mua lại khi còn hạn sẽ được cộng dồn thời gian.</p>
+    <span class="pl-demo">Dữ liệu mẫu: chưa nối API gói đọc</span>
+    <div class="pl-grid">
+        @foreach (var p in Model)
+        {
+            <div class="pl-card">
+                <h3>@p.Name</h3>
+                <div class="pl-price">@p.Price.ToString("N0")đ</div>
+                <ul><li>Thời hạn @p.DurationMonths tháng</li><li>@(p.ScopeType == "All" ? "Đọc tất cả truyện trả phí" : "Áp dụng cho truyện được chọn")</li></ul>
+                @if (User.Identity?.IsAuthenticated == true)
+                {
+                    <form asp-action="Buy" method="post"><input type="hidden" name="versionId" value="@p.PlanVersionId" /><button class="btn btn-brass" type="submit">Mua / gia hạn</button></form>
+                }
+                else { <a class="btn btn-brass" asp-controller="Account" asp-action="Login" asp-route-returnUrl="/Plans">Đăng nhập để mua</a> }
+            </div>
+        }
+    </div>
+    @if (Model.Count == 0) { <p class="pl-sub">Hiện chưa có gói nào đang bán.</p> }
+</div>

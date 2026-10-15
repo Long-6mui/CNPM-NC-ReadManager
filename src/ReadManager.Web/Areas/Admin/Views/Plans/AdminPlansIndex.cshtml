@@ -1,0 +1,30 @@
+@model List<ReadManager.Web.Services.PlanItem>
+@{
+    ViewData["Title"] = "Gói đọc";
+    ViewBag.ActiveNav = "plans";
+    var rows = Model.Append(new ReadManager.Web.Services.PlanItem { PlanId = 0, VersionNumber = 0 }).ToList();
+}
+<link rel="stylesheet" href="~/css/plans.css" asp-append-version="true" />
+<div class="container section">
+    <div class="section-head"><h2>Trang quản trị</h2></div>
+    <div class="admin-shell">
+        <partial name="_AdminNav" />
+        <div>
+            <span class="pl-demo">Dữ liệu mẫu: chưa nối API gói đọc</span>
+            <p class="pl-sub">Sửa giá hoặc thời hạn sẽ phát hành một phiên bản mới, đơn đã mua vẫn giữ giá cũ. Dòng cuối để tạo gói mới.</p>
+            <div class="ad-row ad-head"><span>Tên gói</span><span>Giá (đ)</span><span>Số tháng</span><span>Phạm vi</span><span>Đang bán</span><span></span></div>
+            @foreach (var p in rows)
+            {
+                <form asp-action="Save" method="post" class="ad-row">
+                    <input type="hidden" name="planId" value="@p.PlanId" />
+                    <input name="name" value="@p.Name" placeholder="Tên gói mới" required />
+                    <input name="price" type="number" min="1" step="1000" value="@(p.PlanId == 0 ? "" : p.Price.ToString("0"))" required />
+                    <input name="months" type="number" min="1" value="@(p.PlanId == 0 ? "" : p.DurationMonths.ToString())" required />
+                    <select name="scope"><option value="All" selected="@(p.ScopeType == "All")">Tất cả truyện</option><option value="Selected" selected="@(p.ScopeType == "Selected")">Truyện được chọn</option></select>
+                    <label><input type="checkbox" name="available" value="true" checked="@(p.PlanId == 0 || p.IsAvailable)" /> Bán</label>
+                    <button class="btn btn-brass btn-sm" type="submit">@(p.PlanId == 0 ? "+ Tạo gói" : $"Lưu (v{p.VersionNumber})")</button>
+                </form>
+            }
+        </div>
+    </div>
+</div>
