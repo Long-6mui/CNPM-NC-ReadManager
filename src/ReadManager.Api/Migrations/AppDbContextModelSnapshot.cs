@@ -83,6 +83,49 @@ namespace ReadManager.Api.Migrations
                         });
                 });
 
+            modelBuilder.Entity("ReadManager.Api.Entities.Comment", b =>
+                {
+                    b.Property<int>("CommentId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("CommentId"));
+
+                    b.Property<int?>("ChapterId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Content")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("varchar(1000)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)")
+                        .HasDefaultValue("Visible");
+
+                    b.Property<int>("StoryId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.HasKey("CommentId");
+
+                    b.HasIndex("ChapterId");
+
+                    b.HasIndex("UserId");
+
+                    b.HasIndex("StoryId", "ChapterId", "CreatedAt");
+
+                    b.ToTable("Comments", (string)null);
+                });
+
             modelBuilder.Entity("ReadManager.Api.Entities.Genre", b =>
                 {
                     b.Property<int>("GenreId")
@@ -110,6 +153,47 @@ namespace ReadManager.Api.Migrations
                         .IsUnique();
 
                     b.ToTable("Genres", (string)null);
+                });
+
+            modelBuilder.Entity("ReadManager.Api.Entities.Notification", b =>
+                {
+                    b.Property<int>("NotificationId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("NotificationId"));
+
+                    b.Property<int?>("ChapterId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<bool>("IsRead")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("tinyint(1)")
+                        .HasDefaultValue(false);
+
+                    b.Property<string>("Message")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("varchar(500)");
+
+                    b.Property<int>("StoryId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.HasKey("NotificationId");
+
+                    b.HasIndex("ChapterId");
+
+                    b.HasIndex("StoryId");
+
+                    b.HasIndex("UserId", "CreatedAt");
+
+                    b.ToTable("Notifications", (string)null);
                 });
 
             modelBuilder.Entity("ReadManager.Api.Entities.PlanVersionStory", b =>
@@ -200,6 +284,59 @@ namespace ReadManager.Api.Migrations
                         });
                 });
 
+            modelBuilder.Entity("ReadManager.Api.Entities.Report", b =>
+                {
+                    b.Property<int>("ReportId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("ReportId"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<DateTime?>("HandledAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("Note")
+                        .HasMaxLength(500)
+                        .HasColumnType("varchar(500)");
+
+                    b.Property<string>("Reason")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)");
+
+                    b.Property<int>("ReporterId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)")
+                        .HasDefaultValue("Pending");
+
+                    b.Property<int>("TargetId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("TargetType")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)");
+
+                    b.HasKey("ReportId");
+
+                    b.HasIndex("ReporterId");
+
+                    b.HasIndex("Status", "CreatedAt");
+
+                    b.ToTable("Reports", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_Reports_TargetType", "`TargetType` IN ('Story', 'Chapter', 'Comment')");
+                        });
+                });
+
             modelBuilder.Entity("ReadManager.Api.Entities.Story", b =>
                 {
                     b.Property<int>("StoryId")
@@ -279,6 +416,24 @@ namespace ReadManager.Api.Migrations
                         {
                             t.HasCheckConstraint("CK_Stories_CurrentPrice", "`CurrentPrice` IS NULL OR `CurrentPrice` > 0");
                         });
+                });
+
+            modelBuilder.Entity("ReadManager.Api.Entities.StoryFollow", b =>
+                {
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("StoryId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.HasKey("UserId", "StoryId");
+
+                    b.HasIndex("StoryId");
+
+                    b.ToTable("StoryFollows", (string)null);
                 });
 
             modelBuilder.Entity("ReadManager.Api.Entities.StoryGenre", b =>
@@ -375,6 +530,58 @@ namespace ReadManager.Api.Migrations
                     b.Navigation("Story");
                 });
 
+            modelBuilder.Entity("ReadManager.Api.Entities.Comment", b =>
+                {
+                    b.HasOne("ReadManager.Api.Entities.Chapter", "Chapter")
+                        .WithMany()
+                        .HasForeignKey("ChapterId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("ReadManager.Api.Entities.Story", "Story")
+                        .WithMany()
+                        .HasForeignKey("StoryId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("ReadManager.Api.Entities.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Chapter");
+
+                    b.Navigation("Story");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("ReadManager.Api.Entities.Notification", b =>
+                {
+                    b.HasOne("ReadManager.Api.Entities.Chapter", "Chapter")
+                        .WithMany()
+                        .HasForeignKey("ChapterId")
+                        .OnDelete(DeleteBehavior.Cascade);
+
+                    b.HasOne("ReadManager.Api.Entities.Story", "Story")
+                        .WithMany()
+                        .HasForeignKey("StoryId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("ReadManager.Api.Entities.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Chapter");
+
+                    b.Navigation("Story");
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("ReadManager.Api.Entities.PlanVersionStory", b =>
                 {
                     b.HasOne("ReadManager.Api.Entities.ReadingPlanVersion", "PlanVersion")
@@ -405,6 +612,17 @@ namespace ReadManager.Api.Migrations
                     b.Navigation("Plan");
                 });
 
+            modelBuilder.Entity("ReadManager.Api.Entities.Report", b =>
+                {
+                    b.HasOne("ReadManager.Api.Entities.User", "Reporter")
+                        .WithMany()
+                        .HasForeignKey("ReporterId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Reporter");
+                });
+
             modelBuilder.Entity("ReadManager.Api.Entities.Story", b =>
                 {
                     b.HasOne("ReadManager.Api.Entities.User", "Creator")
@@ -414,6 +632,25 @@ namespace ReadManager.Api.Migrations
                         .IsRequired();
 
                     b.Navigation("Creator");
+                });
+
+            modelBuilder.Entity("ReadManager.Api.Entities.StoryFollow", b =>
+                {
+                    b.HasOne("ReadManager.Api.Entities.Story", "Story")
+                        .WithMany()
+                        .HasForeignKey("StoryId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("ReadManager.Api.Entities.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Story");
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("ReadManager.Api.Entities.StoryGenre", b =>

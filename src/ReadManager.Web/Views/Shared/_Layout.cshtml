@@ -1,7 +1,14 @@
-@inject ReadManager.Web.Services.StoriesApiClient Api
+﻿@inject ReadManager.Web.Services.StoriesApiClient Api
 @{
     List<ReadManager.Web.Services.GenreDto> navGenres = [];
     try { navGenres = await Api.GenresAsync(); } catch { }
+
+    // PB31 — số thông báo chưa đọc trên chuông 🔔 (chỉ khi đã đăng nhập)
+    var unreadNoti = 0;
+    if (User.Identity?.IsAuthenticated == true)
+    {
+        unreadNoti = await Api.UnreadCountAsync(await Microsoft.AspNetCore.Authentication.AuthenticationHttpContextExtensions.GetTokenAsync(Context, "access_token"));
+    }
 }
 <!DOCTYPE html>
 <html lang="vi">
@@ -16,6 +23,12 @@
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/theme.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/account.css" asp-append-version="true" />
+    <style>
+        /* PB31 — chuông thông báo */
+        .noti-bell { position: relative; }
+        .noti-badge { position: absolute; top: -2px; right: -4px; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9px;
+                      background: var(--crimson); color: #fff; font-size: 11px; font-weight: 700; line-height: 18px; text-align: center; }
+    </style>
 </head>
 <body>
     <a class="skip-link" href="#main-content">Đến nội dung chính</a>
@@ -25,7 +38,6 @@
             <nav class="nav-main" aria-label="Điều hướng chính">
                 <a class="nav-link" asp-area="" asp-controller="Home" asp-action="Index">Trang chủ</a>
                 <a class="nav-link" asp-area="" asp-controller="Stories" asp-action="Browse">Khám phá</a>
-                <a class="nav-link" asp-area="" asp-controller="Plans" asp-action="Index">Gói đọc</a>
                 <details class="dd">
                     <summary>Thể loại ▾</summary>
                     <div class="dd-menu">
@@ -52,12 +64,19 @@
                 <button type="button" class="btn btn-ghost" id="themeToggle" aria-label="Đổi giao diện sáng/tối">◐</button>
                 @if (User.Identity?.IsAuthenticated == true)
                 {
+                    @* PB31 — chuông thông báo chương mới *@
+                    <a class="btn btn-ghost noti-bell" asp-area="" asp-controller="Notifications" asp-action="Index" aria-label="Thông báo">
+                        🔔@if (unreadNoti > 0)
+                        {
+                            <span class="noti-badge">@(unreadNoti > 99 ? "99+" : unreadNoti.ToString())</span>
+                        }
+                    </a>
                     <details class="dd user-dd">
                         <summary class="avatar" aria-label="Tài khoản">@(string.IsNullOrWhiteSpace(User.Identity?.Name) ? "?" : User.Identity!.Name!.Trim()[0].ToString().ToUpper())</summary>
                         <div class="user-menu">
                             <div class="user-menu-name">@User.Identity.Name</div>
                             <a asp-area="" asp-controller="Account" asp-action="Profile">Tài khoản của tôi</a>
-                            <a asp-area="" asp-controller="Plans" asp-action="Mine">Gói của tôi</a>
+                            <a asp-area="" asp-controller="Notifications" asp-action="Index">Thông báo @(unreadNoti > 0 ? $"({unreadNoti})" : "")</a>
                             @if (User.IsInRole("Admin"))
                             {
                                 <a asp-area="Admin" asp-controller="Stories" asp-action="Index">Trang quản trị</a>

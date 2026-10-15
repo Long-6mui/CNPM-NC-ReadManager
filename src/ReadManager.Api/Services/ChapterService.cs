@@ -41,9 +41,13 @@ public class ChapterService : IChapterService
     // _db = cổng kết nối database (EF Core), được ASP.NET tự truyền vào.
     private readonly AppDbContext _db;
 
-    public ChapterService(AppDbContext db)
+    // PB31 — báo cho người theo dõi khi có chương mới
+    private readonly INotificationService _notifications;
+
+    public ChapterService(AppDbContext db, INotificationService notifications)
     {
         _db = db;
+        _notifications = notifications;
     }
 
     //  PHẦN 1: ĐỌC DỮ LIỆU
@@ -223,6 +227,9 @@ public class ChapterService : IChapterService
 
         // 5. Lưu vào database
         await SaveOrThrowDuplicateAsync(dto.ChapterNumber);
+
+        // 6. PB31 — chương công khai (hoặc hẹn giờ) → tạo thông báo cho người theo dõi truyện
+        await _notifications.SyncChaptersAsync(new[] { chapter.ChapterId });
         return ToListItem(chapter);
     }
 
@@ -287,6 +294,9 @@ public class ChapterService : IChapterService
 
         await tx.CommitAsync();   // xác nhận lưu
 
+        // PB31 — vừa công khai / đổi giờ hẹn → cập nhật thông báo cho người theo dõi
+        await _notifications.SyncChaptersAsync(new[] { chapterId });
+
         // 5. Đọc lại chương sau khi sửa để trả về
         var updated = await _db.Chapters.AsNoTracking().FirstAsync(c => c.ChapterId == chapterId);
         return ToListItem(updated);
@@ -346,6 +356,7 @@ public class ChapterService : IChapterService
         var now = DateTime.UtcNow;
         var result = new UploadChaptersResultDto();
         var touchStory = false;   // có cần cập nhật ngày của truyện không
+        var savedChapters = new List<Chapter>();   // PB31 — các chương được thêm/ghi đè, để gửi thông báo
 
         // 4. Duyệt từng chương gửi lên
         foreach (var item in dto.Chapters.OrderBy(c => c.ChapterNumber))
@@ -374,12 +385,13 @@ public class ChapterService : IChapterService
                     chapter.PublishedAt = itemSchedule ?? now;
                 chapter.PublicationStatus = item.PublicationStatus;
                 chapter.UpdatedAt = now;
+                savedChapters.Add(chapter);
                 result.Updated++;
             }
             else
             {
                 // ----- Chương MỚI → thêm vào -----
-                _db.Chapters.Add(new Chapter
+                var newChapter = new Chapter
                 {
                     StoryId = storyId,
                     ChapterNumber = item.ChapterNumber,
@@ -392,7 +404,9 @@ public class ChapterService : IChapterService
                         ? ResolveSchedule(item.PublicationStatus, item.ScheduledAt, now) ?? now : null,
                     CreatedAt = now,
                     UpdatedAt = now
-                });
+                };
+                _db.Chapters.Add(newChapter);
+                savedChapters.Add(newChapter);
                 result.Created++;
             }
 
@@ -405,6 +419,9 @@ public class ChapterService : IChapterService
 
         // 5. Lưu tất cả 1 lần
         await SaveOrThrowDuplicateAsync(null);
+
+        // PB31 — gửi thông báo chương mới (sau khi lưu mới có ChapterId)
+        await _notifications.SyncChaptersAsync(savedChapters.Select(c => c.ChapterId));
 
         // 6. Tạo câu thông báo kết quả
         result.Message = $"Đã thêm {result.Created} chương, cập nhật {result.Updated} chương"

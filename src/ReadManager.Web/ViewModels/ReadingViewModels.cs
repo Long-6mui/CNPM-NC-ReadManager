@@ -1,4 +1,4 @@
-namespace ReadManager.Web.ViewModels;
+﻿namespace ReadManager.Web.ViewModels;
 
 public class BrowseVm
 {
@@ -34,6 +34,7 @@ public class StoryDetailVm
     public int ChapterPageCount { get; set; } = 1;
 
     public bool IsFollowing { get; set; }
+    public int FollowerCount { get; set; }      // PB31 — số người theo dõi
     public bool Owned { get; set; }
     public bool HasPendingOrder { get; set; }
     public int? ContinueChapterNo { get; set; }
@@ -49,4 +50,31 @@ public class ReadVm
     public DateTime? UpcomingAt { get; set; }   // có giá trị = chưa tới giờ ra mắt (giờ Việt Nam)
     public int? PrevNo { get; set; }
     public int? NextNo { get; set; }
+
+    // PB32 — bình luận của chương này
+    public List<ReadManager.Web.Services.CommentApi> Comments { get; set; } = new();
+    public int CommentTotal { get; set; }
+
+    // PB33 — các lý do báo cáo vi phạm (lấy từ API)
+    public List<string> ReportReasons { get; set; } = new();
+}
+
+// PB31 — trang "Thông báo của tôi"
+public class NotificationsVm
+{
+    public List<ReadManager.Web.Services.NotificationApi> Items { get; set; } = new();
+    public int TotalCount { get; set; }
+    public int UnreadCount { get; set; }
+    public int Page { get; set; } = 1;
+    public int PageCount { get; set; } = 1;
+}
+
+// PB33 — trang Admin "Báo cáo vi phạm"
+public class AdminReportsVm
+{
+    public List<ReadManager.Web.Services.ReportApi> Items { get; set; } = new();
+    public string? Status { get; set; }          // bộ lọc đang chọn (null = tất cả)
+    public int TotalCount { get; set; }
+    public int Page { get; set; } = 1;
+    public int PageCount { get; set; } = 1;
 }

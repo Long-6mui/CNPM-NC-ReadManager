@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ReadManager.Web.Services;
 using ReadManager.Web.ViewModels;
@@ -35,6 +36,10 @@ public class StoriesController(StoriesApiClient api) : Controller
             if (detail is null) return NotFound();
             var chapters = await api.ChaptersAsync(id);
 
+            // PB31 — trạng thái theo dõi (gửi token để biết mình đã theo dõi chưa)
+            var token = await HttpContext.GetTokenAsync("access_token");
+            var follow = await api.FollowStatusAsync(id, token);
+
             // Phân trang: giữ số trang trong khoảng hợp lệ
             var pageCount = Math.Max(1, (int)Math.Ceiling(chapters.Count / (double)ChaptersPerPage));
             page = Math.Clamp(page, 1, pageCount);
@@ -58,7 +63,9 @@ public class StoriesController(StoriesApiClient api) : Controller
                 ChapterPage = page,
                 ChapterPageCount = pageCount,
                 // nút "Đọc từ đầu" → chương đầu tiên đã ra mắt (bỏ qua chương còn hẹn giờ)
-                FirstVisibleChapterNo = chapters.FirstOrDefault(c => !c.IsUpcoming)?.ChapterNumber
+                FirstVisibleChapterNo = chapters.FirstOrDefault(c => !c.IsUpcoming)?.ChapterNumber,
+                IsFollowing = follow?.IsFollowing ?? false,
+                FollowerCount = follow?.FollowerCount ?? 0
             });
         }
         catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException)
@@ -82,7 +89,7 @@ public class StoriesController(StoriesApiClient api) : Controller
                 return RedirectToAction(nameof(Details), new { id = storyId });
             }
 
-            return View(new ReadVm
+            var vm = new ReadVm
             {
                 Story = new Story { Id = c.StoryId, Title = c.StoryTitle },
                 Chapter = new Chapter
@@ -99,12 +106,110 @@ public class StoriesController(StoriesApiClient api) : Controller
                 NotYetPublicPreview = c.PublicationStatus != "Published",
                 PrevNo = c.PreviousChapterNumber,                     // nút "Chương trước"
                 NextNo = c.NextChapterNumber                          // nút "Chương sau"
-            });
+            };
+
+            // PB32 + PB33 — chương đã ra mắt thì tải bình luận + danh sách lý do báo cáo
+            if (!c.IsUpcoming)
+            {
+                var comments = await api.CommentsAsync(storyId, c.ChapterId, token);
+                vm.Comments = comments.Items;
+                vm.CommentTotal = comments.TotalCount;
+                vm.ReportReasons = await api.ReportReasonsAsync();
+            }
+
+            return View(vm);
         }
         catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException)
         {
             TempData["Toast"] = "Không kết nối được API. Hãy chạy ReadManager.Api rồi thử lại.";
             return RedirectToAction(nameof(Details), new { id = storyId });
         }
+    }
+
+    // =====================================================================
+    // BACKEND 4 — TƯƠNG TÁC: các nút bấm trên trang (gọi API rồi quay lại trang cũ)
+    // =====================================================================
+    private const string ApiDown = "Không kết nối được API. Hãy chạy ReadManager.Api rồi thử lại.";
+
+    // Quay về trang đọc chương, nhảy xuống mục bình luận
+    private IActionResult BackToRead(int storyId, int no)
+        => Redirect(Url.Action(nameof(Read), new { storyId, no }) + "#comments");
+
+    // ----- PB32: đăng bình luận -----
+    [Authorize]
+    [HttpPost, ValidateAntiForgeryToken]
+    public async Task<IActionResult> PostComment(int storyId, int no, int chapterId, string? content)
+    {
+        if (string.IsNullOrWhiteSpace(content))
+        {
+            TempData["Toast"] = "Vui lòng nhập nội dung bình luận.";
+            return BackToRead(storyId, no);
+        }
+        try
+        {
+            var token = await HttpContext.GetTokenAsync("access_token");
+            TempData["Toast"] = (await api.PostCommentAsync(storyId, chapterId, content, token)).Message;
+        }
+        catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException)
+        {
+            TempData["Toast"] = ApiDown;
+        }
+        return BackToRead(storyId, no);
+    }
+
+    // ----- PB32: xóa bình luận (người viết hoặc Admin) -----
+    [Authorize]
+    [HttpPost, ValidateAntiForgeryToken]
+    public async Task<IActionResult> DeleteComment(int commentId, int storyId, int no)
+    {
+        try
+        {
+            var token = await HttpContext.GetTokenAsync("access_token");
+            TempData["Toast"] = (await api.DeleteCommentAsync(commentId, token)).Message;
+        }
+        catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException)
+        {
+            TempData["Toast"] = ApiDown;
+        }
+        return BackToRead(storyId, no);
+    }
+
+    // ----- PB33: báo cáo vi phạm (chương hoặc bình luận) -----
+    [Authorize]
+    [HttpPost, ValidateAntiForgeryToken]
+    public async Task<IActionResult> Report(string targetType, int targetId, string? reason, string? note, int storyId, int no)
+    {
+        if (string.IsNullOrWhiteSpace(reason))
+        {
+            TempData["Toast"] = "Vui lòng chọn lý do báo cáo.";
+            return BackToRead(storyId, no);
+        }
+        try
+        {
+            var token = await HttpContext.GetTokenAsync("access_token");
+            TempData["Toast"] = (await api.CreateReportAsync(targetType, targetId, reason, note, token)).Message;
+        }
+        catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException)
+        {
+            TempData["Toast"] = ApiDown;
+        }
+        return BackToRead(storyId, no);
+    }
+
+    // ----- PB31: theo dõi / bỏ theo dõi truyện -----
+    [Authorize]
+    [HttpPost, ValidateAntiForgeryToken]
+    public async Task<IActionResult> Follow(int id, bool follow)
+    {
+        try
+        {
+            var token = await HttpContext.GetTokenAsync("access_token");
+            TempData["Toast"] = (await api.SetFollowAsync(id, follow, token)).Message;
+        }
+        catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException)
+        {
+            TempData["Toast"] = ApiDown;
+        }
+        return RedirectToAction(nameof(Details), new { id });
     }
 }

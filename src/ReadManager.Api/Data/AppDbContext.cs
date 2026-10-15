@@ -22,6 +22,12 @@ public class AppDbContext : DbContext
     public DbSet<PlanVersionStory> PlanVersionStories
         => Set<PlanVersionStory>();
 
+    // ----- BE4: Tương tác (PB31–33) -----
+    public DbSet<StoryFollow> StoryFollows => Set<StoryFollow>();
+    public DbSet<Notification> Notifications => Set<Notification>();
+    public DbSet<Comment> Comments => Set<Comment>();
+    public DbSet<Report> Reports => Set<Report>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
@@ -193,6 +199,60 @@ public class AppDbContext : DbContext
                 .WithMany()
                 .HasForeignKey(x => x.StoryId)
                 .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        // ===== BE4: TƯƠNG TÁC (PB31–33) =====
+
+        modelBuilder.Entity<StoryFollow>(entity =>
+        {
+            entity.ToTable("StoryFollows");
+            entity.HasKey(x => new { x.UserId, x.StoryId });   // 1 người theo dõi 1 truyện 1 lần
+            entity.Property(x => x.CreatedAt).HasColumnType("datetime(6)");
+            entity.HasOne(x => x.User).WithMany().HasForeignKey(x => x.UserId).OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne(x => x.Story).WithMany().HasForeignKey(x => x.StoryId).OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<Notification>(entity =>
+        {
+            entity.ToTable("Notifications");
+            entity.HasKey(x => x.NotificationId);
+            entity.Property(x => x.Message).HasMaxLength(500).IsRequired();
+            entity.Property(x => x.IsRead).HasDefaultValue(false);
+            entity.Property(x => x.CreatedAt).HasColumnType("datetime(6)");
+            entity.HasIndex(x => new { x.UserId, x.CreatedAt });   // lấy thông báo của 1 người cho nhanh
+            entity.HasOne(x => x.User).WithMany().HasForeignKey(x => x.UserId).OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne(x => x.Story).WithMany().HasForeignKey(x => x.StoryId).OnDelete(DeleteBehavior.Restrict);
+            // Xóa chương → xóa luôn thông báo của chương đó (nếu không, admin sẽ không xóa được chương)
+            entity.HasOne(x => x.Chapter).WithMany().HasForeignKey(x => x.ChapterId).OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<Comment>(entity =>
+        {
+            entity.ToTable("Comments");
+            entity.HasKey(x => x.CommentId);
+            entity.Property(x => x.Content).HasMaxLength(1000).IsRequired();
+            entity.Property(x => x.Status).HasMaxLength(20).HasDefaultValue("Visible").IsRequired();
+            entity.Property(x => x.CreatedAt).HasColumnType("datetime(6)");
+            entity.HasIndex(x => new { x.StoryId, x.ChapterId, x.CreatedAt });
+            entity.HasOne(x => x.User).WithMany().HasForeignKey(x => x.UserId).OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne(x => x.Story).WithMany().HasForeignKey(x => x.StoryId).OnDelete(DeleteBehavior.Restrict);
+            // Xóa chương → bình luận vẫn giữ, chỉ bỏ liên kết chương (thành bình luận chung của truyện)
+            entity.HasOne(x => x.Chapter).WithMany().HasForeignKey(x => x.ChapterId).OnDelete(DeleteBehavior.SetNull);
+        });
+
+        modelBuilder.Entity<Report>(entity =>
+        {
+            entity.ToTable("Reports", table =>
+                table.HasCheckConstraint("CK_Reports_TargetType", "`TargetType` IN ('Story', 'Chapter', 'Comment')"));
+            entity.HasKey(x => x.ReportId);
+            entity.Property(x => x.TargetType).HasMaxLength(20).IsRequired();
+            entity.Property(x => x.Reason).HasMaxLength(100).IsRequired();
+            entity.Property(x => x.Note).HasMaxLength(500).IsRequired(false);
+            entity.Property(x => x.Status).HasMaxLength(20).HasDefaultValue("Pending").IsRequired();
+            entity.Property(x => x.CreatedAt).HasColumnType("datetime(6)");
+            entity.Property(x => x.HandledAt).HasColumnType("datetime(6)");
+            entity.HasIndex(x => new { x.Status, x.CreatedAt });   // admin lọc báo cáo chờ xử lý
+            entity.HasOne(x => x.Reporter).WithMany().HasForeignKey(x => x.ReporterId).OnDelete(DeleteBehavior.Restrict);
         });
     }
 }

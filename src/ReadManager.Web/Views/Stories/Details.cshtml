@@ -1,4 +1,4 @@
-@model StoryDetailVm
+﻿@model StoryDetailVm
 @{
     ViewData["Title"] = Model.Story.Title;
     var story = Model.Story;
@@ -44,6 +44,22 @@
                 }
 
                 <button type="button" class="btn btn-outline fav-btn" data-id="@story.Id" data-title="@story.Title" data-author="@story.Author" data-cover="@story.CoverUrl"><i>♡</i> <span>Yêu thích</span></button>
+
+                @* PB31 — THEO DÕI TRUYỆN: có chương mới sẽ nhận thông báo 🔔 *@
+                @if (User.Identity?.IsAuthenticated == true)
+                {
+                    <form asp-action="Follow" asp-route-id="@story.Id" method="post" style="display:inline;">
+                        <input type="hidden" name="follow" value="@(Model.IsFollowing ? "false" : "true")" />
+                        <button type="submit" class="btn btn-outline" title="@Model.FollowerCount người đang theo dõi">
+                            @(Model.IsFollowing ? "🔔 Đang theo dõi" : "🔕 Theo dõi") (@Model.FollowerCount)
+                        </button>
+                    </form>
+                }
+                else
+                {
+                    <a class="btn btn-outline" asp-controller="Account" asp-action="Login"
+                       asp-route-returnUrl="@Url.Action("Details", new { id = story.Id })">🔕 Theo dõi (@Model.FollowerCount)</a>
+                }
             </div>
             <div class="stat-row">
                 <div><b>@Model.TotalChapters</b><span>Chương</span></div>

@@ -1,4 +1,4 @@
-using System.Net;
+﻿using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using ReadManager.Web.ViewModels;
@@ -38,6 +38,30 @@ public record ChapterReadApi(
     int? PreviousChapterId, int? NextChapterId, int? PreviousChapterNumber, int? NextChapterNumber,
     DateTime? PublishedAt, DateTime UpdatedAt,
     DateTime? ScheduledAt = null, bool IsUpcoming = false);   // hẹn giờ ra mắt (giờ UTC)
+
+// ----- Tương tác (Backend 4 — PB31–33) — các record này khớp với DTO bên API -----
+// CommentApi        ↔ CommentDto          (1 bình luận)
+// ReportApi         ↔ ReportDto           (1 báo cáo vi phạm — trang Admin)
+// FollowStatusApi   ↔ FollowStatusDto     (nút Theo dõi)
+// NotificationApi   ↔ NotificationDto     (1 thông báo chương mới)
+public record CommentApi(
+    int CommentId, int StoryId, int? ChapterId, int? ChapterNumber,
+    int UserId, string DisplayName, string? AvatarUrl,
+    string Content, DateTime CreatedAt, bool CanDelete);
+
+public record ReportApi(
+    int ReportId, int ReporterId, string ReporterName,
+    string TargetType, int TargetId, int? StoryId, int? ChapterNumber,
+    string TargetPreview, bool TargetExists,
+    string Reason, string? Note, string Status, DateTime CreatedAt, DateTime? HandledAt);
+
+public record FollowStatusApi(int StoryId, bool IsFollowing, int FollowerCount);
+
+public record NotificationApi(
+    int NotificationId, int StoryId, int? ChapterId, int? ChapterNumber,
+    string Message, bool IsRead, DateTime CreatedAt);
+
+public record NotificationListApi(List<NotificationApi> Items, int TotalCount, int UnreadCount, int Page, int PageSize);
 
 public record UploadChaptersResultApi(int Created, int Updated, List<int> SkippedNumbers, string Message);
 
@@ -186,6 +210,121 @@ public class StoriesApiClient(HttpClient http)
     }
 
     // ---------- Hàm phụ ----------
+    // ---------- PB32 — Bình luận ----------
+    // Danh sách bình luận của 1 chương (mới nhất ở trên). Gửi token để API biết bình luận nào mình được xóa.
+    public async Task<PagedApi<CommentApi>> CommentsAsync(int storyId, int chapterId, string? token, int page = 1)
+    {
+        using var req = Build(HttpMethod.Get, $"api/stories/{storyId}/comments?chapterId={chapterId}&page={page}&pageSize=50", token);
+        using var res = await http.SendAsync(req);
+        if (!res.IsSuccessStatusCode) return new PagedApi<CommentApi>([], 0, page, 50);
+        return await res.Content.ReadFromJsonAsync<PagedApi<CommentApi>>() ?? new PagedApi<CommentApi>([], 0, page, 50);
+    }
+
+    public async Task<ApiResult> PostCommentAsync(int storyId, int chapterId, string content, string? token)
+    {
+        using var req = Build(HttpMethod.Post, $"api/stories/{storyId}/comments", token, new { chapterId, content });
+        using var res = await http.SendAsync(req);
+        if (res.StatusCode == HttpStatusCode.TooManyRequests)
+            return new ApiResult(false, "Bạn thao tác nhanh quá. Vui lòng chờ 1 phút.");
+        return await ToResultAsync(res, "Đã đăng bình luận.");
+    }
+
+    public async Task<ApiResult> DeleteCommentAsync(int commentId, string? token)
+    {
+        using var req = Build(HttpMethod.Delete, $"api/comments/{commentId}", token);
+        using var res = await http.SendAsync(req);
+        return await ToResultAsync(res, "Đã xóa bình luận.");
+    }
+
+    // ---------- PB33 — Báo cáo vi phạm ----------
+    public async Task<List<string>> ReportReasonsAsync()
+    {
+        using var res = await http.GetAsync("api/reports/reasons");
+        if (!res.IsSuccessStatusCode) return [];
+        return await res.Content.ReadFromJsonAsync<List<string>>() ?? [];
+    }
+
+    // targetType: "Story" | "Chapter" | "Comment"
+    public async Task<ApiResult> CreateReportAsync(string targetType, int targetId, string reason, string? note, string? token)
+    {
+        using var req = Build(HttpMethod.Post, "api/reports", token, new { targetType, targetId, reason, note });
+        using var res = await http.SendAsync(req);
+        if (res.StatusCode == HttpStatusCode.TooManyRequests)
+            return new ApiResult(false, "Bạn thao tác nhanh quá. Vui lòng chờ 1 phút.");
+        return await ToResultAsync(res, "Đã gửi báo cáo. Cảm ơn bạn, Admin sẽ xem xét sớm.");
+    }
+
+    // Admin: status = "Pending" | "Resolved" | "Rejected" | null (tất cả)
+    public async Task<PagedApi<ReportApi>> AdminReportsAsync(string? status, int page, string? token)
+    {
+        var url = $"api/admin/reports?page={page}&pageSize=20" + (string.IsNullOrEmpty(status) ? "" : $"&status={status}");
+        using var req = Build(HttpMethod.Get, url, token);
+        using var res = await http.SendAsync(req);
+        res.EnsureSuccessStatusCode();
+        return await res.Content.ReadFromJsonAsync<PagedApi<ReportApi>>() ?? new PagedApi<ReportApi>([], 0, page, 20);
+    }
+
+    public async Task<ApiResult> HandleReportAsync(int reportId, string status, bool hideComment, string? token)
+    {
+        using var req = Build(HttpMethod.Put, $"api/admin/reports/{reportId}", token, new { status, hideComment });
+        using var res = await http.SendAsync(req);
+        return await ToResultAsync(res, status == "Resolved" ? "Đã xử lý báo cáo." : "Đã bác bỏ báo cáo.");
+    }
+
+    // ---------- PB31 — Theo dõi truyện + thông báo ----------
+    public async Task<FollowStatusApi?> FollowStatusAsync(int storyId, string? token)
+    {
+        using var req = Build(HttpMethod.Get, $"api/stories/{storyId}/follow", token);
+        using var res = await http.SendAsync(req);
+        if (!res.IsSuccessStatusCode) return null;
+        return await res.Content.ReadFromJsonAsync<FollowStatusApi>();
+    }
+
+    // follow = true → theo dõi, false → bỏ theo dõi
+    public async Task<ApiResult> SetFollowAsync(int storyId, bool follow, string? token)
+    {
+        using var req = Build(follow ? HttpMethod.Post : HttpMethod.Delete, $"api/stories/{storyId}/follow", token);
+        using var res = await http.SendAsync(req);
+        return await ToResultAsync(res, follow
+            ? "Đã theo dõi truyện. Có chương mới bạn sẽ nhận được thông báo 🔔"
+            : "Đã bỏ theo dõi truyện.");
+    }
+
+    public async Task<NotificationListApi> NotificationsAsync(int page, string? token)
+    {
+        using var req = Build(HttpMethod.Get, $"api/notifications?page={page}&pageSize=20", token);
+        using var res = await http.SendAsync(req);
+        res.EnsureSuccessStatusCode();
+        return await res.Content.ReadFromJsonAsync<NotificationListApi>() ?? new NotificationListApi([], 0, 0, page, 20);
+    }
+
+    // Số thông báo chưa đọc (cho chuông 🔔). Lỗi gì cũng trả 0 để không làm hỏng trang.
+    public async Task<int> UnreadCountAsync(string? token)
+    {
+        try
+        {
+            using var req = Build(HttpMethod.Get, "api/notifications/unread-count", token);
+            using var res = await http.SendAsync(req);
+            return res.IsSuccessStatusCode ? await res.Content.ReadFromJsonAsync<int>() : 0;
+        }
+        catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException)
+        {
+            return 0;
+        }
+    }
+
+    public async Task MarkNotificationReadAsync(int notificationId, string? token)
+    {
+        using var req = Build(HttpMethod.Put, $"api/notifications/{notificationId}/read", token);
+        using var res = await http.SendAsync(req);
+    }
+
+    public async Task MarkAllNotificationsReadAsync(string? token)
+    {
+        using var req = Build(HttpMethod.Put, "api/notifications/read-all", token);
+        using var res = await http.SendAsync(req);
+    }
+
     private static HttpRequestMessage Build(HttpMethod method, string url, string? token, object? body = null)
     {
         var req = new HttpRequestMessage(method, url);
