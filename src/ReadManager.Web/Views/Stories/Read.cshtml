@@ -108,7 +108,9 @@
     {
         <div class="locked-box">
             <h3>Chương này dành cho độc giả đã mở khóa</h3>
-            <p>Nội dung trả phí đang khóa. Chức năng mua và cấp quyền chưa được tích hợp.</p>
+            <p>Nội dung trả phí đang khóa. Mua trọn bộ truyện để đọc vĩnh viễn tất cả các chương.</p>
+            @* PB21 — dẫn sang trang "Mua trọn bộ" *@
+            <a class="btn btn-brass" asp-controller="Orders" asp-action="Checkout" asp-route-storyId="@Model.Story.Id" style="margin-top:10px;">🛒 Mua trọn bộ truyện</a>
         </div>
     }
     else

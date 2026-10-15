@@ -40,6 +40,9 @@ public class StoriesController(StoriesApiClient api) : Controller
             var token = await HttpContext.GetTokenAsync("access_token");
             var follow = await api.FollowStatusAsync(id, token);
 
+            // PB21 — báo giá mua truyện: đã sở hữu chưa / có đơn đang chờ không
+            var quote = await api.QuoteStoryAsync(id, token);
+
             // Phân trang: giữ số trang trong khoảng hợp lệ
             var pageCount = Math.Max(1, (int)Math.Ceiling(chapters.Count / (double)ChaptersPerPage));
             page = Math.Clamp(page, 1, pageCount);
@@ -65,6 +68,11 @@ public class StoriesController(StoriesApiClient api) : Controller
                 // nút "Đọc từ đầu" → chương đầu tiên đã ra mắt (bỏ qua chương còn hẹn giờ)
                 FirstVisibleChapterNo = chapters.FirstOrDefault(c => !c.IsUpcoming)?.ChapterNumber,
                 IsFollowing = follow?.IsFollowing ?? false,
+                Owned = quote?.AlreadyOwned ?? false,
+                PendingOrderId = quote?.PendingOrderId,
+                HasPendingOrder = quote?.PendingOrderId != null,
+                CanBuy = quote?.CanBuy ?? false,
+                BuyPrice = quote?.Amount ?? 0,
                 FollowerCount = follow?.FollowerCount ?? 0
             });
         }
