@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Authentication;
+﻿using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
 using ReadManager.Api.Authentication;
@@ -21,6 +21,10 @@ builder.Services.AddScoped<IStoryService, StoryService>();
 builder.Services.AddScoped<IGenreService, GenreService>();
 builder.Services.AddScoped<IChapterService, ChapterService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<ICommentService, CommentService>();             // BE4 — PB32 bình luận
+builder.Services.AddScoped<IReportService, ReportService>();               // BE4 — PB33 báo cáo vi phạm
+builder.Services.AddScoped<IFollowService, FollowService>();               // BE4 — PB31 theo dõi truyện
+builder.Services.AddScoped<INotificationService, NotificationService>();   // BE4 — PB31 thông báo chương mới
 
 builder.Services.AddDataProtection()
     .SetApplicationName("ReadManager.Api");
@@ -42,6 +46,18 @@ builder.Services.AddRateLimiter(options =>
             _ => new FixedWindowRateLimiterOptions
             {
                 PermitLimit = 10,
+                Window = TimeSpan.FromMinutes(1),
+                QueueLimit = 0
+            }));
+
+    // BE4 — chống spam bình luận / báo cáo: mỗi tài khoản tối đa 5 lần / phút
+    options.AddPolicy("comment", context =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            context.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value
+                ?? context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 5,
                 Window = TimeSpan.FromMinutes(1),
                 QueueLimit = 0
             }));

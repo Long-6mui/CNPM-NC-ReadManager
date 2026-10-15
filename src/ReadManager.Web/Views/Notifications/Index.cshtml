@@ -1,0 +1,72 @@
+@model NotificationsVm
+@{
+    ViewData["Title"] = "Thông báo";
+}
+<div class="container section" style="max-width:760px;">
+    <div class="section-head" style="display:flex; align-items:center; justify-content:space-between; gap:12px;">
+        <h2>🔔 Thông báo @(Model.UnreadCount > 0 ? $"({Model.UnreadCount} chưa đọc)" : "")</h2>
+        @if (Model.UnreadCount > 0)
+        {
+            <form asp-action="ReadAll" method="post">
+                <button type="submit" class="btn btn-outline btn-sm">Đánh dấu tất cả đã đọc</button>
+            </form>
+        }
+    </div>
+
+    @if (Model.Items.Count == 0)
+    {
+        <div class="panel" style="text-align:center; color:var(--muted);">
+            Chưa có thông báo nào. Hãy bấm <b>"Theo dõi"</b> ở trang truyện để nhận thông báo khi có chương mới.
+        </div>
+    }
+    else
+    {
+        <ul class="noti-list">
+            @foreach (var n in Model.Items)
+            {
+                <li class="noti-item @(n.IsRead ? "" : "unread")">
+                    <form asp-action="Open" method="post">
+                        <input type="hidden" name="id" value="@n.NotificationId" />
+                        <input type="hidden" name="storyId" value="@n.StoryId" />
+                        <input type="hidden" name="chapterNumber" value="@n.ChapterNumber" />
+                        <button type="submit" class="noti-btn">
+                            <span class="noti-dot"></span>
+                            <span class="noti-text">
+                                <span class="noti-msg">@n.Message</span>
+                                <span class="noti-time">@StoriesApiClientTime(n.CreatedAt)</span>
+                            </span>
+                        </button>
+                    </form>
+                </li>
+            }
+        </ul>
+
+        @if (Model.PageCount > 1)
+        {
+            <div class="pillbar" style="justify-content:center; margin-top:16px;">
+                @for (var p = 1; p <= Model.PageCount; p++)
+                {
+                    <a class="pill @(p == Model.Page ? "active" : "")" asp-action="Index" asp-route-page="@p">@p</a>
+                }
+            </div>
+        }
+    }
+</div>
+
+@functions {
+    // Đổi giờ UTC từ API sang giờ máy (Việt Nam)
+    private static string StoriesApiClientTime(DateTime utc)
+        => ReadManager.Web.Services.StoriesApiClient.ToLocal(utc)?.ToString("HH:mm dd/MM/yyyy") ?? "";
+}
+
+<style>
+    .noti-list { list-style: none; padding: 0; margin: 0; background: var(--surface); border: 1px solid var(--border); border-radius: 6px; overflow: hidden; }
+    .noti-item + .noti-item { border-top: 1px solid var(--border); }
+    .noti-btn { display: flex; gap: 12px; align-items: flex-start; width: 100%; padding: 14px 16px; background: none; border: 0; text-align: left; cursor: pointer; color: inherit; font: inherit; }
+    .noti-btn:hover { background: var(--surface-2); }
+    .noti-dot { width: 8px; height: 8px; border-radius: 50%; margin-top: 7px; flex: none; background: transparent; }
+    .noti-item.unread .noti-dot { background: var(--crimson); }
+    .noti-item.unread .noti-msg { font-weight: 600; }
+    .noti-text { display: flex; flex-direction: column; gap: 3px; }
+    .noti-time { font-size: 12.5px; color: var(--muted); }
+</style>
