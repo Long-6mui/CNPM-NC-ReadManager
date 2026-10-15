@@ -63,6 +63,19 @@ public record NotificationApi(
 
 public record NotificationListApi(List<NotificationApi> Items, int TotalCount, int UnreadCount, int Page, int PageSize);
 
+// ----- Đơn hàng (Backend 3 — PB19, PB21, PB26) — khớp OrderQuoteDto / OrderDto bên API -----
+public record OrderQuoteApi(
+    string OrderType, int? StoryId, int? PlanId, int? PlanVersionId,
+    string ItemName, decimal Amount, int? DurationMonths,
+    bool CanBuy, bool AlreadyOwned, int? PendingOrderId, string? Message);
+
+public record OrderApi(
+    int OrderId, int UserId, string? UserName, string OrderType,
+    int? PlanId, int? PlanVersionId, int? StoryId,
+    string ItemName, decimal Amount, int? DurationMonths,
+    string Status, DateTime CreatedAt, DateTime? PaidAt, DateTime? ExpiresAt,
+    bool CanPay);
+
 public record UploadChaptersResultApi(int Created, int Updated, List<int> SkippedNumbers, string Message);
 
 public class StoriesApiClient(HttpClient http)
@@ -324,6 +337,38 @@ public class StoriesApiClient(HttpClient http)
         using var req = Build(HttpMethod.Put, "api/notifications/read-all", token);
         using var res = await http.SendAsync(req);
     }
+
+    // ---------- Đơn hàng (Backend 3 — PB21 mua truyện) ----------
+    // Báo giá mua truyện. Gửi token để biết đã mua chưa / có đơn đang chờ không. Lỗi → null.
+    public async Task<OrderQuoteApi?> QuoteStoryAsync(int storyId, string? token)
+    {
+        using var req = Build(HttpMethod.Get, $"api/orders/quote/story/{storyId}", token);
+        using var res = await http.SendAsync(req);
+        if (!res.IsSuccessStatusCode) return null;
+        return await res.Content.ReadFromJsonAsync<OrderQuoteApi>();
+    }
+
+    // Tạo đơn mua truyện (bấm "Thanh toán"). Đang có đơn chờ thanh toán → API trả lại đơn đó. Thành công → Id = mã đơn.
+    public async Task<ApiResult> CreateStoryOrderAsync(int storyId, string? token)
+    {
+        using var req = Build(HttpMethod.Post, "api/orders", token, new { orderType = "Story", storyId });
+        using var res = await http.SendAsync(req);
+        var result = await ToResultAsync(res, "Đã tạo đơn hàng.");
+        if (!result.Ok) return result;
+        var order = await res.Content.ReadFromJsonAsync<OrderApi>();
+        return result with { Id = order?.OrderId };
+    }
+
+    // Chi tiết đơn (chỉ chủ đơn / Admin). Không có quyền hoặc không tồn tại → null.
+    public async Task<OrderApi?> GetOrderAsync(int orderId, string? token)
+    {
+        using var req = Build(HttpMethod.Get, $"api/orders/{orderId}", token);
+        using var res = await http.SendAsync(req);
+        if (res.StatusCode == HttpStatusCode.NotFound) return null;
+        res.EnsureSuccessStatusCode();
+        return await res.Content.ReadFromJsonAsync<OrderApi>();
+    }
+
 
     private static HttpRequestMessage Build(HttpMethod method, string url, string? token, object? body = null)
     {

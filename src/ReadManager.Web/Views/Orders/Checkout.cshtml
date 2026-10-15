@@ -1,0 +1,59 @@
+@model CheckoutVm
+@{
+    ViewData["Title"] = "Mua trọn bộ — " + Model.Story.Title;
+    var story = Model.Story;
+}
+<div class="container section" style="max-width:760px;">
+    <div class="section-head"><h2>🛒 Mua trọn bộ truyện</h2></div>
+
+    <div class="panel checkout">
+        <div class="checkout-cover">
+            @if (!string.IsNullOrEmpty(story.CoverUrl))
+            {
+                <img src="@story.CoverUrl" alt="Bìa truyện @story.Title" />
+            }
+            else
+            {
+                <div class="gen-cover"><span>@story.Title</span></div>
+            }
+        </div>
+        <div class="checkout-info">
+            <h3>@story.Title</h3>
+            <div class="hint" style="font-size:13px;">@(string.IsNullOrEmpty(story.Author) ? "Khuyết danh" : story.Author) · @Model.TotalChapters chương đã ra</div>
+
+            <div class="checkout-price">@Model.Quote.Amount.ToString("N0")₫</div>
+
+            <ul class="checkout-benefits">
+                <li>✔ Đọc <b>vĩnh viễn</b> tất cả chương của truyện, kể cả các chương ra sau này</li>
+                <li>✔ Chỉ trả tiền <b>một lần</b> — khác gói đọc theo tháng, không có hạn sử dụng nên không phải trả tiền gia hạn hằng tháng</li>
+                <li>✔ Quyền đọc gắn với tài khoản, đọc được trên cả Web và Mobile</li>
+            </ul>
+
+            @if (Model.Quote.PendingOrderId.HasValue)
+            {
+                <p class="hint">Bạn đang có đơn @* #@Model.Quote.PendingOrderId *@ chờ thanh toán cho truyện này — bấm "Thanh toán" để tiếp tục đơn đó.</p>
+            }
+
+            <div class="checkout-actions">
+                <form asp-action="Pay" method="post">
+                    <input type="hidden" name="storyId" value="@story.Id" />
+                    <button type="submit" class="btn btn-brass">💳 Thanh toán @Model.Quote.Amount.ToString("N0")₫</button>
+                </form>
+                <a class="btn btn-outline" asp-controller="Stories" asp-action="Details" asp-route-id="@story.Id">← Quay lại</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .checkout { display: grid; grid-template-columns: 160px 1fr; gap: 24px; align-items: start; }
+    .checkout-cover img, .checkout-cover .gen-cover { width: 160px; aspect-ratio: 2 / 3; object-fit: cover; border-radius: 6px; display: block; }
+    .checkout-info h3 { font-size: 22px; margin-bottom: 4px; }
+    .checkout-price { font-size: 30px; font-weight: 700; color: var(--crimson); margin: 16px 0 12px; }
+    .checkout-benefits { list-style: none; padding: 0; margin: 0 0 18px; line-height: 1.9; }
+    .checkout-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+    @@media (max-width: 560px) {
+        .checkout { grid-template-columns: 1fr; }
+        .checkout-cover img, .checkout-cover .gen-cover { width: 120px; }
+    }
+</style>

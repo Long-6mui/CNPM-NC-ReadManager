@@ -43,6 +43,17 @@
                     <span class="btn" style="background:rgba(255,255,255,.12); color:#fff; border:1px solid rgba(255,255,255,.4); cursor:not-allowed;">📖 Chưa có chương</span>
                 }
 
+                @* PB21 — MUA TRỌN BỘ TRUYỆN (giá lấy từ API) *@
+                @if (Model.Owned)
+                {
+                    <span class="btn btn-outline" style="cursor:default;">✔ Đã sở hữu</span>
+                }
+                else if (Model.CanBuy)
+                {
+                    @* Bấm vào → mở trang "Mua trọn bộ" xem giá + thông tin, CHƯA tạo đơn. Chưa đăng nhập → tự chuyển tới trang đăng nhập *@
+                    <a class="btn btn-brass" asp-controller="Orders" asp-action="Checkout" asp-route-storyId="@story.Id">🛒 Mua trọn bộ — @Model.BuyPrice.ToString("N0")₫</a>
+                }
+
                 <button type="button" class="btn btn-outline fav-btn" data-id="@story.Id" data-title="@story.Title" data-author="@story.Author" data-cover="@story.CoverUrl"><i>♡</i> <span>Yêu thích</span></button>
 
                 @* PB31 — THEO DÕI TRUYỆN: có chương mới sẽ nhận thông báo 🔔 *@
@@ -63,8 +74,8 @@
             </div>
             <div class="stat-row">
                 <div><b>@Model.TotalChapters</b><span>Chương</span></div>
-                <div><b>@story.Price.ToString("N0")₫</b><span>@(story.Access == AccessPolicy.Paid ? "Giá trọn bộ" : "Mua trọn bộ")</span></div>
-                <div><b>@(story.FreeChapterCount >= 999 ? "Tất cả" : story.FreeChapterCount.ToString())</b><span>Chương đọc miễn phí</span></div>
+@*                 <div><b>@story.Price.ToString("N0")₫</b><span>@(story.Access == AccessPolicy.Paid ? "Giá trọn bộ" : "Mua trọn bộ")</span></div>
+ *@                <div><b>@(story.FreeChapterCount >= 999 ? "Tất cả" : story.FreeChapterCount.ToString())</b><span>Chương đọc miễn phí</span></div>
             </div>
         </div>
     </div>
