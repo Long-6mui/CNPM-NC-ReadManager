@@ -1,0 +1,41 @@
+@model ReadManager.Web.Controllers.MineVm
+@{
+    ViewData["Title"] = "Gói của tôi";
+    string St(string s) => s == "Paid" ? "Đã thanh toán" : s == "Failed" ? "Thất bại" : "Chờ thanh toán";
+}
+<link rel="stylesheet" href="~/css/plans.css" asp-append-version="true" />
+<div class="container pl">
+    <h1>Gói của tôi</h1>
+    <span class="pl-demo">Dữ liệu mẫu: chưa nối API đơn hàng và thanh toán</span>
+
+    <h2>Thư viện đã mua (gói đang có)</h2>
+    @if (Model.Entitlements.Count == 0) { <p class="pl-sub">Bạn chưa có gói nào còn hạn. <a asp-action="Index">Xem các gói đọc</a></p> }
+    else
+    {
+        <table class="pl-table"><thead><tr><th>Gói</th><th>Hết hạn</th></tr></thead><tbody>
+        @foreach (var e in Model.Entitlements) { <tr><td>@e.PlanName</td><td>@e.ExpiresAt.ToLocalTime().ToString("dd/MM/yyyy")</td></tr> }
+        </tbody></table>
+    }
+
+    <h2>Lịch sử thanh toán</h2>
+    @if (Model.Orders.Count == 0) { <p class="pl-sub">Chưa có giao dịch nào.</p> }
+    else
+    {
+        <table class="pl-table"><thead><tr><th>Mã đơn</th><th>Gói</th><th>Số tiền</th><th>Thời gian</th><th>Trạng thái</th><th></th></tr></thead><tbody>
+        @foreach (var o in Model.Orders)
+        {
+            <tr>
+                <td>#@o.Id</td><td>@o.PlanName</td><td>@o.Price.ToString("N0")đ</td><td>@o.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</td>
+                <td><span class="pl-st @o.Status">@St(o.Status)</span></td>
+                <td>
+                    @if (o.Status == "Pending")
+                    {
+                        <form asp-action="Pay" method="post" style="display:inline"><input type="hidden" name="orderId" value="@o.Id" /><input type="hidden" name="ok" value="true" /><button class="btn btn-brass btn-sm" type="submit">Giả lập: thành công</button></form>
+                        <form asp-action="Pay" method="post" style="display:inline"><input type="hidden" name="orderId" value="@o.Id" /><input type="hidden" name="ok" value="false" /><button class="btn btn-outline btn-sm" type="submit">Giả lập: thất bại</button></form>
+                    }
+                </td>
+            </tr>
+        }
+        </tbody></table>
+    }
+</div>
