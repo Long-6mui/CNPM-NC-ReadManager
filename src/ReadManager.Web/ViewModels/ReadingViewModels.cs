@@ -1,4 +1,4 @@
-﻿namespace ReadManager.Web.ViewModels;
+namespace ReadManager.Web.ViewModels;
 
 public class BrowseVm
 {
@@ -37,6 +37,9 @@ public class StoryDetailVm
     public int FollowerCount { get; set; }      // PB31 — số người theo dõi
     public bool Owned { get; set; }
     public bool HasPendingOrder { get; set; }
+    public int? PendingOrderId { get; set; }    // PB21 — đơn mua truyện đang chờ thanh toán
+    public bool CanBuy { get; set; }            // PB21 — hiện nút "Mua trọn bộ"
+    public decimal BuyPrice { get; set; }       // PB21 — giá lấy từ API (giá thật trong DB)
     public int? ContinueChapterNo { get; set; }
     public int? FirstVisibleChapterNo { get; set; }
 }
@@ -48,7 +51,6 @@ public class ReadVm
     public bool Locked { get; set; }
     public bool NotYetPublicPreview { get; set; }
     public DateTime? UpcomingAt { get; set; }   // có giá trị = chưa tới giờ ra mắt (giờ Việt Nam)
-    public bool HasEntitlement { get; set; }    // PB22 — người đọc đã có quyền (gói/mua riêng)
     public int? PrevNo { get; set; }
     public int? NextNo { get; set; }
 

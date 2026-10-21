@@ -43,7 +43,7 @@ try
     db.Users.Add(admin); await db.SaveChangesAsync();
     var story = new Story {Title="Test",Slug="test",AuthorName="Author",Synopsis="Synopsis",Visibility="Public",AccessPolicy="Mixed",CurrentPrice=10,CreatedBy=admin.UserId};
     db.Stories.Add(story); await db.SaveChangesAsync();
-    var chapters = new ChapterService(db);
+    var chapters = new ChapterService(db, new NotificationService(db));
     var free = await chapters.CreateAsync(story.StoryId,new CreateChapterDto {ChapterNumber=1,Title="Free",Content="Free content",PublicationStatus="Published"});
     var paid = await chapters.CreateAsync(story.StoryId,new CreateChapterDto {ChapterNumber=2,Title="Paid",Content="Secret content",AccessLevel="Paid",PublicationStatus="Published"});
     var draft = await chapters.CreateAsync(story.StoryId,new CreateChapterDto {ChapterNumber=3,Title="Draft",Content="Draft content"});

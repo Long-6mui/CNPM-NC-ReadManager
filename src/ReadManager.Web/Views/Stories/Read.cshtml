@@ -1,4 +1,4 @@
-﻿@model ReadVm
+@model ReadVm
 @{
     ViewData["Title"] = $"Chương {Model.Chapter.No}: {Model.Chapter.Title}";
     var paragraphs = (Model.Chapter.Content ?? "").Replace("\r\n", "\n").Split("\n\n", StringSplitOptions.RemoveEmptyEntries);
@@ -108,18 +108,11 @@
     {
         <div class="locked-box">
             <h3>Chương này dành cho độc giả đã mở khóa</h3>
-            @if (Model.HasEntitlement)
-            {
-                <p>Hệ thống ghi nhận bạn đã có quyền đọc truyện này. Nội dung sẽ mở khi API kiểm tra quyền (PB22) được tích hợp.</p>
-            }
-            else
-            {
-                <p>Mua riêng truyện hoặc đăng ký gói đọc để đọc chương này. Quyền mua riêng không mất khi gói hết hạn.</p>
-                <div style="display:flex; gap:10px; justify-content:center; flex-wrap:wrap; margin-top:12px;">
-                    <a class="btn btn-brass" asp-controller="Stories" asp-action="Details" asp-route-id="@Model.Story.Id">Mua truyện này</a>
-                    <a class="btn btn-outline" asp-controller="Plans" asp-action="Index">Xem gói đọc</a>
-                </div>
-            }
+            <p>Nội dung chương này đang khóa. Bạn có thể xem các lựa chọn mua truyện hoặc gói đọc.</p>
+            <div style="display:flex; gap:10px; justify-content:center; flex-wrap:wrap; margin-top:12px;">
+                <a class="btn btn-brass" asp-controller="Orders" asp-action="Checkout" asp-route-storyId="@Model.Story.Id">Mua trọn bộ truyện</a>
+                <a class="btn btn-outline" asp-controller="Plans" asp-action="Index">Xem gói đọc</a>
+            </div>
         </div>
     }
     else

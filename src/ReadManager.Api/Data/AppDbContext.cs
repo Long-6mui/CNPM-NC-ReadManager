@@ -28,6 +28,12 @@ public class AppDbContext : DbContext
     public DbSet<Comment> Comments => Set<Comment>();
     public DbSet<Report> Reports => Set<Report>();
 
+    // ----- BE3: Đơn hàng (PB19, PB21, PB26) -----
+    public DbSet<Order> Orders => Set<Order>();
+
+    // ----- BE3: Thống kê nội dung (PB40) -----
+    public DbSet<ChapterRead> ChapterReads => Set<ChapterRead>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
@@ -253,6 +259,49 @@ public class AppDbContext : DbContext
             entity.Property(x => x.HandledAt).HasColumnType("datetime(6)");
             entity.HasIndex(x => new { x.Status, x.CreatedAt });   // admin lọc báo cáo chờ xử lý
             entity.HasOne(x => x.Reporter).WithMany().HasForeignKey(x => x.ReporterId).OnDelete(DeleteBehavior.Restrict);
+        });
+
+        // ===== BE3: ĐƠN HÀNG (PB19, PB21, PB26) =====
+        modelBuilder.Entity<Order>(entity =>
+        {
+            entity.ToTable("Orders", table =>
+            {
+                table.HasCheckConstraint("CK_Orders_OrderType", "`OrderType` IN ('Plan', 'Story')");
+                table.HasCheckConstraint("CK_Orders_Status", "`Status` IN ('Pending', 'Paid', 'Failed', 'Cancelled', 'Expired')");
+                table.HasCheckConstraint("CK_Orders_Amount", "`Amount` > 0");
+                // Mua gói phải có PlanVersionId, mua truyện phải có StoryId
+                table.HasCheckConstraint("CK_Orders_Item",
+                    "(`OrderType` = 'Plan' AND `PlanVersionId` IS NOT NULL) OR (`OrderType` = 'Story' AND `StoryId` IS NOT NULL)");
+            });
+            entity.HasKey(x => x.OrderId);
+            entity.Property(x => x.OrderType).HasMaxLength(10).IsRequired();
+            entity.Property(x => x.ItemName).HasMaxLength(255).IsRequired();
+            entity.Property(x => x.Amount).HasPrecision(12, 2);
+            entity.Property(x => x.Status).HasMaxLength(20).HasDefaultValue("Pending").IsRequired();
+            entity.Property(x => x.CreatedAt).HasColumnType("datetime(6)");
+            entity.Property(x => x.UpdatedAt).HasColumnType("datetime(6)");
+            entity.Property(x => x.PaidAt).HasColumnType("datetime(6)");
+            entity.HasIndex(x => new { x.UserId, x.CreatedAt });   // lịch sử thanh toán của 1 người
+            entity.HasIndex(x => new { x.Status, x.CreatedAt });   // Admin lọc theo trạng thái / quét đơn hết hạn
+            entity.HasOne(x => x.User).WithMany().HasForeignKey(x => x.UserId).OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne(x => x.PlanVersion).WithMany().HasForeignKey(x => x.PlanVersionId).OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne(x => x.Story).WithMany().HasForeignKey(x => x.StoryId).OnDelete(DeleteBehavior.Restrict);
+        });
+
+        // ===== BE3: LƯỢT ĐỌC CHƯƠNG (PB40 — thống kê nội dung) =====
+        modelBuilder.Entity<ChapterRead>(entity =>
+        {
+            entity.ToTable("ChapterReads");
+            entity.HasKey(x => x.ChapterReadId);
+            entity.Property(x => x.ReadAt).HasColumnType("datetime(6)");
+            entity.HasIndex(x => new { x.StoryId, x.ReadAt });               // thống kê theo truyện
+            entity.HasIndex(x => new { x.ChapterId, x.ReadAt });             // thống kê theo chương
+            entity.HasIndex(x => new { x.UserId, x.ChapterId, x.ReadAt });   // chống tính trùng trong 30 phút
+            entity.HasIndex(x => x.ReadAt);                                  // thống kê theo ngày
+            entity.HasOne(x => x.Story).WithMany().HasForeignKey(x => x.StoryId).OnDelete(DeleteBehavior.Restrict);
+            // Xóa chương → xóa luôn lượt đọc của chương đó (nếu không, admin sẽ không xóa được chương)
+            entity.HasOne(x => x.Chapter).WithMany().HasForeignKey(x => x.ChapterId).OnDelete(DeleteBehavior.Cascade);
+            entity.HasOne(x => x.User).WithMany().HasForeignKey(x => x.UserId).OnDelete(DeleteBehavior.SetNull);
         });
     }
 }
