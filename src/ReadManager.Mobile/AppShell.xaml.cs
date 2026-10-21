@@ -16,10 +16,6 @@ namespace ReadManager.Mobile
             Routing.RegisterRoute(nameof(ChapterListPage), typeof(ChapterListPage));
             Routing.RegisterRoute(nameof(ChapterReaderPage), typeof(ChapterReaderPage));
 
-            // Trang quản trị mở từ danh sách truyện
-            Routing.RegisterRoute(nameof(AdminStoryEditPage), typeof(AdminStoryEditPage));
-            Routing.RegisterRoute(nameof(AdminChapterEditPage), typeof(AdminChapterEditPage));
-            Routing.RegisterRoute(nameof(AdminBulkImportPage), typeof(AdminBulkImportPage));
         }
     }
 }

@@ -37,9 +37,8 @@ public partial class LoginViewModel : BaseViewModel
                 Password = Password
             });
 
-            // Giống web: Admin vào thẳng trang quản trị, người dùng thường về trang chủ.
             // "//" thay toàn bộ stack để không back lại màn Login.
-            await Shell.Current.GoToAsync(user.Role == "Admin" ? "//AdminStoriesPage" : "//StoryListPage");
+            await Shell.Current.GoToAsync("//StoryListPage");
         });
     }
 
