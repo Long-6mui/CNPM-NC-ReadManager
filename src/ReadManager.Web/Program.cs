@@ -4,16 +4,17 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
-builder.Services.AddHttpClient<AuthApiClient>(client=>{client.BaseAddress=new Uri(builder.Configuration["Api:BaseUrl"]??"https://localhost:7188/");client.Timeout=TimeSpan.FromSeconds(10);});
+builder.Services.AddHttpClient<AuthApiClient>(client => { client.BaseAddress = new Uri(builder.Configuration["Api:BaseUrl"] ?? "https://localhost:7188/"); client.Timeout = TimeSpan.FromSeconds(10); });
 builder.Services.AddHttpClient<StoriesApiClient>(client =>
 {
     client.BaseAddress = new Uri(builder.Configuration["Api:BaseUrl"] ?? "https://localhost:7188/");
     client.Timeout = TimeSpan.FromSeconds(10);
 });
+builder.Services.AddSingleton<DemoPlanStore>();
 builder.Services.AddScoped<ApiCookieEvents>();
-builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme).AddCookie(options=>{
- options.Cookie.Name="ReadManager.Web.Session";options.Cookie.HttpOnly=true;options.Cookie.SameSite=SameSiteMode.Lax;options.Cookie.SecurePolicy=builder.Environment.IsDevelopment()?CookieSecurePolicy.SameAsRequest:CookieSecurePolicy.Always;
- options.LoginPath="/Account/Login";options.AccessDeniedPath="/Account/AccessDenied";options.ExpireTimeSpan=TimeSpan.FromHours(8);options.SlidingExpiration=false;options.EventsType=typeof(ApiCookieEvents);
+builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme).AddCookie(options => {
+    options.Cookie.Name = "ReadManager.Web.Session"; options.Cookie.HttpOnly = true; options.Cookie.SameSite = SameSiteMode.Lax; options.Cookie.SecurePolicy = builder.Environment.IsDevelopment() ? CookieSecurePolicy.SameAsRequest : CookieSecurePolicy.Always;
+    options.LoginPath = "/Account/Login"; options.AccessDeniedPath = "/Account/AccessDenied"; options.ExpireTimeSpan = TimeSpan.FromHours(8); options.SlidingExpiration = false; options.EventsType = typeof(ApiCookieEvents);
 });
 builder.Services.AddAuthorization();
 
