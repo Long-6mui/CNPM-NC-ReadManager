@@ -83,6 +83,39 @@ namespace ReadManager.Api.Migrations
                         });
                 });
 
+            modelBuilder.Entity("ReadManager.Api.Entities.ChapterRead", b =>
+                {
+                    b.Property<int>("ChapterReadId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("ChapterReadId"));
+
+                    b.Property<int>("ChapterId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("ReadAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<int>("StoryId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("UserId")
+                        .HasColumnType("int");
+
+                    b.HasKey("ChapterReadId");
+
+                    b.HasIndex("ReadAt");
+
+                    b.HasIndex("ChapterId", "ReadAt");
+
+                    b.HasIndex("StoryId", "ReadAt");
+
+                    b.HasIndex("UserId", "ChapterId", "ReadAt");
+
+                    b.ToTable("ChapterReads", (string)null);
+                });
+
             modelBuilder.Entity("ReadManager.Api.Entities.Comment", b =>
                 {
                     b.Property<int>("CommentId")
@@ -600,6 +633,32 @@ namespace ReadManager.Api.Migrations
                         .IsRequired();
 
                     b.Navigation("Story");
+                });
+
+            modelBuilder.Entity("ReadManager.Api.Entities.ChapterRead", b =>
+                {
+                    b.HasOne("ReadManager.Api.Entities.Chapter", "Chapter")
+                        .WithMany()
+                        .HasForeignKey("ChapterId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("ReadManager.Api.Entities.Story", "Story")
+                        .WithMany()
+                        .HasForeignKey("StoryId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("ReadManager.Api.Entities.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("Chapter");
+
+                    b.Navigation("Story");
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("ReadManager.Api.Entities.Comment", b =>

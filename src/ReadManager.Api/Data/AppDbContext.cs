@@ -31,6 +31,9 @@ public class AppDbContext : DbContext
     // ----- BE3: Đơn hàng (PB19, PB21, PB26) -----
     public DbSet<Order> Orders => Set<Order>();
 
+    // ----- BE3: Thống kê nội dung (PB40) -----
+    public DbSet<ChapterRead> ChapterReads => Set<ChapterRead>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
@@ -283,6 +286,22 @@ public class AppDbContext : DbContext
             entity.HasOne(x => x.User).WithMany().HasForeignKey(x => x.UserId).OnDelete(DeleteBehavior.Restrict);
             entity.HasOne(x => x.PlanVersion).WithMany().HasForeignKey(x => x.PlanVersionId).OnDelete(DeleteBehavior.Restrict);
             entity.HasOne(x => x.Story).WithMany().HasForeignKey(x => x.StoryId).OnDelete(DeleteBehavior.Restrict);
+        });
+
+        // ===== BE3: LƯỢT ĐỌC CHƯƠNG (PB40 — thống kê nội dung) =====
+        modelBuilder.Entity<ChapterRead>(entity =>
+        {
+            entity.ToTable("ChapterReads");
+            entity.HasKey(x => x.ChapterReadId);
+            entity.Property(x => x.ReadAt).HasColumnType("datetime(6)");
+            entity.HasIndex(x => new { x.StoryId, x.ReadAt });               // thống kê theo truyện
+            entity.HasIndex(x => new { x.ChapterId, x.ReadAt });             // thống kê theo chương
+            entity.HasIndex(x => new { x.UserId, x.ChapterId, x.ReadAt });   // chống tính trùng trong 30 phút
+            entity.HasIndex(x => x.ReadAt);                                  // thống kê theo ngày
+            entity.HasOne(x => x.Story).WithMany().HasForeignKey(x => x.StoryId).OnDelete(DeleteBehavior.Restrict);
+            // Xóa chương → xóa luôn lượt đọc của chương đó (nếu không, admin sẽ không xóa được chương)
+            entity.HasOne(x => x.Chapter).WithMany().HasForeignKey(x => x.ChapterId).OnDelete(DeleteBehavior.Cascade);
+            entity.HasOne(x => x.User).WithMany().HasForeignKey(x => x.UserId).OnDelete(DeleteBehavior.SetNull);
         });
     }
 }

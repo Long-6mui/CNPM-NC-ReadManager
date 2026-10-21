@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Authentication;
+﻿using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
 using ReadManager.Api.Authentication;
@@ -23,6 +23,7 @@ builder.Services.AddScoped<IGenreService, GenreService>();
 builder.Services.AddScoped<IChapterService, ChapterService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IOrderService, OrderService>();   // BE3 — đơn hàng (PB19, PB21, PB26)
+builder.Services.AddScoped<IContentStatisticsService, ContentStatisticsService>();   // BE3 — PB40 thống kê nội dung
 builder.Services.AddScoped<ICommentService, CommentService>();             // BE4 — PB32 bình luận
 builder.Services.AddScoped<IReportService, ReportService>();               // BE4 — PB33 báo cáo vi phạm
 builder.Services.AddScoped<IFollowService, FollowService>();               // BE4 — PB31 theo dõi truyện
