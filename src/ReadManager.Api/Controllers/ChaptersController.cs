@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using System.Security.Claims;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ReadManager.Api.DTOs.Chapters;
 using ReadManager.Api.Services;
@@ -40,6 +41,10 @@ public class ChaptersController : ControllerBase
     // Admin được xem trước chương nháp và chương trả phí.
     private bool IsAdmin => User.IsInRole(AdminRole);
 
+    // Id người đang đọc (null = khách chưa đăng nhập) — dùng để ghi lượt đọc (PB40)
+    private int? ReaderId =>
+        int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var id) ? id : null;
+
 
 
     
@@ -61,7 +66,7 @@ public class ChaptersController : ControllerBase
     [HttpGet("api/stories/{storyId:int}/chapters/{chapterNumber:int}")]
     public async Task<ActionResult<ChapterReadDto>> GetByNumber(int storyId, int chapterNumber)
     {
-        var chapter = await _chapterService.GetByNumberAsync(storyId, chapterNumber, IsAdmin);
+        var chapter = await _chapterService.GetByNumberAsync(storyId, chapterNumber, IsAdmin, ReaderId);
         return chapter is null ? NotFound() : Ok(chapter);
     }
 
@@ -70,7 +75,7 @@ public class ChaptersController : ControllerBase
     [HttpGet("api/chapters/{chapterId:int}")]
     public async Task<ActionResult<ChapterReadDto>> GetById(int chapterId)
     {
-        var chapter = await _chapterService.GetByIdAsync(chapterId, IsAdmin);
+        var chapter = await _chapterService.GetByIdAsync(chapterId, IsAdmin, ReaderId);
         return chapter is null ? NotFound() : Ok(chapter);
     }
 

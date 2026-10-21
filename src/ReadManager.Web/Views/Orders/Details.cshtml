@@ -1,0 +1,60 @@
+@model ReadManager.Web.Services.OrderApi
+@{
+    ViewData["Title"] = $"Đơn hàng #{Model.OrderId}";
+    string Local(DateTime? utc) => ReadManager.Web.Services.StoriesApiClient.ToLocal(utc)?.ToString("HH:mm dd/MM/yyyy") ?? "—";
+    var (badge, label) = Model.Status switch
+    {
+        "Pending" => ("badge-gold", "Chờ thanh toán"),
+        "Paid" => ("badge-green", "Đã thanh toán"),
+        "Failed" => ("badge-red", "Thanh toán thất bại"),
+        "Cancelled" => ("badge-gray", "Đã hủy"),
+        "Expired" => ("badge-gray", "Hết hạn thanh toán"),
+        _ => ("badge-gray", Model.Status)
+    };
+}
+<div class="container section" style="max-width:640px;">
+    <div class="section-head"><h2>Đơn hàng #@Model.OrderId</h2></div>
+
+    <div class="panel">
+        <table class="data" style="background:transparent;">
+            <tbody>
+                <tr><td style="width:40%; color:var(--muted);">Món hàng</td>
+                    <td><b>@(Model.OrderType == "Story" ? "📖 Mua trọn bộ: " : "🎟 Gói đọc: ")@Model.ItemName</b></td></tr>
+                @if (Model.OrderType == "Story")
+                {
+                    <tr><td style="color:var(--muted);">Quyền đọc</td><td>Vĩnh viễn, tất cả chương</td></tr>
+                }
+                @if (Model.DurationMonths.HasValue)
+                {
+                    <tr><td style="color:var(--muted);">Thời hạn</td><td>@Model.DurationMonths tháng</td></tr>
+                }
+                <tr><td style="color:var(--muted);">Số tiền</td>
+                    <td><b style="font-size:20px;">@Model.Amount.ToString("N0")₫</b></td></tr>
+                <tr><td style="color:var(--muted);">Trạng thái</td>
+                    <td><span class="badge @badge">@label</span></td></tr>
+                <tr><td style="color:var(--muted);">Ngày tạo</td><td>@Local(Model.CreatedAt)</td></tr>
+                @if (Model.PaidAt.HasValue)
+                {
+                    <tr><td style="color:var(--muted);">Ngày thanh toán</td><td>@Local(Model.PaidAt)</td></tr>
+                }
+            </tbody>
+        </table>
+
+        @if (Model.Status == "Pending")
+        {
+            @* Cổng thanh toán: phần Thanh toán (BE4 — feature/s2-payments) sẽ nối vào đây *@
+            <p class="hint" style="margin-top:14px;">Đơn hàng đã được tạo và đang chờ thanh toán. Cổng thanh toán đang được tích hợp.</p>
+        }
+
+        <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:18px;">
+            @if (Model.StoryId.HasValue)
+            {
+                <a class="btn btn-outline" asp-controller="Stories" asp-action="Details" asp-route-id="@Model.StoryId">← Quay lại truyện</a>
+            }
+            else
+            {
+                <a class="btn btn-outline" asp-controller="Home" asp-action="Index">← Về trang chủ</a>
+            }
+        </div>
+    </div>
+</div>
