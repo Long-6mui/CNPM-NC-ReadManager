@@ -45,6 +45,30 @@
 
                 <button type="button" class="btn btn-outline fav-btn" data-id="@story.Id" data-title="@story.Title" data-author="@story.Author" data-cover="@story.CoverUrl"><i>♡</i> <span>Yêu thích</span></button>
 
+                @* PB21 — MUA QUYỀN ĐỌC RIÊNG TRUYỆN (truyện trả phí/kết hợp có giá) *@
+                @if (story.Access != AccessPolicy.Free && story.Price > 0)
+                {
+                    if (Model.Owned)
+                    {
+                        <span class="btn btn-outline" style="cursor:default">✓ Bạn đã sở hữu truyện này</span>
+                    }
+                    else if (User.Identity?.IsAuthenticated != true)
+                    {
+                        <a class="btn btn-outline" asp-controller="Account" asp-action="Login" asp-route-returnUrl="@Url.Action("Details", new { id = story.Id })">Đăng nhập để mua truyện</a>
+                    }
+                    else if (Model.HasPendingOrder)
+                    {
+                        <a class="btn btn-outline" asp-controller="Plans" asp-action="Mine">Hoàn tất thanh toán</a>
+                    }
+                    else
+                    {
+                        <form asp-controller="Plans" asp-action="BuyStory" method="post" style="display:inline;">
+                            <input type="hidden" name="storyId" value="@story.Id" />
+                            <button type="submit" class="btn btn-outline">🛒 Mua trọn bộ @story.Price.ToString("N0")₫</button>
+                        </form>
+                    }
+                }
+
                 @* PB31 — THEO DÕI TRUYỆN: có chương mới sẽ nhận thông báo 🔔 *@
                 @if (User.Identity?.IsAuthenticated == true)
                 {

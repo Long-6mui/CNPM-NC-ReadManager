@@ -6,7 +6,7 @@ using ReadManager.Web.ViewModels;
 
 namespace ReadManager.Web.Controllers;
 
-public class StoriesController(StoriesApiClient api) : Controller
+public class StoriesController(StoriesApiClient api, DemoPlanStore orders) : Controller
 {
     public async Task<IActionResult> Browse(string? q, int? genre, AccessPolicy? access,
         StoryStatus? status, string sort = "updated")
@@ -39,6 +39,7 @@ public class StoriesController(StoriesApiClient api) : Controller
             // PB31 — trạng thái theo dõi (gửi token để biết mình đã theo dõi chưa)
             var token = await HttpContext.GetTokenAsync("access_token");
             var follow = await api.FollowStatusAsync(id, token);
+            var uid = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "";
 
             // Phân trang: giữ số trang trong khoảng hợp lệ
             var pageCount = Math.Max(1, (int)Math.Ceiling(chapters.Count / (double)ChaptersPerPage));
@@ -65,6 +66,9 @@ public class StoriesController(StoriesApiClient api) : Controller
                 // nút "Đọc từ đầu" → chương đầu tiên đã ra mắt (bỏ qua chương còn hẹn giờ)
                 FirstVisibleChapterNo = chapters.FirstOrDefault(c => !c.IsUpcoming)?.ChapterNumber,
                 IsFollowing = follow?.IsFollowing ?? false,
+                // PB21/PB27 — đã mua truyện này chưa / đang có đơn chờ thanh toán không
+                Owned = uid != "" && orders.OwnsStory(uid, id),
+                HasPendingOrder = uid != "" && orders.HasPendingStoryOrder(uid, id),
                 FollowerCount = follow?.FollowerCount ?? 0
             });
         }
@@ -104,6 +108,9 @@ public class StoriesController(StoriesApiClient api) : Controller
                 Locked = c.IsLocked,                                  // true → hiện hộp "cần mở khóa"
                 UpcomingAt = c.IsUpcoming ? StoriesApiClient.ToLocal(c.ScheduledAt) : null,   // chưa tới giờ ra mắt
                 NotYetPublicPreview = c.PublicationStatus != "Published",
+                // PB22 — hệ thống ghi nhận người đọc đã có quyền (gói còn hạn đúng phạm vi hoặc đã mua truyện)
+                HasEntitlement = User.Identity?.IsAuthenticated == true
+                    && orders.CanRead(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "", storyId),
                 PrevNo = c.PreviousChapterNumber,                     // nút "Chương trước"
                 NextNo = c.NextChapterNumber                          // nút "Chương sau"
             };

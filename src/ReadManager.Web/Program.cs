@@ -10,6 +10,11 @@ builder.Services.AddHttpClient<StoriesApiClient>(client =>
     client.BaseAddress = new Uri(builder.Configuration["Api:BaseUrl"] ?? "https://localhost:7188/");
     client.Timeout = TimeSpan.FromSeconds(10);
 });
+builder.Services.AddHttpClient<PlansApiClient>(client =>
+{
+    client.BaseAddress = new Uri(builder.Configuration["Api:BaseUrl"] ?? "https://localhost:7188/");
+    client.Timeout = TimeSpan.FromSeconds(10);
+});
 builder.Services.AddSingleton<DemoPlanStore>();
 builder.Services.AddScoped<ApiCookieEvents>();
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme).AddCookie(options => {

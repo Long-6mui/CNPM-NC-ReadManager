@@ -1,98 +1,152 @@
 namespace ReadManager.Web.Services;
 
-// DỮ LIỆU MẪU: giả lập API gói đọc cho đến khi Backend (s2-*) merge.
-// Tên trường bám theo bảng ReadingPlans / ReadingPlanVersions để sau này đổi sang gọi API dễ dàng.
-public class PlanItem
-{
-    public int PlanId { get; set; }
-    public int PlanVersionId { get; set; }
-    public int VersionNumber { get; set; } = 1;
-    public string Name { get; set; } = "";
-    public bool IsAvailable { get; set; } = true;
-    public decimal Price { get; set; }
-    public int DurationMonths { get; set; } = 1;
-    public string ScopeType { get; set; } = "All";   // All | Selected
-}
+// DỮ LIỆU MẪU (trong bộ nhớ): đơn hàng + quyền đọc.
+// Gói đọc đã lấy từ API thật (PlansApiClient). API đơn hàng/thanh toán nằm ở nhánh feature/s2-orders
+// chưa merge vào main, nên phần mua/thanh toán tạm giả lập ở đây. Khi API đơn hàng merge, thay các
+// hàm bên dưới bằng lời gọi API — giữ nguyên tên hàm thì Controller/View không phải sửa.
 public class OrderItem
 {
     public int Id { get; set; }
     public string UserId { get; set; } = "";
-    public string PlanName { get; set; } = "";
-    public decimal Price { get; set; }
+    public string UserName { get; set; } = "";
+    public string OrderType { get; set; } = "Plan";      // Plan | Story
+    public int PlanId { get; set; }
+    public int PlanVersionId { get; set; }               // phiên bản đã chốt giá khi tạo đơn
+    public int StoryId { get; set; }
+    public string ItemName { get; set; } = "";
+    public decimal Price { get; set; }                   // giá chốt tại thời điểm giao dịch
     public int Months { get; set; }
-    public string Status { get; set; } = "Pending";  // Pending | Paid | Failed
+    public string ScopeType { get; set; } = "All";
+    public List<int> ScopeStoryIds { get; set; } = [];
+    public string Status { get; set; } = "Pending";      // Pending | Paid | Failed
+    public bool GrantFailed { get; set; }                // Paid nhưng cập nhật quyền bị lỗi (PB25)
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public DateTime? PaidAt { get; set; }
 }
-public class Entitlement
+
+public class PlanEntitlement
 {
     public string UserId { get; set; } = "";
+    public int PlanId { get; set; }
     public string PlanName { get; set; } = "";
+    public string ScopeType { get; set; } = "All";
+    public List<int> StoryIds { get; set; } = [];
     public DateTime ExpiresAt { get; set; }
+}
+
+public class StoryEntitlement
+{
+    public string UserId { get; set; } = "";
+    public int StoryId { get; set; }
+    public string Title { get; set; } = "";
+    public DateTime PurchasedAt { get; set; }
 }
 
 public class DemoPlanStore
 {
     private readonly object _lock = new();
-    private readonly List<PlanItem> _rows =
-    [
-        new() { PlanId = 1, PlanVersionId = 1, Name = "Gói đọc tháng", Price = 49000, DurationMonths = 1 },
-        new() { PlanId = 2, PlanVersionId = 2, Name = "Gói đọc 6 tháng", Price = 249000, DurationMonths = 6 },
-        new() { PlanId = 3, PlanVersionId = 3, Name = "Gói đọc năm", Price = 449000, DurationMonths = 12 },
-    ];
     private readonly List<OrderItem> _orders = [];
-    private readonly List<Entitlement> _ent = [];
-    private int _nextVersion = 4, _nextPlan = 4, _nextOrder = 1;
+    private readonly List<PlanEntitlement> _plans = [];
+    private readonly List<StoryEntitlement> _stories = [];
+    private int _nextOrder = 1;
 
-    // Phiên bản mới nhất của mỗi gói
-    public List<PlanItem> Latest(bool onlyAvailable = false)
+    // ---------- Tạo đơn (giá do Controller lấy từ API, không nhận từ client) ----------
+    public OrderItem CreatePlanOrder(string uid, string userName, ReadingPlanApi plan)
     {
-        lock (_lock)
-            return _rows.GroupBy(r => r.PlanId).Select(g => g.OrderBy(r => r.VersionNumber).Last())
-                .Where(p => !onlyAvailable || p.IsAvailable).OrderBy(p => p.PlanId).ToList();
-    }
-
-    // planId = 0: tạo gói mới. planId > 0: phát hành phiên bản giá mới (đơn cũ giữ giá cũ).
-    public void Save(int planId, string name, decimal price, int months, string scope, bool available)
-    {
+        var v = plan.CurrentVersion!;
         lock (_lock)
         {
-            var last = _rows.Where(r => r.PlanId == planId).OrderBy(r => r.VersionNumber).LastOrDefault();
-            if (last is null) planId = _nextPlan++;
-            else foreach (var r in _rows.Where(r => r.PlanId == planId)) { r.Name = name; r.IsAvailable = available; }
-            _rows.Add(new PlanItem { PlanId = planId, PlanVersionId = _nextVersion++, VersionNumber = (last?.VersionNumber ?? 0) + 1,
-                Name = name, IsAvailable = available, Price = price, DurationMonths = months, ScopeType = scope });
-        }
-    }
-
-    public OrderItem? Buy(string uid, int versionId)
-    {
-        lock (_lock)
-        {
-            var v = _rows.FirstOrDefault(r => r.PlanVersionId == versionId && r.IsAvailable);
-            if (v is null) return null;
-            var o = new OrderItem { Id = _nextOrder++, UserId = uid, PlanName = v.Name, Price = v.Price, Months = v.DurationMonths };
+            // Không tạo đơn trùng: còn đơn chờ thanh toán của đúng phiên bản này thì dùng lại
+            var open = _orders.FirstOrDefault(o => o.UserId == uid && o.OrderType == "Plan"
+                && o.PlanVersionId == v.PlanVersionId && o.Status == "Pending");
+            if (open is not null) return open;
+            var o = new OrderItem
+            {
+                Id = _nextOrder++, UserId = uid, UserName = userName, OrderType = "Plan",
+                PlanId = plan.PlanId, PlanVersionId = v.PlanVersionId, ItemName = plan.Name,
+                Price = v.Price, Months = v.DurationMonths, ScopeType = v.ScopeType, ScopeStoryIds = [.. v.StoryIds]
+            };
             _orders.Add(o); return o;
         }
     }
 
-    // Giả lập kết quả thanh toán. Thành công thì cấp quyền; gia hạn khi còn hạn sẽ cộng dồn.
-    public bool Pay(string uid, int orderId, bool ok)
+    // Trả null nếu đã sở hữu (không thu tiền lại)
+    public OrderItem? CreateStoryOrder(string uid, string userName, int storyId, string title, decimal price)
+    {
+        lock (_lock)
+        {
+            if (OwnsStoryNoLock(uid, storyId)) return null;
+            var open = _orders.FirstOrDefault(o => o.UserId == uid && o.OrderType == "Story" && o.StoryId == storyId && o.Status == "Pending");
+            if (open is not null) return open;
+            var o = new OrderItem { Id = _nextOrder++, UserId = uid, UserName = userName, OrderType = "Story", StoryId = storyId, ItemName = title, Price = price };
+            _orders.Add(o); return o;
+        }
+    }
+
+    // ---------- Thanh toán (giả lập cổng thanh toán) ----------
+    // outcome: "ok" | "fail" | "grantfail" (thanh toán xong nhưng lỗi cập nhật quyền → Admin khôi phục)
+    // Chỉ xử lý đơn đang Pending → bấm/gửi lặp không cấp quyền hai lần.
+    public bool Pay(string uid, int orderId, string outcome)
     {
         lock (_lock)
         {
             var o = _orders.FirstOrDefault(x => x.Id == orderId && x.UserId == uid);
             if (o is null || o.Status != "Pending") return false;
-            o.Status = ok ? "Paid" : "Failed";
-            if (ok)
-            {
-                var e = _ent.FirstOrDefault(x => x.UserId == uid && x.PlanName == o.PlanName && x.ExpiresAt > DateTime.UtcNow);
-                if (e is null) _ent.Add(new Entitlement { UserId = uid, PlanName = o.PlanName, ExpiresAt = DateTime.UtcNow.AddMonths(o.Months) });
-                else e.ExpiresAt = e.ExpiresAt.AddMonths(o.Months);
-            }
+            if (outcome == "fail") { o.Status = "Failed"; return true; }
+            o.Status = "Paid"; o.PaidAt = DateTime.UtcNow;
+            if (outcome == "grantfail") o.GrantFailed = true; else GrantNoLock(o);
             return true;
         }
     }
 
+    // PB25 — Admin khôi phục quyền: chỉ với đơn đã Paid mà chưa cấp quyền; không thu thêm tiền, không cấp trùng
+    public bool Recover(int orderId)
+    {
+        lock (_lock)
+        {
+            var o = _orders.FirstOrDefault(x => x.Id == orderId);
+            if (o is null || o.Status != "Paid" || !o.GrantFailed) return false;
+            GrantNoLock(o); o.GrantFailed = false; return true;
+        }
+    }
+
+    private void GrantNoLock(OrderItem o)
+    {
+        if (o.OrderType == "Story")
+        {
+            if (!OwnsStoryNoLock(o.UserId, o.StoryId))
+                _stories.Add(new StoryEntitlement { UserId = o.UserId, StoryId = o.StoryId, Title = o.ItemName, PurchasedAt = DateTime.UtcNow });
+            return;
+        }
+        // Gia hạn: còn hạn thì cộng dồn vào ngày hết hạn, hết hạn thì tính từ bây giờ
+        var e = _plans.FirstOrDefault(x => x.UserId == o.UserId && x.PlanId == o.PlanId && x.ExpiresAt > DateTime.UtcNow);
+        if (e is null)
+            _plans.Add(new PlanEntitlement { UserId = o.UserId, PlanId = o.PlanId, PlanName = o.ItemName, ScopeType = o.ScopeType,
+                StoryIds = [.. o.ScopeStoryIds], ExpiresAt = DateTime.UtcNow.AddMonths(o.Months) });
+        else e.ExpiresAt = e.ExpiresAt.AddMonths(o.Months);
+    }
+
+    // ---------- Truy vấn ----------
     public List<OrderItem> Orders(string uid) { lock (_lock) return _orders.Where(o => o.UserId == uid).OrderByDescending(o => o.Id).ToList(); }
-    public List<Entitlement> Entitlements(string uid) { lock (_lock) return _ent.Where(e => e.UserId == uid && e.ExpiresAt > DateTime.UtcNow).OrderBy(e => e.ExpiresAt).ToList(); }
+    public List<OrderItem> AllOrders(string? status = null)
+    { lock (_lock) return _orders.Where(o => string.IsNullOrEmpty(status) || o.Status == status).OrderByDescending(o => o.Id).ToList(); }
+    public List<PlanEntitlement> PlanEntitlements(string uid)
+    { lock (_lock) return _plans.Where(e => e.UserId == uid && e.ExpiresAt > DateTime.UtcNow).OrderBy(e => e.ExpiresAt).ToList(); }
+    public List<StoryEntitlement> OwnedStories(string uid)
+    { lock (_lock) return _stories.Where(s => s.UserId == uid).OrderByDescending(s => s.PurchasedAt).ToList(); }
+
+    public bool OwnsStory(string uid, int storyId) { lock (_lock) return OwnsStoryNoLock(uid, storyId); }
+    private bool OwnsStoryNoLock(string uid, int storyId) => _stories.Any(s => s.UserId == uid && s.StoryId == storyId);
+
+    // PB22/PB23 — có quyền đọc truyện này không? (mua riêng luôn còn; gói chỉ tính khi còn hạn và đúng phạm vi)
+    public bool CanRead(string uid, int storyId)
+    {
+        lock (_lock)
+            return OwnsStoryNoLock(uid, storyId)
+                || _plans.Any(e => e.UserId == uid && e.ExpiresAt > DateTime.UtcNow
+                                   && (e.ScopeType == "All" || e.StoryIds.Contains(storyId)));
+    }
+
+    public bool HasPendingStoryOrder(string uid, int storyId)
+    { lock (_lock) return _orders.Any(o => o.UserId == uid && o.OrderType == "Story" && o.StoryId == storyId && o.Status == "Pending"); }
 }

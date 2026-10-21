@@ -48,6 +48,7 @@ public class ReadVm
     public bool Locked { get; set; }
     public bool NotYetPublicPreview { get; set; }
     public DateTime? UpcomingAt { get; set; }   // có giá trị = chưa tới giờ ra mắt (giờ Việt Nam)
+    public bool HasEntitlement { get; set; }    // PB22 — người đọc đã có quyền (gói/mua riêng)
     public int? PrevNo { get; set; }
     public int? NextNo { get; set; }
 

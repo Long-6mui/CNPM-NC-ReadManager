@@ -108,7 +108,18 @@
     {
         <div class="locked-box">
             <h3>Chương này dành cho độc giả đã mở khóa</h3>
-            <p>Nội dung trả phí đang khóa. Chức năng mua và cấp quyền chưa được tích hợp.</p>
+            @if (Model.HasEntitlement)
+            {
+                <p>Hệ thống ghi nhận bạn đã có quyền đọc truyện này. Nội dung sẽ mở khi API kiểm tra quyền (PB22) được tích hợp.</p>
+            }
+            else
+            {
+                <p>Mua riêng truyện hoặc đăng ký gói đọc để đọc chương này. Quyền mua riêng không mất khi gói hết hạn.</p>
+                <div style="display:flex; gap:10px; justify-content:center; flex-wrap:wrap; margin-top:12px;">
+                    <a class="btn btn-brass" asp-controller="Stories" asp-action="Details" asp-route-id="@Model.Story.Id">Mua truyện này</a>
+                    <a class="btn btn-outline" asp-controller="Plans" asp-action="Index">Xem gói đọc</a>
+                </div>
+            }
         </div>
     }
     else
