@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using ReadManager.Api.Entities;
 
 namespace ReadManager.Api.Data;
@@ -34,9 +34,15 @@ public class AppDbContext : DbContext
     // ----- BE3: Thống kê nội dung (PB40) -----
     public DbSet<ChapterRead> ChapterReads => Set<ChapterRead>();
 
+    public DbSet<Payment> Payments => Set<Payment>();
+    public DbSet<PaymentEvent> PaymentEvents => Set<PaymentEvent>();
+    public DbSet<UserSubscription> UserSubscriptions => Set<UserSubscription>();
+    public DbSet<StoryPurchase> StoryPurchases => Set<StoryPurchase>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
+        PaymentModelConfiguration.Configure(modelBuilder);
         modelBuilder.HasCharSet("utf8mb4");
         modelBuilder.UseCollation("utf8mb4_unicode_ci");
 
