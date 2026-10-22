@@ -12,10 +12,9 @@ namespace ReadManager.Api.Services;
 public interface IChapterService
 {
     // ----- Phần ĐỌC (độc giả + admin) -----
-    Task<List<ChapterListItemDto>?> GetListAsync(int storyId, bool includeDrafts);              // PB11
-    // readerId = người đang đọc (null = khách) → dùng để ghi lượt đọc (PB40)
-    Task<ChapterReadDto?> GetByIdAsync(int chapterId, bool isAdmin, int? readerId = null);                          // PB12 (Mobile)
-    Task<ChapterReadDto?> GetByNumberAsync(int storyId, int chapterNumber, bool isAdmin, int? readerId = null);     // PB12 (Web)
+    Task<List<ChapterListItemDto>?> GetListAsync(int storyId, bool includeDrafts, int? userId = null);              // PB11 (userId: PB22 mở khóa theo quyền)
+    Task<ChapterReadDto?> GetByIdAsync(int chapterId, bool isAdmin, int? userId = null);                            // PB12 (Mobile), PB22
+    Task<ChapterReadDto?> GetByNumberAsync(int storyId, int chapterNumber, bool isAdmin, int? userId = null);       // PB12 (Web), PB22
 
     // ----- Phần GHI (chỉ admin) -----
     Task<ChapterListItemDto?> CreateAsync(int storyId, CreateChapterDto dto);                   // PB07
@@ -45,17 +44,21 @@ public class ChapterService : IChapterService
     // PB31 — báo cho người theo dõi khi có chương mới
     private readonly INotificationService _notifications;
 
-    public ChapterService(AppDbContext db, INotificationService notifications)
+    // PB22 — kiểm tra quyền đọc chương trả phí (mua riêng / gói còn hạn)
+    private readonly IEntitlementService _entitlements;
+
+    public ChapterService(AppDbContext db, INotificationService notifications, IEntitlementService entitlements)
     {
         _db = db;
         _notifications = notifications;
+        _entitlements = entitlements;
     }
 
     //  PHẦN 1: ĐỌC DỮ LIỆU
 
     // PB11 — LẤY DANH SÁCH CHƯƠNG TRUYỆN
 
-    public async Task<List<ChapterListItemDto>?> GetListAsync(int storyId, bool includeDrafts)
+    public async Task<List<ChapterListItemDto>?> GetListAsync(int storyId, bool includeDrafts, int? userId = null)
     {
         // 1. Tìm truyện
         var story = await _db.Stories.AsNoTracking().FirstOrDefaultAsync(s => s.StoryId == storyId);
@@ -95,6 +98,18 @@ public class ChapterService : IChapterService
         {
             foreach (var row in rows)
                 row.IsLocked = IsLocked(story.AccessPolicy, row.AccessLevel);
+
+            // PB22 — người đọc đã mua truyện / có gói còn hạn thì mở khóa. Chỉ tra quyền 1 lần cho cả truyện,
+            // và chỉ khi thật sự có chương đang khóa.
+            if (userId is not null && rows.Any(r => r.IsLocked))
+            {
+                var access = await _entitlements.ResolveAsync(userId, storyId, story.AccessPolicy);
+                if (access.HasAccess)
+                {
+                    foreach (var row in rows)
+                        row.IsLocked = false;
+                }
+            }
         }
 
         // Sửa luôn dấu tiếng Việt cho các chương đã lưu từ trước
@@ -106,31 +121,31 @@ public class ChapterService : IChapterService
 
     // PB12 — ĐỌC CHƯƠNG THEO ID (Mobile dùng)
 
-    public async Task<ChapterReadDto?> GetByIdAsync(int chapterId, bool isAdmin, int? readerId = null)
+    public async Task<ChapterReadDto?> GetByIdAsync(int chapterId, bool isAdmin, int? userId = null)
     {
         var chapter = await _db.Chapters.AsNoTracking()
             .Include(c => c.Story)                         // lấy kèm thông tin truyện
             .FirstOrDefaultAsync(c => c.ChapterId == chapterId);
 
-        return chapter is null ? null : await BuildReadDtoAsync(chapter, isAdmin, readerId);
+        return chapter is null ? null : await BuildReadDtoAsync(chapter, isAdmin, userId);
     }
 
 
     // PB12 — ĐỌC CHƯƠNG THEO SỐ CHƯƠNG (Web dùng) vd: truyện 1, chương 3
 
-    public async Task<ChapterReadDto?> GetByNumberAsync(int storyId, int chapterNumber, bool isAdmin, int? readerId = null)
+    public async Task<ChapterReadDto?> GetByNumberAsync(int storyId, int chapterNumber, bool isAdmin, int? userId = null)
     {
         var chapter = await _db.Chapters.AsNoTracking()
             .Include(c => c.Story)
             .FirstOrDefaultAsync(c => c.StoryId == storyId && c.ChapterNumber == chapterNumber);
 
-        return chapter is null ? null : await BuildReadDtoAsync(chapter, isAdmin, readerId);
+        return chapter is null ? null : await BuildReadDtoAsync(chapter, isAdmin, userId);
     }
 
 
     // HÀM PHỤ: dựng dữ liệu cho màn hình đọc (dùng chung cho 2 hàm trên)
 
-    private async Task<ChapterReadDto?> BuildReadDtoAsync(Chapter chapter, bool isAdmin, int? readerId)
+    private async Task<ChapterReadDto?> BuildReadDtoAsync(Chapter chapter, bool isAdmin, int? userId)
     {
         // 1. Độc giả chỉ được xem chương ĐÃ CÔNG KHAI của truyện ĐÃ CÔNG KHAI.
         //    Không đạt → trả null (404), không cho biết chương có tồn tại hay không.
@@ -139,15 +154,20 @@ public class ChapterService : IChapterService
             return null;
 
         // 2. PB10 — KIỂM TRA QUYỀN ĐỌC MIỄN PHÍ. Admin luôn đọc được.
+        //    PB22 — chương trả phí: tra thêm quyền mua riêng / gói còn hạn của người đang đọc.
+        //    PB23 — gói hết hạn không ảnh hưởng truyện đã mua riêng (EntitlementService xử lý).
         var locked = !isAdmin && IsLocked(chapter.Story.AccessPolicy, chapter.AccessLevel);
+        string? lockReason = null;
+        if (locked)
+        {
+            var access = await _entitlements.ResolveAsync(userId, chapter.StoryId, chapter.Story.AccessPolicy);
+            locked = !access.HasAccess;
+            lockReason = locked ? access.Reason : null;
+        }
 
         // Hẹn giờ: chưa tới giờ ra mắt → độc giả chưa đọc được (admin vẫn xem trước được)
         var upcoming = IsUpcoming(chapter.PublicationStatus, chapter.ScheduledAt, DateTime.UtcNow);
         var hideContent = locked || (upcoming && !isAdmin);
-
-        // PB40 — độc giả đọc được nội dung → ghi 1 lượt đọc (Admin xem trước thì không tính)
-        if (!isAdmin && !hideContent)
-            await RecordReadAsync(chapter.StoryId, chapter.ChapterId, readerId);
 
         // 3. Tìm chương TRƯỚC và chương SAU để làm nút chuyển chương.
         var siblings = _db.Chapters.AsNoTracking().Where(c => c.StoryId == chapter.StoryId);
@@ -178,6 +198,7 @@ public class ChapterService : IChapterService
             AccessLevel = chapter.AccessLevel,
             PublicationStatus = chapter.PublicationStatus,
             IsLocked = locked,
+            LockReason = lockReason,
             IsUpcoming = upcoming,
             ScheduledAt = chapter.ScheduledAt,
             PreviousChapterId = prev?.ChapterId,                 // "?." = nếu prev là null thì kết quả cũng null
@@ -187,41 +208,6 @@ public class ChapterService : IChapterService
             PublishedAt = chapter.PublishedAt,
             UpdatedAt = chapter.UpdatedAt
         };
-    }
-
-    // PB40 — GHI LƯỢT ĐỌC
-    // Người đã đăng nhập mở lại cùng chương trong 30 phút → không tính thêm (tránh F5 làm tăng ảo).
-    // Lỗi khi ghi lượt đọc KHÔNG được làm hỏng việc đọc chương → bắt lỗi và bỏ qua.
-    private static readonly TimeSpan ReadDedupWindow = TimeSpan.FromMinutes(30);
-
-    private async Task RecordReadAsync(int storyId, int chapterId, int? readerId)
-    {
-        try
-        {
-            var now = DateTime.UtcNow;
-            if (readerId.HasValue)
-            {
-                var since = now - ReadDedupWindow;
-                var readRecently = await _db.ChapterReads.AnyAsync(r =>
-                    r.UserId == readerId && r.ChapterId == chapterId && r.ReadAt >= since);
-                if (readRecently)
-                    return;
-            }
-
-            _db.ChapterReads.Add(new ChapterRead
-            {
-                StoryId = storyId,
-                ChapterId = chapterId,
-                UserId = readerId,
-                ReadAt = now
-            });
-            await _db.SaveChangesAsync();
-        }
-        catch (DbUpdateException)
-        {
-            // bỏ qua: thống kê thiếu 1 lượt còn hơn độc giả không đọc được chương
-            _db.ChangeTracker.Clear();
-        }
     }
 
     //    PHẦN 2: GHI DỮ LIỆU (chỉ admin)

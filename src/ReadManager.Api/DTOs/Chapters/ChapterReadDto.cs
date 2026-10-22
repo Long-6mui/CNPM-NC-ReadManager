@@ -19,6 +19,9 @@ public class ChapterReadDto
     public string PublicationStatus { get; set; } = "Draft";
     public bool IsLocked { get; set; }                       // true = cần mở khóa mới đọc được
 
+    // PB22 — vì sao bị khóa (null nếu không khóa): LoginRequired | NotPurchased | SubscriptionExpired
+    public string? LockReason { get; set; }
+
     // ----- Nút "Chương trước" / "Chương sau" -----
     // null = không có (đang ở chương đầu hoặc chương cuối)
     // Mobile chuyển chương bằng Id, Web chuyển chương bằng số chương → trả cả 2.

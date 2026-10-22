@@ -41,8 +41,8 @@ public class ChaptersController : ControllerBase
     // Admin được xem trước chương nháp và chương trả phí.
     private bool IsAdmin => User.IsInRole(AdminRole);
 
-    // Id người đang đọc (null = khách chưa đăng nhập) — dùng để ghi lượt đọc (PB40)
-    private int? ReaderId =>
+    // PB22 — người đang đăng nhập (null = khách). Dùng để kiểm tra quyền đọc chương trả phí.
+    private int? CurrentUserId =>
         int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var id) ? id : null;
 
 
@@ -57,7 +57,7 @@ public class ChaptersController : ControllerBase
     [HttpGet("api/stories/{storyId:int}/chapters")]
     public async Task<ActionResult<List<ChapterListItemDto>>> GetList(int storyId)
     {
-        var list = await _chapterService.GetListAsync(storyId, includeDrafts: false);
+        var list = await _chapterService.GetListAsync(storyId, includeDrafts: false, userId: CurrentUserId);
         return list is null ? NotFound() : Ok(list);
     }
 
@@ -66,7 +66,7 @@ public class ChaptersController : ControllerBase
     [HttpGet("api/stories/{storyId:int}/chapters/{chapterNumber:int}")]
     public async Task<ActionResult<ChapterReadDto>> GetByNumber(int storyId, int chapterNumber)
     {
-        var chapter = await _chapterService.GetByNumberAsync(storyId, chapterNumber, IsAdmin, ReaderId);
+        var chapter = await _chapterService.GetByNumberAsync(storyId, chapterNumber, IsAdmin, CurrentUserId);
         return chapter is null ? NotFound() : Ok(chapter);
     }
 
@@ -75,7 +75,7 @@ public class ChaptersController : ControllerBase
     [HttpGet("api/chapters/{chapterId:int}")]
     public async Task<ActionResult<ChapterReadDto>> GetById(int chapterId)
     {
-        var chapter = await _chapterService.GetByIdAsync(chapterId, IsAdmin, ReaderId);
+        var chapter = await _chapterService.GetByIdAsync(chapterId, IsAdmin, CurrentUserId);
         return chapter is null ? NotFound() : Ok(chapter);
     }
 
