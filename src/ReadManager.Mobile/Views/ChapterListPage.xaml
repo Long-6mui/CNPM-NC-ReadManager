@@ -7,6 +7,10 @@
              x:Class="ReadManager.Mobile.Views.ChapterListPage"
              Title="{Binding StoryTitle}">
 
+    <Shell.BackButtonBehavior>
+        <BackButtonBehavior IconOverride="ic_back.png" />
+    </Shell.BackButtonBehavior>
+
     <Grid RowDefinitions="Auto,*" Padding="16">
 
         <VerticalStackLayout Grid.Row="0"><Label Text="{Binding ErrorMessage}" TextColor="Red" />
@@ -29,9 +33,10 @@
                         </VerticalStackLayout>
 
                         <Label Grid.Column="1"
-                               Text="{Binding AccessLevel}"
+                               Text="{Binding AccessText}"
                                FontSize="12"
-                               TextColor="Gray"
+                               FontAttributes="Bold"
+                               TextColor="{Binding AccessColor}"
                                VerticalOptions="Center" />
                     </Grid>
                 </DataTemplate>

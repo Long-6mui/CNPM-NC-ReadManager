@@ -11,6 +11,7 @@ public partial class StoryDetailViewModel : BaseViewModel
 {
     private readonly IStoryService _storyService;
     private readonly ILibraryService _library;
+    private readonly IOrderService _orders;
 
     [ObservableProperty]
     private int storyId;
@@ -24,10 +25,16 @@ public partial class StoryDetailViewModel : BaseViewModel
 
     public string FavoriteText => IsFavorite ? "♥ Đã yêu thích" : "♡ Yêu thích";
 
-    public StoryDetailViewModel(IStoryService storyService, ILibraryService library)
+    // ----- Mua trọn bộ (PB21): lấy từ báo giá của API -----
+    [ObservableProperty] private bool showBuy;
+    [ObservableProperty] private bool showOwned;
+    [ObservableProperty] private string buyText = string.Empty;
+
+    public StoryDetailViewModel(IStoryService storyService, ILibraryService library, IOrderService orders)
     {
         _storyService = storyService;
         _library = library;
+        _orders = orders;
     }
 
     // Shell tự gán StoryId khi điều hướng tới trang này
@@ -41,6 +48,38 @@ public partial class StoryDetailViewModel : BaseViewModel
             // Ghi vào "Truyện đã xem gần đây" của Tủ sách
             _library.AddToHistory(Story);
             IsFavorite = _library.IsFavorite(Story.StoryId);
+        });
+        _ = RefreshPurchaseAsync();
+    }
+
+    // Cập nhật nút "Mua trọn bộ / Đã sở hữu". Gọi lại mỗi lần quay về màn này (sau khi mua).
+    public async Task RefreshPurchaseAsync()
+    {
+        ShowBuy = false;
+        ShowOwned = false;
+        if (StoryId <= 0) return;
+
+        try
+        {
+            var quote = await _orders.QuoteStoryAsync(StoryId);
+            if (quote is null) return;
+
+            ShowOwned = quote.AlreadyOwned;
+            ShowBuy = quote.CanBuy;
+            BuyText = quote.PendingOrderId.HasValue
+                ? $"Tiếp tục thanh toán — {quote.AmountText}"
+                : $"🛒 Mua trọn bộ — {quote.AmountText}";
+        }
+        catch { /* truyện miễn phí / mất mạng: không hiện nút mua */ }
+    }
+
+    [RelayCommand]
+    private async Task BuyAsync()
+    {
+        if (StoryId <= 0) return;
+        await Shell.Current.GoToAsync(nameof(Views.CheckoutPage), new Dictionary<string, object>
+        {
+            { "storyId", StoryId }
         });
     }
 

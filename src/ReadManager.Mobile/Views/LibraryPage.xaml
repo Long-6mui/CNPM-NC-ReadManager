@@ -10,7 +10,7 @@
 
     <Grid RowDefinitions="Auto,Auto,*">
 
-        <!-- Hai mục: Đã xem gần đây | Yêu thích -->
+        <!-- Ba mục: Đã xem gần đây | Yêu thích | Đã mua -->
         <HorizontalStackLayout Grid.Row="0" Spacing="8" Padding="16,12" BackgroundColor="White">
             <Button Text="Đã xem gần đây" Style="{StaticResource TabBtn}"
                     Command="{Binding SelectTabCommand}" CommandParameter="0">
@@ -32,6 +32,16 @@
                     </DataTrigger>
                 </Button.Triggers>
             </Button>
+            <Button Text="Đã mua" Style="{StaticResource TabBtn}"
+                    Command="{Binding SelectTabCommand}" CommandParameter="2">
+                <Button.Triggers>
+                    <DataTrigger TargetType="Button" Binding="{Binding IsTab2}" Value="True">
+                        <Setter Property="BackgroundColor" Value="{StaticResource WebNavy}" />
+                        <Setter Property="TextColor" Value="White" />
+                        <Setter Property="BorderColor" Value="{StaticResource WebNavy}" />
+                    </DataTrigger>
+                </Button.Triggers>
+            </Button>
         </HorizontalStackLayout>
 
         <!-- Số truyện + nút xóa lịch sử -->
@@ -42,7 +52,8 @@
         </Grid>
 
         <!-- Danh sách -->
-        <CollectionView Grid.Row="2" ItemsSource="{Binding Items}" SelectionMode="None" Margin="16,6,16,0">
+        <CollectionView Grid.Row="2" ItemsSource="{Binding Items}" SelectionMode="None" Margin="16,6,16,0"
+                        IsVisible="{Binding ShowList}">
             <CollectionView.Footer>
                 <BoxView HeightRequest="16" Color="Transparent" />
             </CollectionView.Footer>
@@ -123,5 +134,81 @@
             <Label Text="{Binding EmptyTitle}" Style="{StaticResource LblH2}" FontSize="18" HorizontalTextAlignment="Center" />
             <Label Text="{Binding EmptyHint}" Style="{StaticResource LblMuted}" HorizontalTextAlignment="Center" />
         </VerticalStackLayout>
+
+        <!-- ============ Mục "Đã mua" (gói đang dùng + truyện đã mua trọn bộ) ============ -->
+        <ScrollView Grid.Row="2" IsVisible="{Binding IsTab2}">
+            <VerticalStackLayout Padding="16,6,16,32" Spacing="12">
+
+                <ActivityIndicator IsRunning="{Binding IsBusy}" IsVisible="{Binding IsBusy}" Color="{StaticResource WebRoyal}" />
+                <Label Text="{Binding ErrorMessage}" TextColor="{StaticResource WebCrimson}"
+                       IsVisible="{Binding ErrorMessage, Converter={StaticResource StringToBoolConverter}}" />
+
+                <!-- Chưa đăng nhập -->
+                <Border Style="{StaticResource Panel}" IsVisible="{Binding PurchasesNeedLogin}">
+                    <VerticalStackLayout Spacing="10">
+                        <Label Text="Đăng nhập để xem truyện và gói đã mua." Style="{StaticResource LblH2}" FontSize="17" />
+                        <Button Text="Đăng nhập" Style="{StaticResource BtnBrass}" Command="{Binding GoToLoginCommand}" />
+                    </VerticalStackLayout>
+                </Border>
+
+                <!-- Gói đang dùng -->
+                <Border Style="{StaticResource Panel}" IsVisible="{Binding HasMyPlans}">
+                    <VerticalStackLayout Spacing="10">
+                        <Label Text="Gói đang dùng" FontSize="15" FontAttributes="Bold" TextColor="{StaticResource WebText}" />
+                        <VerticalStackLayout BindableLayout.ItemsSource="{Binding MyPlans}" Spacing="10">
+                            <BindableLayout.ItemTemplate>
+                                <DataTemplate x:DataType="models:PlanEntitlement">
+                                    <Grid ColumnDefinitions="*,Auto">
+                                        <VerticalStackLayout Spacing="2">
+                                            <Label Text="{Binding PlanName}" FontSize="14" FontAttributes="Bold" TextColor="{StaticResource WebText}" />
+                                            <Label Text="{Binding ExpiresText}" Style="{StaticResource LblCardMeta}" />
+                                        </VerticalStackLayout>
+                                        <Label Grid.Column="1" Text="{Binding RemainingText}" FontSize="12" FontAttributes="Bold"
+                                               TextColor="{StaticResource WebSage}" VerticalOptions="Center" />
+                                    </Grid>
+                                </DataTemplate>
+                            </BindableLayout.ItemTemplate>
+                        </VerticalStackLayout>
+                    </VerticalStackLayout>
+                </Border>
+
+                <!-- Truyện đã mua trọn bộ -->
+                <Border Style="{StaticResource Panel}" IsVisible="{Binding HasOwnedStories}">
+                    <VerticalStackLayout Spacing="10">
+                        <Label Text="Truyện đã mua trọn bộ" FontSize="15" FontAttributes="Bold" TextColor="{StaticResource WebText}" />
+                        <VerticalStackLayout BindableLayout.ItemsSource="{Binding OwnedStories}" Spacing="10">
+                            <BindableLayout.ItemTemplate>
+                                <DataTemplate x:DataType="models:OwnedStory">
+                                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                                        <Grid.GestureRecognizers>
+                                            <TapGestureRecognizer
+                                                Command="{Binding Source={RelativeSource AncestorType={x:Type vm:LibraryViewModel}}, Path=OpenOwnedStoryCommand}"
+                                                CommandParameter="{Binding .}" />
+                                        </Grid.GestureRecognizers>
+                                        <VerticalStackLayout Spacing="2">
+                                            <Label Text="{Binding Title}" FontSize="14" FontAttributes="Bold" TextColor="{StaticResource WebText}"
+                                                   LineBreakMode="TailTruncation" MaxLines="1" />
+                                            <Label Text="{Binding PurchasedText}" Style="{StaticResource LblCardMeta}" />
+                                        </VerticalStackLayout>
+                                        <Label Grid.Column="1" Text="›" FontSize="20" TextColor="{StaticResource WebMuted}" VerticalOptions="Center" />
+                                    </Grid>
+                                </DataTemplate>
+                            </BindableLayout.ItemTemplate>
+                        </VerticalStackLayout>
+                    </VerticalStackLayout>
+                </Border>
+
+                <!-- Chưa mua gì -->
+                <VerticalStackLayout IsVisible="{Binding PurchasesEmpty}" Padding="8,24" Spacing="8">
+                    <Label Text="Bạn chưa mua gói hay truyện nào." Style="{StaticResource LblH2}" FontSize="18" HorizontalTextAlignment="Center" />
+                    <Label Text="Chọn một gói đọc hoặc mua trọn bộ truyện trả phí để đọc không giới hạn." Style="{StaticResource LblMuted}"
+                           HorizontalTextAlignment="Center" />
+                </VerticalStackLayout>
+
+                <Button Text="Xem các gói đọc" Style="{StaticResource BtnBrass}" Command="{Binding OpenPlansCommand}" />
+                <Button Text="Lịch sử thanh toán" Style="{StaticResource BtnOutlineSm}" HeightRequest="44"
+                        Command="{Binding OpenHistoryCommand}" />
+            </VerticalStackLayout>
+        </ScrollView>
     </Grid>
 </ContentPage>
