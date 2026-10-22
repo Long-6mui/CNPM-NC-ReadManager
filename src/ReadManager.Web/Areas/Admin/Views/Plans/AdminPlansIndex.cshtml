@@ -1,30 +1,88 @@
-@model List<ReadManager.Web.Services.PlanItem>
+@model ReadManager.Web.Areas.Admin.Controllers.AdminPlansVm
 @{
     ViewData["Title"] = "Gói đọc";
     ViewBag.ActiveNav = "plans";
-    var rows = Model.Append(new ReadManager.Web.Services.PlanItem { PlanId = 0, VersionNumber = 0 }).ToList();
 }
 <link rel="stylesheet" href="~/css/plans.css" asp-append-version="true" />
+@functions {
+    static string Scope(ReadManager.Web.Services.PlanVersionApi? v) => v is null ? "—" : v.ScopeType == "All" ? "Tất cả truyện" : $"{v.StoryIds.Count} truyện";
+}
 <div class="container section">
     <div class="section-head"><h2>Trang quản trị</h2></div>
     <div class="admin-shell">
         <partial name="_AdminNav" />
         <div>
-            <span class="pl-demo">Dữ liệu mẫu: chưa nối API gói đọc</span>
-            <p class="pl-sub">Sửa giá hoặc thời hạn sẽ phát hành một phiên bản mới, đơn đã mua vẫn giữ giá cũ. Dòng cuối để tạo gói mới.</p>
-            <div class="ad-row ad-head"><span>Tên gói</span><span>Giá (đ)</span><span>Số tháng</span><span>Phạm vi</span><span>Đang bán</span><span></span></div>
-            @foreach (var p in rows)
-            {
-                <form asp-action="Save" method="post" class="ad-row">
-                    <input type="hidden" name="planId" value="@p.PlanId" />
-                    <input name="name" value="@p.Name" placeholder="Tên gói mới" required />
-                    <input name="price" type="number" min="1" step="1000" value="@(p.PlanId == 0 ? "" : p.Price.ToString("0"))" required />
-                    <input name="months" type="number" min="1" value="@(p.PlanId == 0 ? "" : p.DurationMonths.ToString())" required />
-                    <select name="scope"><option value="All" selected="@(p.ScopeType == "All")">Tất cả truyện</option><option value="Selected" selected="@(p.ScopeType == "Selected")">Truyện được chọn</option></select>
-                    <label><input type="checkbox" name="available" value="true" checked="@(p.PlanId == 0 || p.IsAvailable)" /> Bán</label>
-                    <button class="btn btn-brass btn-sm" type="submit">@(p.PlanId == 0 ? "+ Tạo gói" : $"Lưu (v{p.VersionNumber})")</button>
+            <p class="pl-sub">Đổi giá, thời hạn hoặc phạm vi sẽ phát hành <b>phiên bản mới</b>; đơn đã mua giữ nguyên giá cũ. Ngừng bán không xóa gói và không thu hồi quyền đã cấp.</p>
+
+            <details class="pl-edit" open>
+                <summary>+ Tạo gói mới</summary>
+                <form asp-action="Save" method="post" class="pl-form">
+                    <input type="hidden" name="planId" value="0" />
+                    <label>Tên gói<input name="name" maxlength="150" required /></label>
+                    <label>Giá (đ)<input name="price" type="number" min="1" step="1000" required /></label>
+                    <label>Số tháng<input name="months" type="number" min="1" max="120" required /></label>
+                    <label>Phạm vi<select name="scope" class="scope-sel"><option value="All">Tất cả truyện</option><option value="Selected">Truyện được chọn</option></select></label>
+                    <div class="pl-stories" hidden>
+                        <span>Chọn truyện thuộc gói:</span>
+                        @foreach (var s in Model.AllStories) { <label><input type="checkbox" name="storyIds" value="@s.StoryId" /> @s.Title</label> }
+                        @if (Model.AllStories.Count == 0) { <i>Chưa có truyện nào.</i> }
+                    </div>
+                    <button class="btn btn-brass btn-sm" type="submit">Tạo gói</button>
                 </form>
+            </details>
+
+            @if (Model.Plans.Count == 0) { <p class="pl-sub">Chưa có gói nào (hoặc chưa kết nối được API).</p> }
+            @foreach (var p in Model.Plans)
+            {
+                var v = p.CurrentVersion;
+                <details class="pl-edit">
+                    <summary>
+                        <b>@p.Name</b> — @(v is null ? "chưa có phiên bản" : $"{v.Price:N0}đ / {v.DurationMonths} tháng / {Scope(v)} (v{v.VersionNumber})")
+                        <span class="pl-st @(p.IsAvailable ? "Paid" : "Failed")">@(p.IsAvailable ? "Đang bán" : "Ngừng bán")</span>
+                    </summary>
+
+                    <form asp-action="Rename" method="post" class="pl-inline">
+                        <input type="hidden" name="planId" value="@p.PlanId" />
+                        <input name="name" value="@p.Name" maxlength="150" required aria-label="Tên gói" />
+                        <button class="btn btn-outline btn-sm" type="submit">Đổi tên</button>
+                    </form>
+                    <form asp-action="Availability" method="post" class="pl-inline">
+                        <input type="hidden" name="planId" value="@p.PlanId" />
+                        <input type="hidden" name="isAvailable" value="@(p.IsAvailable ? "false" : "true")" />
+                        <button class="btn btn-outline btn-sm" type="submit">@(p.IsAvailable ? "Ngừng bán" : "Bán lại")</button>
+                    </form>
+
+                    <form asp-action="Save" method="post" class="pl-form">
+                        <input type="hidden" name="planId" value="@p.PlanId" />
+                        <label>Giá (đ)<input name="price" type="number" min="1" step="1000" value="@v?.Price.ToString("0")" required /></label>
+                        <label>Số tháng<input name="months" type="number" min="1" max="120" value="@v?.DurationMonths" required /></label>
+                        <label>Phạm vi<select name="scope" class="scope-sel"><option value="All" selected="@(v?.ScopeType != "Selected")">Tất cả truyện</option><option value="Selected" selected="@(v?.ScopeType == "Selected")">Truyện được chọn</option></select></label>
+                        <div class="pl-stories" hidden>
+                            <span>Chọn truyện thuộc gói:</span>
+                            @foreach (var s in Model.AllStories) { <label><input type="checkbox" name="storyIds" value="@s.StoryId" checked="@(v?.StoryIds.Contains(s.StoryId) == true)" /> @s.Title</label> }
+                        </div>
+                        <button class="btn btn-brass btn-sm" type="submit">Phát hành phiên bản mới</button>
+                    </form>
+
+                    <table class="pl-table">
+                        <thead><tr><th>Phiên bản</th><th>Giá</th><th>Thời hạn</th><th>Phạm vi</th><th>Công bố</th></tr></thead>
+                        <tbody>
+                        @foreach (var h in Model.Versions.GetValueOrDefault(p.PlanId) ?? [])
+                        {
+                            <tr><td>v@(h.VersionNumber)</td><td>@h.Price.ToString("N0")đ</td><td>@h.DurationMonths tháng</td><td>@Scope(h)</td><td>@((h.PublishedAt ?? h.CreatedAt).ToLocalTime().ToString("dd/MM/yyyy HH:mm"))</td></tr>
+                        }
+                        </tbody>
+                    </table>
+                </details>
             }
         </div>
     </div>
 </div>
+<script>
+    // Chỉ hiện danh sách chọn truyện khi phạm vi = "Truyện được chọn"
+    document.querySelectorAll('.pl-form').forEach(f => {
+        const sel = f.querySelector('.scope-sel'), box = f.querySelector('.pl-stories');
+        const sync = () => box.hidden = sel.value !== 'Selected';
+        sel.addEventListener('change', sync); sync();
+    });
+</script>

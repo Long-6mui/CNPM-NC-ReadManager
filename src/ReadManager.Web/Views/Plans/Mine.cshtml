@@ -6,14 +6,36 @@
 <link rel="stylesheet" href="~/css/plans.css" asp-append-version="true" />
 <div class="container pl">
     <h1>Gói của tôi</h1>
-    <span class="pl-demo">Dữ liệu mẫu: chưa nối API đơn hàng và thanh toán</span>
+    <span class="pl-demo">Thanh toán giả lập: chưa nối API đơn hàng</span>
 
-    <h2>Thư viện đã mua (gói đang có)</h2>
-    @if (Model.Entitlements.Count == 0) { <p class="pl-sub">Bạn chưa có gói nào còn hạn. <a asp-action="Index">Xem các gói đọc</a></p> }
+    @if (Model.Orders.Any(o => o.Status == "Paid" && o.GrantFailed))
+    {
+        <div class="banner banner-warn" style="margin-bottom:16px">Có giao dịch đã thanh toán thành công nhưng quyền đọc chưa được cập nhật. Quản trị viên sẽ khôi phục, bạn không bị thu thêm tiền.</div>
+    }
+
+    <h2>Gói đang sử dụng</h2>
+    @if (Model.Plans.Count == 0) { <p class="pl-sub">Bạn chưa có gói nào còn hạn. <a asp-action="Index">Xem các gói đọc</a></p> }
     else
     {
-        <table class="pl-table"><thead><tr><th>Gói</th><th>Hết hạn</th></tr></thead><tbody>
-        @foreach (var e in Model.Entitlements) { <tr><td>@e.PlanName</td><td>@e.ExpiresAt.ToLocalTime().ToString("dd/MM/yyyy")</td></tr> }
+        <table class="pl-table"><thead><tr><th>Gói</th><th>Phạm vi</th><th>Hết hạn</th><th>Còn lại</th><th></th></tr></thead><tbody>
+        @foreach (var e in Model.Plans)
+        {
+            <tr><td>@e.PlanName</td><td>@(e.ScopeType == "All" ? "Tất cả truyện" : $"{e.StoryIds.Count} truyện được chọn")</td>
+                <td>@e.ExpiresAt.ToLocalTime().ToString("dd/MM/yyyy")</td><td>@((int)Math.Ceiling((e.ExpiresAt - DateTime.UtcNow).TotalDays)) ngày</td>
+                <td><form asp-action="Buy" method="post"><input type="hidden" name="planId" value="@e.PlanId" /><button class="btn btn-outline btn-sm" type="submit">Gia hạn</button></form></td></tr>
+        }
+        </tbody></table>
+    }
+
+    <h2>Truyện đã mua</h2>
+    @if (Model.Stories.Count == 0) { <p class="pl-sub">Bạn chưa mua riêng truyện nào. Quyền mua riêng không mất khi gói hết hạn.</p> }
+    else
+    {
+        <table class="pl-table"><thead><tr><th>Truyện</th><th>Ngày mua</th></tr></thead><tbody>
+        @foreach (var s in Model.Stories)
+        {
+            <tr><td><a asp-controller="Stories" asp-action="Details" asp-route-id="@s.StoryId">@s.Title</a></td><td>@s.PurchasedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</td></tr>
+        }
         </tbody></table>
     }
 
@@ -21,17 +43,21 @@
     @if (Model.Orders.Count == 0) { <p class="pl-sub">Chưa có giao dịch nào.</p> }
     else
     {
-        <table class="pl-table"><thead><tr><th>Mã đơn</th><th>Gói</th><th>Số tiền</th><th>Thời gian</th><th>Trạng thái</th><th></th></tr></thead><tbody>
+        <table class="pl-table"><thead><tr><th>Mã đơn</th><th>Nội dung</th><th>Số tiền</th><th>Thời gian</th><th>Trạng thái</th><th></th></tr></thead><tbody>
         @foreach (var o in Model.Orders)
         {
             <tr>
-                <td>#@o.Id</td><td>@o.PlanName</td><td>@o.Price.ToString("N0")đ</td><td>@o.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</td>
-                <td><span class="pl-st @o.Status">@St(o.Status)</span></td>
+                <td>#@o.Id</td>
+                <td>@(o.OrderType == "Story" ? "Mua truyện: " : "Gói: ")@o.ItemName</td>
+                <td>@o.Price.ToString("N0")đ</td><td>@o.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</td>
+                <td><span class="pl-st @o.Status">@St(o.Status)</span>@if (o.GrantFailed) { <br /><small>Đang chờ cấp quyền</small> }</td>
                 <td>
                     @if (o.Status == "Pending")
                     {
-                        <form asp-action="Pay" method="post" style="display:inline"><input type="hidden" name="orderId" value="@o.Id" /><input type="hidden" name="ok" value="true" /><button class="btn btn-brass btn-sm" type="submit">Giả lập: thành công</button></form>
-                        <form asp-action="Pay" method="post" style="display:inline"><input type="hidden" name="orderId" value="@o.Id" /><input type="hidden" name="ok" value="false" /><button class="btn btn-outline btn-sm" type="submit">Giả lập: thất bại</button></form>
+                        @foreach (var (val, label, cls) in new[] { ("ok", "Giả lập: thành công", "btn-brass"), ("fail", "Giả lập: thất bại", "btn-outline"), ("grantfail", "Giả lập: lỗi cấp quyền", "btn-outline") })
+                        {
+                            <form asp-action="Pay" method="post" style="display:inline"><input type="hidden" name="orderId" value="@o.Id" /><input type="hidden" name="outcome" value="@val" /><button class="btn @cls btn-sm" type="submit">@label</button></form>
+                        }
                     }
                 </td>
             </tr>

@@ -1,4 +1,4 @@
-﻿@model ReadVm
+@model ReadVm
 @{
     ViewData["Title"] = $"Chương {Model.Chapter.No}: {Model.Chapter.Title}";
     var paragraphs = (Model.Chapter.Content ?? "").Replace("\r\n", "\n").Split("\n\n", StringSplitOptions.RemoveEmptyEntries);
@@ -108,9 +108,11 @@
     {
         <div class="locked-box">
             <h3>Chương này dành cho độc giả đã mở khóa</h3>
-            <p>Nội dung trả phí đang khóa. Mua trọn bộ truyện để đọc vĩnh viễn tất cả các chương.</p>
-            @* PB21 — dẫn sang trang "Mua trọn bộ" *@
-            <a class="btn btn-brass" asp-controller="Orders" asp-action="Checkout" asp-route-storyId="@Model.Story.Id" style="margin-top:10px;">🛒 Mua trọn bộ truyện</a>
+            <p>Nội dung chương này đang khóa. Bạn có thể xem các lựa chọn mua truyện hoặc gói đọc.</p>
+            <div style="display:flex; gap:10px; justify-content:center; flex-wrap:wrap; margin-top:12px;">
+                <a class="btn btn-brass" asp-controller="Orders" asp-action="Checkout" asp-route-storyId="@Model.Story.Id">Mua trọn bộ truyện</a>
+                <a class="btn btn-outline" asp-controller="Plans" asp-action="Index">Xem gói đọc</a>
+            </div>
         </div>
     }
     else

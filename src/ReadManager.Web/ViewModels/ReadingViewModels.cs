@@ -1,4 +1,4 @@
-﻿namespace ReadManager.Web.ViewModels;
+namespace ReadManager.Web.ViewModels;
 
 public class BrowseVm
 {
