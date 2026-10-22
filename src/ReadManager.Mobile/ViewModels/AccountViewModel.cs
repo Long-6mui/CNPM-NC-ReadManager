@@ -21,7 +21,6 @@ public partial class AccountViewModel : BaseViewModel
     [NotifyPropertyChangedFor(nameof(IsGuest))]
     private bool isLoggedIn;
 
-    [ObservableProperty] private bool isAdmin;
     [ObservableProperty] private string displayName = "Thành viên";
     [ObservableProperty] private string email = string.Empty;
     [ObservableProperty] private string userIdText = string.Empty;
@@ -63,7 +62,7 @@ public partial class AccountViewModel : BaseViewModel
 
     // Gọi mỗi lần tab hiện ra để cập nhật sau khi đăng nhập/đăng xuất/xem truyện
     [RelayCommand]
-    private async Task LoadAsync() => await RunSafeAsync(async () =>
+    private async Task LoadAsync()
     {
         try { IsLoggedIn = await _authService.IsLoggedInAsync(); }
         catch { IsLoggedIn = _authService.CurrentUser is not null; } // mất mạng
@@ -82,8 +81,7 @@ public partial class AccountViewModel : BaseViewModel
         DisplayName = name;
         Email = user.Email;
         UserIdText = user.UserId.ToString();
-        IsAdmin = user.Role == "Admin";
-        RoleText = IsAdmin ? "Quản trị viên" : "Thành viên";
+        RoleText = "Thành viên";
         Initial = string.IsNullOrWhiteSpace(name) ? "?" : name.Trim()[..1].ToUpperInvariant();
 
         LoadAvatar(user.UserId);
@@ -92,7 +90,7 @@ public partial class AccountViewModel : BaseViewModel
         Fill(FavoritePreview, _library.GetFavorites());
         HasHistory = HistoryPreview.Count > 0;
         HasFavorites = FavoritePreview.Count > 0;
-    });
+    }
 
     // "Đổi ảnh đại diện" — ảnh lưu trên thiết bị này (giống web: lưu trên trình duyệt)
     [RelayCommand]
@@ -161,9 +159,6 @@ public partial class AccountViewModel : BaseViewModel
     [RelayCommand]
     private async Task GoToLibraryAsync() => await Shell.Current.GoToAsync("//LibraryPage");
 
-    // Web: nút "Vào trang quản trị" (chỉ hiện với Admin)
-    [RelayCommand]
-    private async Task GoToAdminAsync() => await Shell.Current.GoToAsync("//AdminStoriesPage");
 
     [RelayCommand]
     private async Task GoToLoginAsync() => await Shell.Current.GoToAsync("//LoginPage");
@@ -175,7 +170,6 @@ public partial class AccountViewModel : BaseViewModel
     private async Task LogoutAsync()
     {
         await _authService.LogoutAsync();
-        IsAdmin = false;
         CurrentPassword = NewPassword = ConfirmPassword = PasswordMessage = string.Empty;
         await LoadAsync();
     }

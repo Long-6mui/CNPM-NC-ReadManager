@@ -42,22 +42,6 @@
             Route="AccountPage" />
     </TabBar>
 
-    <!-- Khu QUẢN TRỊ (chỉ Admin): thanh tab riêng. Vào bằng "//AdminStoriesPage" (Admin đăng nhập xong tự vào đây),
-         thoát về trang chủ bằng nút "Trang chủ" trên thanh tiêu đề. -->
-    <TabBar Route="AdminArea">
-        <ShellContent
-            Title="Truyện"
-            Icon="tab_stories.png"
-            ContentTemplate="{DataTemplate views:AdminStoriesPage}"
-            Route="AdminStoriesPage" />
-
-        <ShellContent
-            Title="Thể loại"
-            Icon="tab_genres.png"
-            ContentTemplate="{DataTemplate views:AdminGenresPage}"
-            Route="AdminGenresPage" />
-    </TabBar>
-
     <!-- Đăng nhập nằm ngoài TabBar nên không hiện thanh tab. Vào bằng "//LoginPage", thoát bằng "//StoryListPage". -->
     <ShellContent
         Title="Đăng nhập"
