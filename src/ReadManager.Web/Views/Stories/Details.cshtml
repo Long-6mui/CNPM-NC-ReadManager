@@ -1,4 +1,4 @@
-﻿@model StoryDetailVm
+@model StoryDetailVm
 @{
     ViewData["Title"] = Model.Story.Title;
     var story = Model.Story;
@@ -47,6 +47,10 @@
                 @if (Model.Owned)
                 {
                     <span class="btn btn-outline" style="cursor:default;">✔ Đã sở hữu</span>
+                }
+                else if (Model.PendingOrderId.HasValue)
+                {
+                    <a class="btn btn-outline" asp-controller="Orders" asp-action="Details" asp-route-id="@Model.PendingOrderId">Xem đơn đang chờ thanh toán</a>
                 }
                 else if (Model.CanBuy)
                 {
