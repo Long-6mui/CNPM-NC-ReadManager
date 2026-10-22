@@ -17,13 +17,12 @@ builder.Services.AddDbContext<AppDbContext>(options =>
         connectionString,
         ServerVersion.AutoDetect(connectionString)));
 
-builder.Services.AddScoped<IReadingPlanService, ReadingPlanService>();
 builder.Services.AddScoped<IStoryService, StoryService>();
 builder.Services.AddScoped<IGenreService, GenreService>();
 builder.Services.AddScoped<IChapterService, ChapterService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
-builder.Services.AddScoped<IOrderService, OrderService>();   // BE3 — đơn hàng (PB19, PB21, PB26)
-builder.Services.AddScoped<IContentStatisticsService, ContentStatisticsService>();   // BE3 — PB40 thống kê nội dung
+builder.Services.AddScoped<IEntitlementService, EntitlementService>();     // BE2 — PB22–23 kiểm tra quyền đọc, cấp quyền
+builder.Services.AddScoped<ISubscriptionService, SubscriptionService>();   // BE2 — PB27 gói đang dùng, truyện đã mua
 builder.Services.AddScoped<ICommentService, CommentService>();             // BE4 — PB32 bình luận
 builder.Services.AddScoped<IReportService, ReportService>();               // BE4 — PB33 báo cáo vi phạm
 builder.Services.AddScoped<IFollowService, FollowService>();               // BE4 — PB31 theo dõi truyện

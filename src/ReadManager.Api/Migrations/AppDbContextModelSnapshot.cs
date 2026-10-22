@@ -83,39 +83,6 @@ namespace ReadManager.Api.Migrations
                         });
                 });
 
-            modelBuilder.Entity("ReadManager.Api.Entities.ChapterRead", b =>
-                {
-                    b.Property<int>("ChapterReadId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("ChapterReadId"));
-
-                    b.Property<int>("ChapterId")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("ReadAt")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<int>("StoryId")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("UserId")
-                        .HasColumnType("int");
-
-                    b.HasKey("ChapterReadId");
-
-                    b.HasIndex("ReadAt");
-
-                    b.HasIndex("ChapterId", "ReadAt");
-
-                    b.HasIndex("StoryId", "ReadAt");
-
-                    b.HasIndex("UserId", "ChapterId", "ReadAt");
-
-                    b.ToTable("ChapterReads", (string)null);
-                });
-
             modelBuilder.Entity("ReadManager.Api.Entities.Comment", b =>
                 {
                     b.Property<int>("CommentId")
@@ -227,194 +194,6 @@ namespace ReadManager.Api.Migrations
                     b.HasIndex("UserId", "CreatedAt");
 
                     b.ToTable("Notifications", (string)null);
-                });
-
-            modelBuilder.Entity("ReadManager.Api.Entities.Order", b =>
-                {
-                    b.Property<int>("OrderId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("OrderId"));
-
-                    b.Property<decimal>("Amount")
-                        .HasPrecision(12, 2)
-                        .HasColumnType("decimal(12,2)");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<int?>("DurationMonths")
-                        .HasColumnType("int");
-
-                    b.Property<string>("ItemName")
-                        .IsRequired()
-                        .HasMaxLength(255)
-                        .HasColumnType("varchar(255)");
-
-                    b.Property<string>("OrderType")
-                        .IsRequired()
-                        .HasMaxLength(10)
-                        .HasColumnType("varchar(10)");
-
-                    b.Property<DateTime?>("PaidAt")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<int?>("PlanVersionId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .ValueGeneratedOnAdd()
-                        .HasMaxLength(20)
-                        .HasColumnType("varchar(20)")
-                        .HasDefaultValue("Pending");
-
-                    b.Property<int?>("StoryId")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<int>("UserId")
-                        .HasColumnType("int");
-
-                    b.HasKey("OrderId");
-
-                    b.HasIndex("PlanVersionId");
-
-                    b.HasIndex("StoryId");
-
-                    b.HasIndex("Status", "CreatedAt");
-
-                    b.HasIndex("UserId", "CreatedAt");
-
-                    b.ToTable("Orders", null, t =>
-                        {
-                            t.HasCheckConstraint("CK_Orders_Amount", "`Amount` > 0");
-
-                            t.HasCheckConstraint("CK_Orders_Item", "(`OrderType` = 'Plan' AND `PlanVersionId` IS NOT NULL) OR (`OrderType` = 'Story' AND `StoryId` IS NOT NULL)");
-
-                            t.HasCheckConstraint("CK_Orders_OrderType", "`OrderType` IN ('Plan', 'Story')");
-
-                            t.HasCheckConstraint("CK_Orders_Status", "`Status` IN ('Pending', 'Paid', 'Failed', 'Cancelled', 'Expired')");
-                        });
-                });
-
-            modelBuilder.Entity("ReadManager.Api.Entities.Payment", b =>
-                {
-                    b.Property<int>("PaymentId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("PaymentId"));
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<string>("FailureCode")
-                        .HasMaxLength(100)
-                        .HasColumnType("varchar(100)");
-
-                    b.Property<string>("MerchantRequestId")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("varchar(100)")
-                        .UseCollation("utf8mb4_bin");
-
-                    b.Property<int>("OrderId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Provider")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("varchar(50)");
-
-                    b.Property<string>("ProviderTransactionId")
-                        .HasMaxLength(150)
-                        .HasColumnType("varchar(150)")
-                        .UseCollation("utf8mb4_bin");
-
-                    b.Property<decimal?>("ReceivedAmount")
-                        .HasPrecision(12, 2)
-                        .HasColumnType("decimal(12,2)");
-
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("varchar(20)");
-
-                    b.Property<DateTime?>("SucceededAt")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<DateTime?>("VerifiedAt")
-                        .HasColumnType("datetime(6)");
-
-                    b.HasKey("PaymentId");
-
-                    b.HasIndex("MerchantRequestId")
-                        .IsUnique();
-
-                    b.HasIndex("OrderId");
-
-                    b.HasIndex("Provider", "ProviderTransactionId")
-                        .IsUnique();
-
-                    b.ToTable("Payments", null, t =>
-                        {
-                            t.HasCheckConstraint("CK_Payments_Amount", "`ReceivedAmount` IS NULL OR `ReceivedAmount` >= 0");
-
-                            t.HasCheckConstraint("CK_Payments_Status", "`Status` IN ('Pending', 'Succeeded', 'Failed', 'Cancelled')");
-
-                            t.HasCheckConstraint("CK_Payments_Success", "`Status` <> 'Succeeded' OR (`VerifiedAt` IS NOT NULL AND `SucceededAt` IS NOT NULL AND `ReceivedAmount` IS NOT NULL AND `ProviderTransactionId` IS NOT NULL)");
-                        });
-                });
-
-            modelBuilder.Entity("ReadManager.Api.Entities.PaymentEvent", b =>
-                {
-                    b.Property<int>("PaymentEventId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("PaymentEventId"));
-
-                    b.Property<string>("ErrorMessage")
-                        .HasMaxLength(1000)
-                        .HasColumnType("varchar(1000)");
-
-                    b.Property<string>("Payload")
-                        .IsRequired()
-                        .HasColumnType("longtext");
-
-                    b.Property<int>("PaymentId")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime?>("ProcessedAt")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<string>("ProcessingStatus")
-                        .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("varchar(20)");
-
-                    b.Property<string>("ProviderEventId")
-                        .IsRequired()
-                        .HasMaxLength(150)
-                        .HasColumnType("varchar(150)")
-                        .UseCollation("utf8mb4_bin");
-
-                    b.Property<DateTime>("ReceivedAt")
-                        .HasColumnType("datetime(6)");
-
-                    b.HasKey("PaymentEventId");
-
-                    b.HasIndex("PaymentId", "ProviderEventId")
-                        .IsUnique();
-
-                    b.ToTable("PaymentEvents", null, t =>
-                        {
-                            t.HasCheckConstraint("CK_PaymentEvents_Status", "`ProcessingStatus` IN ('Pending', 'Processed', 'Failed', 'Ignored')");
-                        });
                 });
 
             modelBuilder.Entity("ReadManager.Api.Entities.PlanVersionStory", b =>
@@ -672,37 +451,6 @@ namespace ReadManager.Api.Migrations
                     b.ToTable("StoryGenres", (string)null);
                 });
 
-            modelBuilder.Entity("ReadManager.Api.Entities.StoryPurchase", b =>
-                {
-                    b.Property<int>("PurchaseId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("PurchaseId"));
-
-                    b.Property<DateTime?>("ExpiresAt")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<DateTime>("GrantedAt")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<int>("OrderId")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime?>("RevokedAt")
-                        .HasColumnType("datetime(6)");
-
-                    b.HasKey("PurchaseId");
-
-                    b.HasIndex("OrderId")
-                        .IsUnique();
-
-                    b.ToTable("StoryPurchases", null, t =>
-                        {
-                            t.HasCheckConstraint("CK_StoryPurchases_Period", "`ExpiresAt` IS NULL OR `ExpiresAt` > `GrantedAt`");
-                        });
-                });
-
             modelBuilder.Entity("ReadManager.Api.Entities.User", b =>
                 {
                     b.Property<int>("UserId")
@@ -771,6 +519,43 @@ namespace ReadManager.Api.Migrations
                     b.ToTable("Users", (string)null);
                 });
 
+            modelBuilder.Entity("ReadManager.Api.Entities.UserStoryAccess", b =>
+                {
+                    b.Property<int>("AccessId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("AccessId"));
+
+                    b.Property<int?>("OrderId")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("PricePaid")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTime>("PurchasedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<int>("StoryId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.HasKey("AccessId");
+
+                    b.HasIndex("OrderId")
+                        .IsUnique();
+
+                    b.HasIndex("StoryId");
+
+                    b.HasIndex("UserId", "StoryId")
+                        .IsUnique();
+
+                    b.ToTable("UserStoryAccesses", (string)null);
+                });
+
             modelBuilder.Entity("ReadManager.Api.Entities.UserSubscription", b =>
                 {
                     b.Property<int>("SubscriptionId")
@@ -779,26 +564,43 @@ namespace ReadManager.Api.Migrations
 
                     MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("SubscriptionId"));
 
-                    b.Property<DateTime>("EndsAt")
+                    b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime(6)");
 
-                    b.Property<int>("OrderId")
+                    b.Property<DateTime>("EndAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<int?>("OrderId")
                         .HasColumnType("int");
 
-                    b.Property<DateTime?>("RevokedAt")
+                    b.Property<int>("PlanVersionId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("StartAt")
                         .HasColumnType("datetime(6)");
 
-                    b.Property<DateTime>("StartsAt")
-                        .HasColumnType("datetime(6)");
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
 
                     b.HasKey("SubscriptionId");
 
                     b.HasIndex("OrderId")
                         .IsUnique();
 
+                    b.HasIndex("PlanVersionId");
+
+                    b.HasIndex("UserId", "EndAt");
+
                     b.ToTable("UserSubscriptions", null, t =>
                         {
-                            t.HasCheckConstraint("CK_UserSubscriptions_Period", "`EndsAt` > `StartsAt`");
+                            t.HasCheckConstraint("CK_UserSubscriptions_Period", "`EndAt` > `StartAt`");
+
+                            t.HasCheckConstraint("CK_UserSubscriptions_Status", "`Status` IN ('Active', 'Revoked')");
                         });
                 });
 
@@ -811,32 +613,6 @@ namespace ReadManager.Api.Migrations
                         .IsRequired();
 
                     b.Navigation("Story");
-                });
-
-            modelBuilder.Entity("ReadManager.Api.Entities.ChapterRead", b =>
-                {
-                    b.HasOne("ReadManager.Api.Entities.Chapter", "Chapter")
-                        .WithMany()
-                        .HasForeignKey("ChapterId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("ReadManager.Api.Entities.Story", "Story")
-                        .WithMany()
-                        .HasForeignKey("StoryId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("ReadManager.Api.Entities.User", "User")
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
-                    b.Navigation("Chapter");
-
-                    b.Navigation("Story");
-
-                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("ReadManager.Api.Entities.Comment", b =>
@@ -889,53 +665,6 @@ namespace ReadManager.Api.Migrations
                     b.Navigation("Story");
 
                     b.Navigation("User");
-                });
-
-            modelBuilder.Entity("ReadManager.Api.Entities.Order", b =>
-                {
-                    b.HasOne("ReadManager.Api.Entities.ReadingPlanVersion", "PlanVersion")
-                        .WithMany()
-                        .HasForeignKey("PlanVersionId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
-                    b.HasOne("ReadManager.Api.Entities.Story", "Story")
-                        .WithMany()
-                        .HasForeignKey("StoryId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
-                    b.HasOne("ReadManager.Api.Entities.User", "User")
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("PlanVersion");
-
-                    b.Navigation("Story");
-
-                    b.Navigation("User");
-                });
-
-            modelBuilder.Entity("ReadManager.Api.Entities.Payment", b =>
-                {
-                    b.HasOne("ReadManager.Api.Entities.Order", "Order")
-                        .WithMany()
-                        .HasForeignKey("OrderId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("Order");
-                });
-
-            modelBuilder.Entity("ReadManager.Api.Entities.PaymentEvent", b =>
-                {
-                    b.HasOne("ReadManager.Api.Entities.Payment", "Payment")
-                        .WithMany()
-                        .HasForeignKey("PaymentId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("Payment");
                 });
 
             modelBuilder.Entity("ReadManager.Api.Entities.PlanVersionStory", b =>
@@ -1028,26 +757,42 @@ namespace ReadManager.Api.Migrations
                     b.Navigation("Story");
                 });
 
-            modelBuilder.Entity("ReadManager.Api.Entities.StoryPurchase", b =>
+            modelBuilder.Entity("ReadManager.Api.Entities.UserStoryAccess", b =>
                 {
-                    b.HasOne("ReadManager.Api.Entities.Order", "Order")
-                        .WithOne()
-                        .HasForeignKey("ReadManager.Api.Entities.StoryPurchase", "OrderId")
+                    b.HasOne("ReadManager.Api.Entities.Story", "Story")
+                        .WithMany()
+                        .HasForeignKey("StoryId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.Navigation("Order");
+                    b.HasOne("ReadManager.Api.Entities.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Story");
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("ReadManager.Api.Entities.UserSubscription", b =>
                 {
-                    b.HasOne("ReadManager.Api.Entities.Order", "Order")
-                        .WithOne()
-                        .HasForeignKey("ReadManager.Api.Entities.UserSubscription", "OrderId")
+                    b.HasOne("ReadManager.Api.Entities.ReadingPlanVersion", "PlanVersion")
+                        .WithMany()
+                        .HasForeignKey("PlanVersionId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.Navigation("Order");
+                    b.HasOne("ReadManager.Api.Entities.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("PlanVersion");
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("ReadManager.Api.Entities.ReadingPlan", b =>
