@@ -1,67 +1,20 @@
-@model ReadManager.Web.Controllers.MineVm
-@{
-    ViewData["Title"] = "Gói của tôi";
-    string St(string s) => s == "Paid" ? "Đã thanh toán" : s == "Failed" ? "Thất bại" : "Chờ thanh toán";
-}
-<link rel="stylesheet" href="~/css/plans.css" asp-append-version="true" />
-<div class="container pl">
-    <h1>Gói của tôi</h1>
-    <span class="pl-demo">Thanh toán giả lập: chưa nối API đơn hàng</span>
-
-    @if (Model.Orders.Any(o => o.Status == "Paid" && o.GrantFailed))
-    {
-        <div class="banner banner-warn" style="margin-bottom:16px">Có giao dịch đã thanh toán thành công nhưng quyền đọc chưa được cập nhật. Quản trị viên sẽ khôi phục, bạn không bị thu thêm tiền.</div>
-    }
-
-    <h2>Gói đang sử dụng</h2>
-    @if (Model.Plans.Count == 0) { <p class="pl-sub">Bạn chưa có gói nào còn hạn. <a asp-action="Index">Xem các gói đọc</a></p> }
-    else
-    {
-        <table class="pl-table"><thead><tr><th>Gói</th><th>Phạm vi</th><th>Hết hạn</th><th>Còn lại</th><th></th></tr></thead><tbody>
-        @foreach (var e in Model.Plans)
+@model ReadManager.Web.Services.PagedApi<ReadManager.Web.Services.OrderApi>
+@{ ViewData["Title"] = "Đơn hàng của tôi"; }
+<div class="container section">
+    <h1>Đơn hàng của tôi</h1>
+    <p>Đơn đang chờ thanh toán chưa cấp quyền đọc. Giao dịch đã thanh toán cần được cấp quyền trước khi mở khóa nội dung.</p>
+    @if (Model.Items.Count == 0) { <p>Chưa có đơn hàng.</p> }
+    <table class="data">
+        <thead><tr><th>Mã đơn</th><th>Nội dung</th><th>Số tiền</th><th>Trạng thái</th><th></th></tr></thead>
+        <tbody>
+        @foreach (var order in Model.Items)
         {
-            <tr><td>@e.PlanName</td><td>@(e.ScopeType == "All" ? "Tất cả truyện" : $"{e.StoryIds.Count} truyện được chọn")</td>
-                <td>@e.ExpiresAt.ToLocalTime().ToString("dd/MM/yyyy")</td><td>@((int)Math.Ceiling((e.ExpiresAt - DateTime.UtcNow).TotalDays)) ngày</td>
-                <td><form asp-action="Buy" method="post"><input type="hidden" name="planId" value="@e.PlanId" /><button class="btn btn-outline btn-sm" type="submit">Gia hạn</button></form></td></tr>
+            var status = order.Status switch { "Pending" => "Chờ thanh toán", "Paid" => "Đã thanh toán", "Failed" => "Thất bại", "Expired" => "Hết hạn", "Cancelled" => "Đã hủy", _ => order.Status };
+            <tr><td>@order.OrderId</td><td>@order.ItemName</td><td>@order.Amount.ToString("N0") đ</td><td>@status</td>
+                <td><a asp-controller="Orders" asp-action="Details" asp-route-id="@order.OrderId">Xem đơn</a></td></tr>
         }
-        </tbody></table>
-    }
-
-    <h2>Truyện đã mua</h2>
-    @if (Model.Stories.Count == 0) { <p class="pl-sub">Bạn chưa mua riêng truyện nào. Quyền mua riêng không mất khi gói hết hạn.</p> }
-    else
-    {
-        <table class="pl-table"><thead><tr><th>Truyện</th><th>Ngày mua</th></tr></thead><tbody>
-        @foreach (var s in Model.Stories)
-        {
-            <tr><td><a asp-controller="Stories" asp-action="Details" asp-route-id="@s.StoryId">@s.Title</a></td><td>@s.PurchasedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</td></tr>
-        }
-        </tbody></table>
-    }
-
-    <h2>Lịch sử thanh toán</h2>
-    @if (Model.Orders.Count == 0) { <p class="pl-sub">Chưa có giao dịch nào.</p> }
-    else
-    {
-        <table class="pl-table"><thead><tr><th>Mã đơn</th><th>Nội dung</th><th>Số tiền</th><th>Thời gian</th><th>Trạng thái</th><th></th></tr></thead><tbody>
-        @foreach (var o in Model.Orders)
-        {
-            <tr>
-                <td>#@o.Id</td>
-                <td>@(o.OrderType == "Story" ? "Mua truyện: " : "Gói: ")@o.ItemName</td>
-                <td>@o.Price.ToString("N0")đ</td><td>@o.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</td>
-                <td><span class="pl-st @o.Status">@St(o.Status)</span>@if (o.GrantFailed) { <br /><small>Đang chờ cấp quyền</small> }</td>
-                <td>
-                    @if (o.Status == "Pending")
-                    {
-                        @foreach (var (val, label, cls) in new[] { ("ok", "Giả lập: thành công", "btn-brass"), ("fail", "Giả lập: thất bại", "btn-outline"), ("grantfail", "Giả lập: lỗi cấp quyền", "btn-outline") })
-                        {
-                            <form asp-action="Pay" method="post" style="display:inline"><input type="hidden" name="orderId" value="@o.Id" /><input type="hidden" name="outcome" value="@val" /><button class="btn @cls btn-sm" type="submit">@label</button></form>
-                        }
-                    }
-                </td>
-            </tr>
-        }
-        </tbody></table>
-    }
+        </tbody>
+    </table>
+    @if (Model.Page > 1) { <a asp-action="Mine" asp-route-page="@(Model.Page - 1)">Trang trước</a> }
+    @if ((long)Model.Page * Model.PageSize < Model.TotalCount) { <a asp-action="Mine" asp-route-page="@(Model.Page + 1)">Trang sau</a> }
 </div>

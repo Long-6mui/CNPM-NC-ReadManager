@@ -1,47 +1,20 @@
-@model List<ReadManager.Web.Services.OrderItem>
-@{
-    ViewData["Title"] = "Giao dịch";
-    var status = (string?)ViewBag.Status;
-    string St(string s) => s == "Paid" ? "Đã thanh toán" : s == "Failed" ? "Thất bại" : "Chờ thanh toán";
-}
-<link rel="stylesheet" href="~/css/plans.css" asp-append-version="true" />
+@model ReadManager.Web.Services.PagedApi<ReadManager.Web.Services.OrderApi>
+@{ ViewData["Title"] = "Quản lý đơn hàng"; }
 <div class="container section">
-    <div class="section-head"><h2>Trang quản trị</h2></div>
-    <div class="admin-shell">
-        <partial name="_AdminNav" />
-        <div>
-            <span class="pl-demo">Dữ liệu giao dịch giả lập: chưa nối API đơn hàng</span>
-            <p class="pl-sub">Đơn <b>đã thanh toán nhưng chưa cập nhật quyền</b> hiện nút "Khôi phục quyền". Khôi phục chỉ cấp quyền một lần, không thu thêm tiền.</p>
-            <div class="pillbar" style="margin-bottom:12px">
-                @foreach (var (val, label) in new[] { ("", "Tất cả"), ("Paid", "Đã thanh toán"), ("Pending", "Chờ thanh toán"), ("Failed", "Thất bại") })
-                {
-                    <a class="pill @((status ?? "") == val ? "active" : "")" asp-action="Index" asp-route-status="@val">@label</a>
-                }
-            </div>
-            @if (Model.Count == 0) { <p class="pl-sub">Chưa có giao dịch nào.</p> }
-            else
-            {
-                <table class="pl-table">
-                    <thead><tr><th>Mã</th><th>Thành viên</th><th>Nội dung</th><th>Số tiền</th><th>Thời gian</th><th>Trạng thái</th><th></th></tr></thead>
-                    <tbody>
-                    @foreach (var o in Model)
-                    {
-                        <tr>
-                            <td>#@o.Id</td><td>@o.UserName</td>
-                            <td>@(o.OrderType == "Story" ? "Mua truyện: " : "Gói: ")@o.ItemName</td>
-                            <td>@o.Price.ToString("N0")đ</td><td>@o.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</td>
-                            <td><span class="pl-st @o.Status">@St(o.Status)</span>@if (o.GrantFailed) { <br /><small>Thiếu quyền đọc</small> }</td>
-                            <td>
-                                @if (o.Status == "Paid" && o.GrantFailed)
-                                {
-                                    <form asp-action="Recover" method="post"><input type="hidden" name="id" value="@o.Id" /><input type="hidden" name="status" value="@status" /><button class="btn btn-brass btn-sm" type="submit">Khôi phục quyền</button></form>
-                                }
-                            </td>
-                        </tr>
-                    }
-                    </tbody>
-                </table>
-            }
-        </div>
-    </div>
+    <partial name="_AdminNav" /><h1>Quản lý đơn hàng</h1>
+    <p>Đơn đang chờ thanh toán chưa cấp quyền đọc. Giao dịch đã thanh toán cần được cấp quyền trước khi mở khóa nội dung.</p>
+    @if (Model.Items.Count == 0) { <p>Chưa có đơn hàng.</p> }
+    <table class="data">
+        <thead><tr><th>Mã đơn</th><th>Nội dung</th><th>Số tiền</th><th>Trạng thái</th><th></th></tr></thead>
+        <tbody>
+        @foreach (var order in Model.Items)
+        {
+            var status = order.Status switch { "Pending" => "Chờ thanh toán", "Paid" => "Đã thanh toán", "Failed" => "Thất bại", "Expired" => "Hết hạn", "Cancelled" => "Đã hủy", _ => order.Status };
+            <tr><td>@order.OrderId</td><td>@order.ItemName</td><td>@order.Amount.ToString("N0") đ</td><td>@status</td>
+                <td><a asp-area="" asp-controller="Orders" asp-action="Details" asp-route-id="@order.OrderId">Xem đơn</a></td></tr>
+        }
+        </tbody>
+    </table>
+    @if (Model.Page > 1) { <a asp-action="Index" asp-route-status="@ViewBag.Status" asp-route-page="@(Model.Page - 1)">Trang trước</a> }
+    @if ((long)Model.Page * Model.PageSize < Model.TotalCount) { <a asp-action="Index" asp-route-status="@ViewBag.Status" asp-route-page="@(Model.Page + 1)">Trang sau</a> }
 </div>

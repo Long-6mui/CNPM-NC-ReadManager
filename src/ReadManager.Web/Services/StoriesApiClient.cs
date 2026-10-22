@@ -1,4 +1,4 @@
-﻿using System.Net;
+using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using ReadManager.Web.ViewModels;
@@ -369,6 +369,33 @@ public class StoriesApiClient(HttpClient http)
         return await res.Content.ReadFromJsonAsync<OrderApi>();
     }
 
+
+    public async Task<ApiResult> CreatePlanOrderAsync(int planId, int planVersionId, string? token)
+    {
+        using var req = Build(HttpMethod.Post, "api/orders", token,
+            new { orderType = "Plan", planId, planVersionId });
+        using var res = await http.SendAsync(req);
+        var result = await ToResultAsync(res, "Đã tạo đơn mua gói, đang chờ thanh toán.");
+        if (!result.Ok) return result;
+        var order = await res.Content.ReadFromJsonAsync<OrderApi>();
+        return result with { Id = order?.OrderId };
+    }
+
+    public async Task<PagedApi<OrderApi>> MyOrdersAsync(string? token, int page = 1)
+    {
+        using var req = Build(HttpMethod.Get, $"api/me/orders?page={Math.Max(1, page)}&pageSize=20", token);
+        using var res = await http.SendAsync(req);
+        res.EnsureSuccessStatusCode();
+        return await res.Content.ReadFromJsonAsync<PagedApi<OrderApi>>() ?? new([], 0, page, 20);
+    }
+
+    public async Task<PagedApi<OrderApi>> AdminOrdersAsync(string? token, string? status, int page = 1)
+    {
+        using var req = Build(HttpMethod.Get, $"api/admin/orders?page={Math.Max(1, page)}&pageSize=20&status={Uri.EscapeDataString(status ?? "")}", token);
+        using var res = await http.SendAsync(req);
+        res.EnsureSuccessStatusCode();
+        return await res.Content.ReadFromJsonAsync<PagedApi<OrderApi>>() ?? new([], 0, page, 20);
+    }
 
     private static HttpRequestMessage Build(HttpMethod method, string url, string? token, object? body = null)
     {

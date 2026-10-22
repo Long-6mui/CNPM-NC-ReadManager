@@ -61,6 +61,18 @@ try
     var plan=await Json(created);var id=plan.GetProperty("planId").GetInt32();
     Check(plan.GetProperty("name").GetString()=="Monthly" && plan.GetProperty("currentVersion").GetProperty("versionNumber").GetInt32()==1,"name trimmed and version starts at 1");
     Check(await db.PlanVersionStories.CountAsync()==1,"selected story link saved");
+    await Login("member");
+    var purchasedVersion=plan.GetProperty("currentVersion").GetProperty("planVersionId").GetInt32();
+    var purchase=await Json(await http.PostAsJsonAsync("api/orders",new {orderType="Plan",planId=id,planVersionId=purchasedVersion,amount=1}));
+    var purchaseId=purchase.GetProperty("orderId").GetInt32();
+    Check(purchase.GetProperty("amount").GetDecimal()==50000m && purchase.GetProperty("status").GetString()=="Pending", "plan order uses DB price 50000 and remains pending");
+    Check(await db.Orders.AnyAsync(o=>o.OrderId==purchaseId && o.PlanVersionId==purchasedVersion), "plan order persisted in MySQL");
+    var repeat=await Json(await http.PostAsJsonAsync("api/orders",new {orderType="Plan",planId=id,planVersionId=purchasedVersion}));
+    Check(repeat.GetProperty("orderId").GetInt32()==purchaseId, "repeated sequential plan purchase reuses pending order");
+    var history=await Json(await http.GetAsync("api/me/orders"));
+    Check(history.GetProperty("items").EnumerateArray().Any(o=>o.GetProperty("orderId").GetInt32()==purchaseId), "my order history includes plan purchase");
+    Check(!await db.UserSubscriptions.AnyAsync(), "pending order does not grant subscription");
+    await Login("admin");
     foreach(var body in new object[]{
         new {name=" ",price=1,durationMonths=1,scopeType="All",storyIds=Array.Empty<int>()},
         new {name="Bad",price=0,durationMonths=1,scopeType="All",storyIds=Array.Empty<int>()},
