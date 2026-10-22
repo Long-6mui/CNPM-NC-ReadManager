@@ -159,6 +159,16 @@ public partial class AccountViewModel : BaseViewModel
     [RelayCommand]
     private async Task GoToLibraryAsync() => await Shell.Current.GoToAsync("//LibraryPage");
 
+    // Sprint 2: gói đọc, mua truyện, lịch sử thanh toán
+    [RelayCommand]
+    private async Task GoToPlansAsync() => await Shell.Current.GoToAsync(nameof(Views.PlansPage));
+
+    [RelayCommand]
+    private async Task GoToPaidStoriesAsync() => await Shell.Current.GoToAsync("//BrowsePage");
+
+    [RelayCommand]
+    private async Task GoToOrderHistoryAsync() => await Shell.Current.GoToAsync(nameof(Views.OrderHistoryPage));
+
 
     [RelayCommand]
     private async Task GoToLoginAsync() => await Shell.Current.GoToAsync("//LoginPage");

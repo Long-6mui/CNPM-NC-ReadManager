@@ -15,7 +15,13 @@ public partial class ChapterReaderViewModel : BaseViewModel
     private int chapterId;
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsLocked))]
+    [NotifyPropertyChangedFor(nameof(IsReadable))]
     private ChapterContent? chapter;
+
+    // Chương trả phí chưa mở khóa (API trả IsLocked = true, nội dung để trống)
+    public bool IsLocked => Chapter?.IsLocked == true;
+    public bool IsReadable => Chapter is not null && !Chapter.IsLocked;
 
     public ChapterReaderViewModel(IChapterService chapterService, ILibraryService library)
     {
@@ -28,10 +34,32 @@ public partial class ChapterReaderViewModel : BaseViewModel
         _ = RunSafeAsync(async () =>
         {
             Chapter = await _chapterService.GetChapterContentAsync(value);
-            if (Chapter.IsLocked) ErrorMessage = "Chương trả phí chưa được mở khóa.";
-            else _library.RecordChapter(Chapter.StoryId, Chapter.ChapterId, Chapter.ChapterNumber, Chapter.Title); // Tủ sách: nhớ chương đang đọc
+            if (!Chapter.IsLocked) _library.RecordChapter(Chapter.StoryId, Chapter.ChapterId, Chapter.ChapterNumber, Chapter.Title); // Tủ sách: nhớ chương đang đọc
         });
     }
+
+    // Gọi khi quay lại từ màn mua: nếu vừa mở khóa thì tải lại nội dung
+    public Task ReloadIfLockedAsync() => IsLocked && ChapterId > 0 ? ReloadAsync() : Task.CompletedTask;
+
+    private Task ReloadAsync() => RunSafeAsync(async () =>
+    {
+        Chapter = await _chapterService.GetChapterContentAsync(ChapterId);
+        if (!Chapter.IsLocked) _library.RecordChapter(Chapter.StoryId, Chapter.ChapterId, Chapter.ChapterNumber, Chapter.Title);
+    });
+
+    // Chương trả phí: mở màn "Mua trọn bộ" (PB21)
+    [RelayCommand]
+    private async Task BuyStoryAsync()
+    {
+        if (Chapter is null) return;
+        await Shell.Current.GoToAsync(nameof(Views.CheckoutPage), new Dictionary<string, object>
+        {
+            { "storyId", Chapter.StoryId }
+        });
+    }
+
+    [RelayCommand]
+    private async Task OpenPlansAsync() => await Shell.Current.GoToAsync(nameof(Views.PlansPage));
 
     [RelayCommand]
     private async Task GoToPreviousAsync()

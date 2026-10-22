@@ -2,17 +2,18 @@ using ReadManager.Mobile.ViewModels;
 
 namespace ReadManager.Mobile.Views;
 
-public partial class AdminStoriesPage : ContentPage
+public partial class PlansPage : ContentPage
 {
-    private readonly AdminStoriesViewModel _viewModel;
+    private readonly PlansViewModel _viewModel;
 
-    public AdminStoriesPage(AdminStoriesViewModel viewModel)
+    public PlansPage(PlansViewModel viewModel)
     {
         InitializeComponent();
         _viewModel = viewModel;
         BindingContext = viewModel;
     }
 
+    // Tải lại mỗi lần mở: sau khi mua xong quay lại sẽ thấy cập nhật
     protected override void OnAppearing()
     {
         base.OnAppearing();

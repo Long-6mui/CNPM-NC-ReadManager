@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:ReadManager.Mobile.ViewModels"
+             xmlns:models="clr-namespace:ReadManager.Mobile.Models"
+             x:DataType="vm:PlansViewModel"
+             x:Class="ReadManager.Mobile.Views.PlansPage"
+             Title="Gói đọc"
+             BackgroundColor="{StaticResource WebBg}">
+
+    <Shell.BackButtonBehavior>
+        <BackButtonBehavior IconOverride="ic_back.png" />
+    </Shell.BackButtonBehavior>
+
+    <ScrollView>
+        <VerticalStackLayout Padding="16,16,16,32" Spacing="14">
+
+            <Label Text="Gói đọc" Style="{StaticResource LblH2}" FontSize="24" />
+            <Label Text="Chọn gói để mở khóa truyện trả phí. Mua lại khi còn hạn sẽ được cộng dồn thời gian."
+                   Style="{StaticResource LblMuted}" />
+
+            <ActivityIndicator IsRunning="{Binding IsBusy}" IsVisible="{Binding IsBusy}" Color="{StaticResource WebRoyal}" />
+            <Label Text="{Binding ErrorMessage}" TextColor="{StaticResource WebCrimson}"
+                   IsVisible="{Binding ErrorMessage, Converter={StaticResource StringToBoolConverter}}" />
+
+            <!-- Gói đang dùng -->
+            <Border Style="{StaticResource Panel}" IsVisible="{Binding HasMyPlans}">
+                <VerticalStackLayout Spacing="8">
+                    <Label Text="Gói của tôi" FontSize="15" FontAttributes="Bold" TextColor="{StaticResource WebText}" />
+                    <VerticalStackLayout BindableLayout.ItemsSource="{Binding MyPlans}" Spacing="8">
+                        <BindableLayout.ItemTemplate>
+                            <DataTemplate x:DataType="models:PlanEntitlement">
+                                <Grid ColumnDefinitions="*,Auto">
+                                    <VerticalStackLayout Spacing="2">
+                                        <Label Text="{Binding PlanName}" FontSize="14" FontAttributes="Bold" TextColor="{StaticResource WebText}" />
+                                        <Label Text="{Binding ExpiresText}" Style="{StaticResource LblCardMeta}" />
+                                    </VerticalStackLayout>
+                                    <Label Grid.Column="1" Text="{Binding RemainingText}" FontSize="12" FontAttributes="Bold"
+                                           TextColor="{StaticResource WebSage}" VerticalOptions="Center" />
+                                </Grid>
+                            </DataTemplate>
+                        </BindableLayout.ItemTemplate>
+                    </VerticalStackLayout>
+                </VerticalStackLayout>
+            </Border>
+
+            <!-- Danh sách gói đang bán -->
+            <VerticalStackLayout BindableLayout.ItemsSource="{Binding Plans}" Spacing="12">
+                <BindableLayout.ItemTemplate>
+                    <DataTemplate x:DataType="models:ReadingPlan">
+                        <Border Style="{StaticResource Panel}">
+                            <VerticalStackLayout Spacing="8">
+                                <Label Text="{Binding Name}" Style="{StaticResource LblH2}" FontSize="18" />
+                                <Label Text="{Binding PriceText}" FontSize="28" FontAttributes="Bold"
+                                       FontFamily="{StaticResource SerifFont}" TextColor="{StaticResource WebCrimson}" />
+                                <Label Text="{Binding DurationText, StringFormat='• {0}'}" Style="{StaticResource LblMuted}" />
+                                <Label Text="{Binding ScopeText, StringFormat='• {0}'}" Style="{StaticResource LblMuted}" />
+                                <Button Text="Mua / gia hạn" Style="{StaticResource BtnBrass}" Margin="0,6,0,0"
+                                        Command="{Binding Source={RelativeSource AncestorType={x:Type vm:PlansViewModel}}, Path=BuyCommand}"
+                                        CommandParameter="{Binding .}" />
+                            </VerticalStackLayout>
+                        </Border>
+                    </DataTemplate>
+                </BindableLayout.ItemTemplate>
+            </VerticalStackLayout>
+
+            <Label Text="Hiện chưa có gói nào đang bán." Style="{StaticResource LblMuted}"
+                   HorizontalTextAlignment="Center" IsVisible="{Binding ShowEmpty}" />
+
+            <Button Text="Lịch sử thanh toán" Style="{StaticResource BtnOutlineSm}" HeightRequest="44"
+                    Command="{Binding OpenHistoryCommand}" />
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

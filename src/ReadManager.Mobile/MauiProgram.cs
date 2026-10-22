@@ -39,6 +39,22 @@ namespace ReadManager.Mobile
             builder.Services.AddTransient<IChapterService, ChapterService>();
             builder.Services.AddSingleton<ILibraryService, LibraryService>(); // Tủ sách lưu trên máy
 
+            // Sprint 2: gói đọc + đơn hàng + thanh toán
+            builder.Services.AddTransient<IPlanService, PlanService>();
+            builder.Services.AddTransient<IOrderService, OrderService>();
+            // Thanh toán (Backend 4): xem ApiSettings.UsePaymentApi
+            if (ApiSettings.UsePaymentApi)
+                builder.Services.AddTransient<IPaymentService, ApiPaymentService>();
+            else
+                builder.Services.AddSingleton<IPaymentService, PendingPaymentService>();
+
+            // Quyền đọc / thư viện đã mua (Backend 2): xem ApiSettings.UseReadingAccessApi
+            builder.Services.AddTransient<OrderBasedReadingAccessService>();
+            if (ApiSettings.UseReadingAccessApi)
+                builder.Services.AddTransient<IReadingAccessService, ApiReadingAccessService>();
+            else
+                builder.Services.AddTransient<IReadingAccessService>(sp => sp.GetRequiredService<OrderBasedReadingAccessService>());
+
             // ---- ViewModels ----
             builder.Services.AddTransient<LoginViewModel>();
             builder.Services.AddTransient<RegisterViewModel>();
@@ -49,6 +65,10 @@ namespace ReadManager.Mobile
             builder.Services.AddTransient<ChapterListViewModel>();
             builder.Services.AddTransient<ChapterReaderViewModel>();
             builder.Services.AddTransient<LibraryViewModel>();
+            builder.Services.AddTransient<PlansViewModel>();
+            builder.Services.AddTransient<CheckoutViewModel>();
+            builder.Services.AddTransient<OrderDetailViewModel>();
+            builder.Services.AddTransient<OrderHistoryViewModel>();
 
             // ---- Pages ----
             builder.Services.AddTransient<LoginPage>();
@@ -60,6 +80,10 @@ namespace ReadManager.Mobile
             builder.Services.AddTransient<ChapterListPage>();
             builder.Services.AddTransient<ChapterReaderPage>();
             builder.Services.AddTransient<LibraryPage>();
+            builder.Services.AddTransient<PlansPage>();
+            builder.Services.AddTransient<CheckoutPage>();
+            builder.Services.AddTransient<OrderDetailPage>();
+            builder.Services.AddTransient<OrderHistoryPage>();
 
             return builder.Build();
         }

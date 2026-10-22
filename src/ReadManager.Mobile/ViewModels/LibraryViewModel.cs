@@ -7,17 +7,29 @@ using ReadManager.Mobile.Services.Auth;
 
 namespace ReadManager.Mobile.ViewModels;
 
-// Tab "Tủ sách": 2 mục — "Đã xem gần đây" (lịch sử) và "Yêu thích".
+// Tab "Tủ sách": 3 mục — "Đã xem gần đây" (lịch sử), "Yêu thích" và "Đã mua" (gói đang dùng + truyện đã mua trọn bộ).
 public partial class LibraryViewModel : BaseViewModel
 {
     private readonly ILibraryService _library;
     private readonly IAuthService _auth;
+    private readonly IReadingAccessService _access;
 
     public ObservableCollection<LibraryEntry> Items { get; } = new();
+
+    // ----- Mục "Đã mua" (Sprint 2) -----
+    public ObservableCollection<PlanEntitlement> MyPlans { get; } = new();
+    public ObservableCollection<OwnedStory> OwnedStories { get; } = new();
+
+    [ObservableProperty] private bool purchasesNeedLogin;
+    [ObservableProperty] private bool purchasesEmpty;
+    [ObservableProperty] private bool hasMyPlans;
+    [ObservableProperty] private bool hasOwnedStories;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(IsTab0))]
     [NotifyPropertyChangedFor(nameof(IsTab1))]
+    [NotifyPropertyChangedFor(nameof(IsTab2))]
+    [NotifyPropertyChangedFor(nameof(ShowList))]
     [NotifyPropertyChangedFor(nameof(ShowClear))]
     private int selectedTab;
 
@@ -32,12 +44,15 @@ public partial class LibraryViewModel : BaseViewModel
 
     public bool IsTab0 => SelectedTab == 0;
     public bool IsTab1 => SelectedTab == 1;
+    public bool IsTab2 => SelectedTab == 2;
+    public bool ShowList => SelectedTab != 2;
     public bool ShowClear => IsTab0 && HasItems;
 
-    public LibraryViewModel(ILibraryService library, IAuthService auth)
+    public LibraryViewModel(ILibraryService library, IAuthService auth, IReadingAccessService access)
     {
         _library = library;
         _auth = auth;
+        _access = access;
     }
 
     // Gọi mỗi lần tab hiện ra để cập nhật sau khi xem truyện / bấm yêu thích
@@ -46,14 +61,14 @@ public partial class LibraryViewModel : BaseViewModel
     {
         try { await _auth.IsLoggedInAsync(); } // nạp CurrentUser để chọn đúng tủ sách của tài khoản
         catch { /* mất mạng: dùng tủ sách theo thông tin hiện có */ }
-        Show();
+        await ShowAsync();
     }
 
     [RelayCommand]
-    private void SelectTab(string? index)
+    private async Task SelectTabAsync(string? index)
     {
         SelectedTab = int.TryParse(index, out var i) ? i : 0;
-        Show();
+        await ShowAsync();
     }
 
     [RelayCommand]
@@ -93,6 +108,60 @@ public partial class LibraryViewModel : BaseViewModel
         if (!ok) return;
         _library.ClearHistory();
         Show();
+    }
+
+    // ----- Mục "Đã mua" -----
+    [RelayCommand]
+    private async Task OpenOwnedStoryAsync(OwnedStory? story)
+    {
+        if (story is null) return;
+        await Shell.Current.GoToAsync(nameof(Views.StoryDetailPage), new Dictionary<string, object>
+        {
+            { "id", story.StoryId }
+        });
+    }
+
+    [RelayCommand]
+    private async Task OpenPlansAsync() => await Shell.Current.GoToAsync(nameof(Views.PlansPage));
+
+    [RelayCommand]
+    private async Task OpenHistoryAsync() => await Shell.Current.GoToAsync(nameof(Views.OrderHistoryPage));
+
+    [RelayCommand]
+    private async Task GoToLoginAsync() => await Shell.Current.GoToAsync("//LoginPage");
+
+    private async Task ShowAsync()
+    {
+        if (SelectedTab == 2) await LoadPurchasesAsync();
+        else Show();
+    }
+
+    private async Task LoadPurchasesAsync()
+    {
+        Items.Clear();
+        ShowEmpty = false;
+        HasItems = false;
+        CountText = string.Empty;
+
+        var loggedIn = _auth.CurrentUser is not null;
+        PurchasesNeedLogin = !loggedIn;
+        MyPlans.Clear();
+        OwnedStories.Clear();
+        HasMyPlans = false;
+        HasOwnedStories = false;
+        PurchasesEmpty = false;
+        if (!loggedIn) return;
+
+        await RunSafeAsync(async () =>
+        {
+            var purchases = await _access.GetPurchasesAsync();
+            foreach (var p in purchases.Plans) MyPlans.Add(p);
+            foreach (var s in purchases.Stories) OwnedStories.Add(s);
+            HasMyPlans = MyPlans.Count > 0;
+            HasOwnedStories = OwnedStories.Count > 0;
+            PurchasesEmpty = !HasMyPlans && !HasOwnedStories;
+            CountText = $"{MyPlans.Count} gói đang dùng · {OwnedStories.Count} truyện đã mua";
+        });
     }
 
     private void Show()

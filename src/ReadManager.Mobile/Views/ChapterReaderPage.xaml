@@ -6,6 +6,10 @@
              x:Class="ReadManager.Mobile.Views.ChapterReaderPage"
              Title="{Binding Chapter.Title}">
 
+    <Shell.BackButtonBehavior>
+        <BackButtonBehavior IconOverride="ic_back.png" />
+    </Shell.BackButtonBehavior>
+
     <Grid RowDefinitions="*,Auto">
 
         <ScrollView Grid.Row="0">
@@ -16,9 +20,22 @@
                        FontSize="18" FontAttributes="Bold" />
 
                 <Label Text="{Binding ErrorMessage}" TextColor="Red" />
-                <Label IsVisible="{Binding Chapter.IsLocked, Converter={StaticResource InvertedBoolConverter}}" Text="{Binding Chapter.Content}"
+                <Label IsVisible="{Binding IsReadable}" Text="{Binding Chapter.Content}"
                        FontSize="16"
                        LineHeight="1.4" />
+
+                <!-- Chương trả phí chưa mở khóa (giống web: Stories/Read.cshtml) -->
+                <Border Style="{StaticResource Panel}" IsVisible="{Binding IsLocked}">
+                    <VerticalStackLayout Spacing="10">
+                        <Label Text="🔒 Chương này dành cho độc giả đã mở khóa" Style="{StaticResource LblH2}" FontSize="18" />
+                        <Label Text="Nội dung trả phí đang khóa. Mua trọn bộ truyện để đọc vĩnh viễn tất cả các chương, hoặc mua gói đọc."
+                               Style="{StaticResource LblMuted}" />
+                        <Button Text="🛒 Mua trọn bộ truyện" Style="{StaticResource BtnBrass}"
+                                Command="{Binding BuyStoryCommand}" Margin="0,6,0,0" />
+                        <Button Text="Xem các gói đọc" Style="{StaticResource BtnOutlineSm}" HeightRequest="44"
+                                Command="{Binding OpenPlansCommand}" />
+                    </VerticalStackLayout>
+                </Border>
             </VerticalStackLayout>
         </ScrollView>
 

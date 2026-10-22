@@ -110,7 +110,8 @@
                                 <Label Text="Gói đọc theo tháng" FontSize="15" FontAttributes="Bold" TextColor="{StaticResource WebText}" />
                                 <Label Text="• Đọc các truyện nằm trong gói" Style="{StaticResource LblMuted}" />
                                 <Label Text="• Gia hạn sớm hoặc muộn đều được cộng dồn" Style="{StaticResource LblMuted}" />
-                                <Button Text="Sắp ra mắt" Style="{StaticResource BtnOutlineSm}" IsEnabled="False" Margin="0,6,0,0" />
+                                <Button Text="Xem các gói đọc" Style="{StaticResource BtnBrassSm}" Margin="0,6,0,0"
+                                        Command="{Binding GoToPlansCommand}" />
                             </VerticalStackLayout>
                         </Border>
 
@@ -119,9 +120,13 @@
                                 <Label Text="Mua riêng từng truyện" FontSize="15" FontAttributes="Bold" TextColor="{StaticResource WebText}" />
                                 <Label Text="• Mua quyền đọc một truyện" Style="{StaticResource LblMuted}" />
                                 <Label Text="• Độc lập với gói theo tháng" Style="{StaticResource LblMuted}" />
-                                <Button Text="Sắp ra mắt" Style="{StaticResource BtnOutlineSm}" IsEnabled="False" Margin="0,6,0,0" />
+                                <Button Text="Tìm truyện trả phí" Style="{StaticResource BtnOutlineSm}" Margin="0,6,0,0"
+                                        Command="{Binding GoToPaidStoriesCommand}" />
                             </VerticalStackLayout>
                         </Border>
+
+                        <Button Text="Lịch sử thanh toán" Style="{StaticResource BtnOutlineSm}" HeightRequest="44"
+                                Command="{Binding GoToOrderHistoryCommand}" />
                     </VerticalStackLayout>
                 </Border>
 
