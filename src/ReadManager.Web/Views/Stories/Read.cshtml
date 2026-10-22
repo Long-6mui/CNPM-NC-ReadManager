@@ -233,7 +233,11 @@
         <section class="comments" id="comments">
             <h3>Bình luận (@Model.CommentTotal)</h3>
 
-            @if (loggedIn)
+            @if (loggedIn && Model.RestrictionNote is not null)
+            {
+                <div class="banner banner-warn" role="alert" style="margin-bottom:16px">@Model.RestrictionNote</div>
+            }
+            else if (loggedIn)
             {
                 <form asp-action="PostComment" method="post" class="comment-form">
                     <input type="hidden" name="storyId" value="@Model.Story.Id" />

@@ -1,9 +1,10 @@
 @model BrowseVm
 @{ ViewData["Title"] = "Khám phá"; }
+<link rel="stylesheet" href="~/css/community.css" asp-append-version="true" />
 <div class="container section">
     <div class="section-head">
         <h2>@(string.IsNullOrEmpty(Model.Q) ? "Khám phá thư viện" : $"Kết quả cho “{Model.Q}”")</h2>
-        <span class="section-sub">@Model.Stories.Count truyện</span>
+        <span class="section-sub">@Model.Total truyện@(Model.PageCount > 1 ? $" · trang {Model.Page}/{Model.PageCount}" : "")</span>
     </div>
 
     <form method="get" asp-action="Browse" class="filter-row">
@@ -40,6 +41,24 @@
         <div class="grid-cards">
             @foreach (var s in Model.Stories) { <partial name="_StoryCard" model="s" /> }
         </div>
+        @if (Model.PageCount > 1)
+        {
+            int cur = Model.Page, last = Model.PageCount;
+            var shown = new SortedSet<int> { 1, last };
+            for (int p = cur - 2; p <= cur + 2; p++) { if (p >= 1 && p <= last) shown.Add(p); }
+            int prevShown = 0;
+            <nav class="pager" aria-label="Phân trang truyện">
+                @if (cur > 1) { <a asp-action="Browse" asp-route-q="@Model.Q" asp-route-genre="@Model.GenreId" asp-route-access="@Model.Access" asp-route-status="@Model.Status" asp-route-sort="@Model.Sort" asp-route-page="@(cur - 1)" title="Trang trước">«</a> }
+                @foreach (var p in shown)
+                {
+                    if (p - prevShown > 1) { <span class="dots">…</span> }
+                    if (p == cur) { <span class="current">@p</span> }
+                    else { <a asp-action="Browse" asp-route-q="@Model.Q" asp-route-genre="@Model.GenreId" asp-route-access="@Model.Access" asp-route-status="@Model.Status" asp-route-sort="@Model.Sort" asp-route-page="@p">@p</a> }
+                    prevShown = p;
+                }
+                @if (cur < last) { <a asp-action="Browse" asp-route-q="@Model.Q" asp-route-genre="@Model.GenreId" asp-route-access="@Model.Access" asp-route-status="@Model.Status" asp-route-sort="@Model.Sort" asp-route-page="@(cur + 1)" title="Trang sau">»</a> }
+            </nav>
+        }
     }
     else
     {

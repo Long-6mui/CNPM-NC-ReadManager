@@ -16,6 +16,8 @@ builder.Services.AddHttpClient<PlansApiClient>(client =>
     client.Timeout = TimeSpan.FromSeconds(10);
 });
 builder.Services.AddSingleton<DemoPlanStore>();
+builder.Services.AddSingleton<DemoReadingProgressStore>();
+builder.Services.AddSingleton<DemoMemberStore>();
 builder.Services.AddScoped<ApiCookieEvents>();
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme).AddCookie(options => {
     options.Cookie.Name = "ReadManager.Web.Session"; options.Cookie.HttpOnly = true; options.Cookie.SameSite = SameSiteMode.Lax; options.Cookie.SecurePolicy = builder.Environment.IsDevelopment() ? CookieSecurePolicy.SameAsRequest : CookieSecurePolicy.Always;
