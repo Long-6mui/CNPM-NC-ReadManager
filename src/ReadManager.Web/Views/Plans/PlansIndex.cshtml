@@ -2,17 +2,17 @@
 @{
     ViewData["Title"] = "Gói đọc";
     var titles = (Dictionary<int, string>)ViewBag.StoryTitles ?? new();
-    var active = (List<ReadManager.Web.Services.PlanEntitlement>)ViewBag.Active ?? new();
+
 }
 <link rel="stylesheet" href="~/css/plans.css" asp-append-version="true" />
 <div class="container pl">
     <h1>Gói đọc</h1>
-    <p class="pl-sub">Chọn gói để đọc truyện trả phí trong phạm vi gói. Mua lại khi còn hạn sẽ được cộng dồn thời gian. Gói hết hạn không làm mất quyền của truyện bạn đã mua riêng.</p>
+    <p class="pl-sub">Chọn gói để tạo đơn hàng. Quyền đọc chỉ có hiệu lực sau khi thanh toán được xác nhận và quyền được cấp.</p>
     <div class="pl-grid">
         @foreach (var p in Model)
         {
             var v = p.CurrentVersion!;
-            var current = active.FirstOrDefault(a => a.PlanId == p.PlanId);
+
             <div class="pl-card">
                 <h3>@p.Name</h3>
                 <div class="pl-price">@v.Price.ToString("N0")đ</div>
@@ -24,16 +24,14 @@
                         <li>Áp dụng cho @v.StoryIds.Count truyện:
                             @string.Join(", ", v.StoryIds.Select(id => titles.TryGetValue(id, out var t) ? t : $"#{id}"))</li>
                     }
-                    @if (current is not null) { <li><b>Đang dùng, hết hạn @current.ExpiresAt.ToLocalTime().ToString("dd/MM/yyyy")</b></li> }
                 </ul>
                 @if (User.Identity?.IsAuthenticated == true)
                 {
-                    <form asp-action="Buy" method="post"><input type="hidden" name="planId" value="@p.PlanId" /><button class="btn btn-brass" type="submit">@(current is null ? "Đăng ký gói" : "Gia hạn gói")</button></form>
+                    <form asp-action="Buy" method="post"><input type="hidden" name="planId" value="@p.PlanId" /><input type="hidden" name="planVersionId" value="@v.PlanVersionId" /><button class="btn btn-brass" type="submit">Tạo đơn mua gói</button></form>
                 }
                 else { <a class="btn btn-brass" asp-controller="Account" asp-action="Login" asp-route-returnUrl="/Plans">Đăng nhập để mua</a> }
             </div>
         }
     </div>
     @if (Model.Count == 0) { <p class="pl-sub">Hiện chưa có gói nào đang bán.</p> }
-    <p class="pl-sub" style="margin-top:20px"><span class="pl-demo">Thanh toán đang giả lập</span> Gói đọc lấy từ API thật; đơn hàng và thanh toán sẽ nối API đơn hàng khi nhánh feature/s2-orders được merge.</p>
 </div>

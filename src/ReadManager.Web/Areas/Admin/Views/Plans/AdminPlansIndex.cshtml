@@ -19,7 +19,7 @@
                 <form asp-action="Save" method="post" class="pl-form">
                     <input type="hidden" name="planId" value="0" />
                     <label>Tên gói<input name="name" maxlength="150" required /></label>
-                    <label>Giá (đ)<input name="price" type="number" min="1" step="1000" required /></label>
+                    <label>Giá (đ)<input name="price" type="number" min="1" step="1" required /></label>
                     <label>Số tháng<input name="months" type="number" min="1" max="120" required /></label>
                     <label>Phạm vi<select name="scope" class="scope-sel"><option value="All">Tất cả truyện</option><option value="Selected">Truyện được chọn</option></select></label>
                     <div class="pl-stories" hidden>
@@ -54,7 +54,7 @@
 
                     <form asp-action="Save" method="post" class="pl-form">
                         <input type="hidden" name="planId" value="@p.PlanId" />
-                        <label>Giá (đ)<input name="price" type="number" min="1" step="1000" value="@v?.Price.ToString("0")" required /></label>
+                        <label>Giá (đ)<input name="price" type="number" min="1" step="1" value="@v?.Price.ToString("0")" required /></label>
                         <label>Số tháng<input name="months" type="number" min="1" max="120" value="@v?.DurationMonths" required /></label>
                         <label>Phạm vi<select name="scope" class="scope-sel"><option value="All" selected="@(v?.ScopeType != "Selected")">Tất cả truyện</option><option value="Selected" selected="@(v?.ScopeType == "Selected")">Truyện được chọn</option></select></label>
                         <div class="pl-stories" hidden>
