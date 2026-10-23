@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using ReadManager.Api.Data;
 using ReadManager.Api.DTOs.Orders;
 using ReadManager.Api.DTOs.Stories;
@@ -281,8 +281,9 @@ public class OrderService : IOrderService
     }
 
     // Đã mua truyện này chưa (có đơn Paid)
-    private Task<bool> OwnsStoryAsync(int userId, int storyId)
-        => _db.Orders.AnyAsync(o => o.UserId == userId && o.OrderType == TypeStory
+    private async Task<bool> OwnsStoryAsync(int userId, int storyId)
+        => await _db.StoryPurchases.AnyAsync(p => p.Order.UserId == userId && p.Order.StoryId == storyId && p.RevokedAt == null && (p.ExpiresAt == null || p.ExpiresAt > DateTime.UtcNow))
+           || await _db.Orders.AnyAsync(o => o.UserId == userId && o.OrderType == TypeStory
                                  && o.StoryId == storyId && o.Status == Paid);
 
     // Đơn đang chờ thanh toán cho đúng món hàng (nếu có)
