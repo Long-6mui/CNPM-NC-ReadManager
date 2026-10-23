@@ -19,8 +19,6 @@ public class AppDbContext : DbContext
     public DbSet<ReadingPlanVersion> ReadingPlanVersions
         => Set<ReadingPlanVersion>();
 
-    public DbSet<PlanVersionStory> PlanVersionStories
-        => Set<PlanVersionStory>();
 
     // ----- BE4: Tương tác (PB31–33) -----
     public DbSet<StoryFollow> StoryFollows => Set<StoryFollow>();
@@ -30,6 +28,11 @@ public class AppDbContext : DbContext
 
     // ----- BE3: Đơn hàng (PB19, PB21, PB26) -----
     public DbSet<Order> Orders => Set<Order>();
+
+    // ----- BE4: Thanh toán (PB19, PB21, PB24, PB25) -----
+    public DbSet<PaymentTransaction> PaymentTransactions => Set<PaymentTransaction>();
+    public DbSet<Entitlement> Entitlements => Set<Entitlement>();
+    public DbSet<PaymentEvent> PaymentEvents => Set<PaymentEvent>();
 
     // ----- BE3: Thống kê nội dung (PB40) -----
     public DbSet<ChapterRead> ChapterReads => Set<ChapterRead>();
@@ -302,6 +305,65 @@ public class AppDbContext : DbContext
             // Xóa chương → xóa luôn lượt đọc của chương đó (nếu không, admin sẽ không xóa được chương)
             entity.HasOne(x => x.Chapter).WithMany().HasForeignKey(x => x.ChapterId).OnDelete(DeleteBehavior.Cascade);
             entity.HasOne(x => x.User).WithMany().HasForeignKey(x => x.UserId).OnDelete(DeleteBehavior.SetNull);
+        });
+
+        // ===== BE4: GIAO DỊCH THANH TOÁN (PB19, PB21, PB24, PB25) =====
+        modelBuilder.Entity<PaymentTransaction>(entity =>
+        {
+            entity.ToTable("PaymentTransactions", table =>
+            {
+                table.HasCheckConstraint("CK_PaymentTransactions_Status", "`Status` IN ('Success', 'Failed', 'Cancelled')");
+                table.HasCheckConstraint("CK_PaymentTransactions_GrantStatus", "`GrantStatus` IN ('NotRequired', 'Pending', 'Granted', 'Failed')");
+            });
+            entity.HasKey(x => x.PaymentTransactionId);
+            entity.Property(x => x.Provider).HasMaxLength(20).IsRequired();
+            entity.Property(x => x.GatewayTransactionId).HasMaxLength(64).IsRequired();
+            entity.Property(x => x.Amount).HasPrecision(12, 2);
+            entity.Property(x => x.Status).HasMaxLength(20).IsRequired();
+            entity.Property(x => x.Note).HasMaxLength(500).IsRequired(false);
+            entity.Property(x => x.GrantStatus).HasMaxLength(20).HasDefaultValue("NotRequired").IsRequired();
+            entity.Property(x => x.GrantError).HasMaxLength(500).IsRequired(false);
+            entity.Property(x => x.CreatedAt).HasColumnType("datetime(6)");
+            // Callback gửi lặp: cùng cổng + cùng mã giao dịch → database chặn trùng
+            entity.HasIndex(x => new { x.Provider, x.GatewayTransactionId }).IsUnique();
+            entity.HasIndex(x => new { x.OrderId, x.CreatedAt });
+            entity.HasIndex(x => new { x.Status, x.GrantStatus });   // Admin tìm giao dịch cần chạy lại cấp quyền
+            entity.HasOne(x => x.Order).WithMany().HasForeignKey(x => x.OrderId).OnDelete(DeleteBehavior.Restrict);
+        });
+
+        // ===== BE4: QUYỀN ĐỌC ĐÃ CẤP (PB19, PB21, PB25) =====
+        modelBuilder.Entity<Entitlement>(entity =>
+        {
+            entity.ToTable("Entitlements", table =>
+            {
+                table.HasCheckConstraint("CK_Entitlements_Source", "`Source` IN ('Plan', 'Story')");
+                table.HasCheckConstraint("CK_Entitlements_Item",
+                    "(`Source` = 'Plan' AND `PlanVersionId` IS NOT NULL) OR (`Source` = 'Story' AND `StoryId` IS NOT NULL)");
+            });
+            entity.HasKey(x => x.EntitlementId);
+            entity.Property(x => x.Source).HasMaxLength(10).IsRequired();
+            entity.Property(x => x.StartsAt).HasColumnType("datetime(6)");
+            entity.Property(x => x.ExpiresAt).HasColumnType("datetime(6)");
+            entity.Property(x => x.CreatedAt).HasColumnType("datetime(6)");
+            // 1 đơn chỉ cấp quyền 1 lần → chạy lại cấp quyền không bao giờ cấp trùng
+            entity.HasIndex(x => x.OrderId).IsUnique();
+            entity.HasIndex(x => new { x.UserId, x.StoryId });     // "đã mua truyện này chưa"
+            entity.HasIndex(x => new { x.UserId, x.ExpiresAt });   // "gói còn hạn không"
+            entity.HasOne(x => x.User).WithMany().HasForeignKey(x => x.UserId).OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne(x => x.Order).WithMany().HasForeignKey(x => x.OrderId).OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne(x => x.PlanVersion).WithMany().HasForeignKey(x => x.PlanVersionId).OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne(x => x.Story).WithMany().HasForeignKey(x => x.StoryId).OnDelete(DeleteBehavior.Restrict);
+        });
+
+        // ===== BE4: NHẬT KÝ THANH TOÁN =====
+        modelBuilder.Entity<PaymentEvent>(entity =>
+        {
+            entity.ToTable("PaymentEvents");
+            entity.HasKey(x => x.PaymentEventId);
+            entity.Property(x => x.EventType).HasMaxLength(40).IsRequired();
+            entity.Property(x => x.Detail).HasMaxLength(1000).IsRequired(false);
+            entity.Property(x => x.CreatedAt).HasColumnType("datetime(6)");
+            entity.HasIndex(x => new { x.OrderId, x.CreatedAt });   // xem nhật ký của 1 đơn
         });
     }
 }

@@ -159,6 +159,61 @@ namespace ReadManager.Api.Migrations
                     b.ToTable("Comments", (string)null);
                 });
 
+            modelBuilder.Entity("ReadManager.Api.Entities.Entitlement", b =>
+                {
+                    b.Property<int>("EntitlementId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("EntitlementId"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<DateTime?>("ExpiresAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<int>("OrderId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("PlanVersionId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Source")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("varchar(10)");
+
+                    b.Property<DateTime>("StartsAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<int?>("StoryId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.HasKey("EntitlementId");
+
+                    b.HasIndex("OrderId")
+                        .IsUnique();
+
+                    b.HasIndex("PlanVersionId");
+
+                    b.HasIndex("StoryId");
+
+                    b.HasIndex("UserId", "ExpiresAt");
+
+                    b.HasIndex("UserId", "StoryId");
+
+                    b.ToTable("Entitlements", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_Entitlements_Item", "(`Source` = 'Plan' AND `PlanVersionId` IS NOT NULL) OR (`Source` = 'Story' AND `StoryId` IS NOT NULL)");
+
+                            t.HasCheckConstraint("CK_Entitlements_Source", "`Source` IN ('Plan', 'Story')");
+                        });
+                });
+
             modelBuilder.Entity("ReadManager.Api.Entities.Genre", b =>
                 {
                     b.Property<int>("GenreId")
@@ -298,6 +353,104 @@ namespace ReadManager.Api.Migrations
                             t.HasCheckConstraint("CK_Orders_OrderType", "`OrderType` IN ('Plan', 'Story')");
 
                             t.HasCheckConstraint("CK_Orders_Status", "`Status` IN ('Pending', 'Paid', 'Failed', 'Cancelled', 'Expired')");
+                        });
+                });
+
+            modelBuilder.Entity("ReadManager.Api.Entities.PaymentEvent", b =>
+                {
+                    b.Property<int>("PaymentEventId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("PaymentEventId"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("Detail")
+                        .HasMaxLength(1000)
+                        .HasColumnType("varchar(1000)");
+
+                    b.Property<string>("EventType")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("varchar(40)");
+
+                    b.Property<int?>("OrderId")
+                        .HasColumnType("int");
+
+                    b.HasKey("PaymentEventId");
+
+                    b.HasIndex("OrderId", "CreatedAt");
+
+                    b.ToTable("PaymentEvents", (string)null);
+                });
+
+            modelBuilder.Entity("ReadManager.Api.Entities.PaymentTransaction", b =>
+                {
+                    b.Property<int>("PaymentTransactionId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("PaymentTransactionId"));
+
+                    b.Property<decimal>("Amount")
+                        .HasPrecision(12, 2)
+                        .HasColumnType("decimal(12,2)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("GatewayTransactionId")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("varchar(64)");
+
+                    b.Property<int>("GrantAttempts")
+                        .HasColumnType("int");
+
+                    b.Property<string>("GrantError")
+                        .HasMaxLength(500)
+                        .HasColumnType("varchar(500)");
+
+                    b.Property<string>("GrantStatus")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)")
+                        .HasDefaultValue("NotRequired");
+
+                    b.Property<string>("Note")
+                        .HasMaxLength(500)
+                        .HasColumnType("varchar(500)");
+
+                    b.Property<int>("OrderId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Provider")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)");
+
+                    b.HasKey("PaymentTransactionId");
+
+                    b.HasIndex("OrderId", "CreatedAt");
+
+                    b.HasIndex("Provider", "GatewayTransactionId")
+                        .IsUnique();
+
+                    b.HasIndex("Status", "GrantStatus");
+
+                    b.ToTable("PaymentTransactions", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_PaymentTransactions_GrantStatus", "`GrantStatus` IN ('NotRequired', 'Pending', 'Granted', 'Failed')");
+
+                            t.HasCheckConstraint("CK_PaymentTransactions_Status", "`Status` IN ('Success', 'Failed', 'Cancelled')");
                         });
                 });
 
@@ -687,6 +840,39 @@ namespace ReadManager.Api.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("ReadManager.Api.Entities.Entitlement", b =>
+                {
+                    b.HasOne("ReadManager.Api.Entities.Order", "Order")
+                        .WithMany()
+                        .HasForeignKey("OrderId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("ReadManager.Api.Entities.ReadingPlanVersion", "PlanVersion")
+                        .WithMany()
+                        .HasForeignKey("PlanVersionId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("ReadManager.Api.Entities.Story", "Story")
+                        .WithMany()
+                        .HasForeignKey("StoryId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("ReadManager.Api.Entities.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Order");
+
+                    b.Navigation("PlanVersion");
+
+                    b.Navigation("Story");
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("ReadManager.Api.Entities.Notification", b =>
                 {
                     b.HasOne("ReadManager.Api.Entities.Chapter", "Chapter")
@@ -736,6 +922,17 @@ namespace ReadManager.Api.Migrations
                     b.Navigation("Story");
 
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("ReadManager.Api.Entities.PaymentTransaction", b =>
+                {
+                    b.HasOne("ReadManager.Api.Entities.Order", "Order")
+                        .WithMany()
+                        .HasForeignKey("OrderId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Order");
                 });
 
             modelBuilder.Entity("ReadManager.Api.Entities.PlanVersionStory", b =>
