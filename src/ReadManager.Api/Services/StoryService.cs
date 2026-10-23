@@ -63,6 +63,8 @@ public class StoryService : IStoryService
         {
             "newest" => stories.OrderByDescending(s => s.CreatedAt),
             "title" => stories.OrderBy(s => s.Title),
+            "reads" => stories.OrderByDescending(s => _db.ChapterReads.Count(r => r.StoryId == s.StoryId)),
+            "follows" => stories.OrderByDescending(s => _db.StoryFollows.Count(f => f.StoryId == s.StoryId)),
             _ => stories.OrderByDescending(s => s.UpdatedAt) // "updated" = mặc định
         };
 
