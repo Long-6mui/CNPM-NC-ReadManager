@@ -1,7 +1,6 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using ReadManager.Api.Authentication;
 using ReadManager.Api.DTOs.Community;
 using ReadManager.Api.Services;
 
@@ -32,7 +31,7 @@ public class FollowsController : ControllerBase
         return status is null ? NotFound(new { message = "Không tìm thấy truyện." }) : Ok(status);
     }
 
-    [Authorize(Policy = AuthPolicies.ActiveMember)]
+    [Authorize]
     [HttpPost("api/stories/{storyId:int}/follow")]
     public async Task<ActionResult<FollowStatusDto>> Follow(int storyId)
     {

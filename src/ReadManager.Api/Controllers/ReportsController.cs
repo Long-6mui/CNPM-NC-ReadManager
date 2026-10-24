@@ -2,7 +2,6 @@ using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
-using ReadManager.Api.Authentication;
 using ReadManager.Api.DTOs.Community;
 using ReadManager.Api.DTOs.Stories;
 using ReadManager.Api.Services;
@@ -30,7 +29,7 @@ public class ReportsController : ControllerBase
     public ActionResult<List<string>> GetReasons() => Ok(_reportService.GetReasons());
 
     // body: { "targetType": "Comment", "targetId": 7, "reason": "Spam / quảng cáo", "note": "" }
-    [Authorize(Policy = AuthPolicies.ActiveMember)]
+    [Authorize]
     [EnableRateLimiting("comment")]   // dùng chung giới hạn 5 lần / phút với bình luận
     [HttpPost("api/reports")]
     public async Task<ActionResult<ReportDto>> Create(CreateReportDto dto)

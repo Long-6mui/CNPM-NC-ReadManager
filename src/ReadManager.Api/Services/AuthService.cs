@@ -105,7 +105,7 @@ public class AuthService : IAuthService
             return (false, "Email hoặc mật khẩu không chính xác.", null, false);
         }
 
-        if (!AccountStatuses.CanSignIn(user.AccountStatus))
+        if (user.AccountStatus != "Active")
         {
             return (false, "Tài khoản của bạn đang bị khóa.", null, true);
         }

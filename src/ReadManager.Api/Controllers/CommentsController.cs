@@ -2,7 +2,6 @@ using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
-using ReadManager.Api.Authentication;
 using ReadManager.Api.DTOs.Community;
 using ReadManager.Api.DTOs.Stories;
 using ReadManager.Api.Services;
@@ -39,7 +38,7 @@ public class CommentsController : ControllerBase
     }
 
     // POST api/stories/5/comments   body: { "chapterId": 12, "content": "Hay quá!" }
-    [Authorize(Policy = AuthPolicies.ActiveMember)]
+    [Authorize]
     [EnableRateLimiting("comment")]   // chống spam: tối đa 5 bình luận / phút (khai báo trong Program.cs)
     [HttpPost("api/stories/{storyId:int}/comments")]
     public async Task<ActionResult<CommentDto>> Create(int storyId, CreateCommentDto dto)
