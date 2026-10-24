@@ -19,7 +19,7 @@ public class ApiSessionHandler(IOptionsMonitor<AuthenticationSchemeOptions> opti
   if(ticket is null||ticket.Properties.ExpiresUtc is not { } expiry||expiry<=DateTimeOffset.UtcNow)return AuthenticateResult.Fail("Invalid session.");
   if(!int.TryParse(ticket.Principal.FindFirstValue(ClaimTypes.NameIdentifier),out var id))return AuthenticateResult.Fail("Invalid user.");
   var user=await db.Users.AsNoTracking().SingleOrDefaultAsync(u=>u.UserId==id);
-  if(user is null||user.AccountStatus!="Active"||ticket.Principal.FindFirstValue("security_version")!=user.SecurityVersion.ToString()||ticket.Principal.FindFirstValue(ClaimTypes.Role)!=user.Role)return AuthenticateResult.Fail("Session revoked.");
+  if(user is null|| !ReadManager.Api.Entities.AccountStatuses.CanSignIn(user.AccountStatus) || ticket.Principal.FindFirstValue("security_version")!=user.SecurityVersion.ToString()||ticket.Principal.FindFirstValue(ClaimTypes.Role)!=user.Role)return AuthenticateResult.Fail("Session revoked.");
   return AuthenticateResult.Success(ticket);
  }
 }

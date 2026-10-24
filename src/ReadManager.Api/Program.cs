@@ -5,6 +5,7 @@ using ReadManager.Api.Authentication;
 using ReadManager.Api.Data;
 using ReadManager.Api.Services;
 using System.Threading.RateLimiting;
+using Microsoft.AspNetCore.Authorization;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -28,6 +29,9 @@ builder.Services.AddScoped<ICommentService, CommentService>();             // BE
 builder.Services.AddScoped<IReportService, ReportService>();               // BE4 — PB33 báo cáo vi phạm
 builder.Services.AddScoped<IFollowService, FollowService>();               // BE4 — PB31 theo dõi truyện
 builder.Services.AddScoped<INotificationService, NotificationService>();   // BE4 — PB31 thông báo chương mới
+builder.Services.AddScoped<IReadingProgressService, ReadingProgressService>();   // BE2 — PB28–29 tiến độ đọc
+builder.Services.AddScoped<IUserManagementService, UserManagementService>();      // BE2 — PB35 quản lý thành viên
+builder.Services.AddScoped<IUserRestrictionService, UserRestrictionService>();    // BE2 — PB36 hạn chế / tạm ngừng
 
 builder.Services.AddDataProtection()
     .SetApplicationName("ReadManager.Api");
@@ -37,7 +41,12 @@ builder.Services.AddAuthentication(ApiSessionHandler.SchemeName)
         ApiSessionHandler.SchemeName,
         _ => { });
 
-builder.Services.AddAuthorization();
+builder.Services.AddScoped<IAuthorizationHandler, ActiveAccountHandler>();
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy(AuthPolicies.ActiveMember, policy =>
+        policy.RequireAuthenticatedUser().AddRequirements(new ActiveAccountRequirement()));
+});
 
 builder.Services.AddRateLimiter(options =>
 {
