@@ -505,6 +505,38 @@ namespace ReadManager.Api.Migrations
                         });
                 });
 
+            modelBuilder.Entity("ReadManager.Api.Entities.ReadingProgress", b =>
+                {
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("StoryId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("ChapterId")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("ScrollPercent")
+                        .HasPrecision(5, 2)
+                        .HasColumnType("decimal(5,2)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.HasKey("UserId", "StoryId");
+
+                    b.HasIndex("ChapterId");
+
+                    b.HasIndex("StoryId");
+
+                    b.HasIndex("UserId", "UpdatedAt");
+
+                    b.ToTable("ReadingProgress", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_ReadingProgress_ScrollPercent", "`ScrollPercent` >= 0 AND `ScrollPercent` <= 100");
+                        });
+                });
+
             modelBuilder.Entity("ReadManager.Api.Entities.Report", b =>
                 {
                     b.Property<int>("ReportId")
@@ -752,6 +784,13 @@ namespace ReadManager.Api.Migrations
                         .HasColumnType("int")
                         .HasDefaultValue(0);
 
+                    b.Property<DateTime?>("StatusChangedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("StatusReason")
+                        .HasMaxLength(500)
+                        .HasColumnType("varchar(500)");
+
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("datetime(6)");
 
@@ -966,6 +1005,33 @@ namespace ReadManager.Api.Migrations
                         .IsRequired();
 
                     b.Navigation("Plan");
+                });
+
+            modelBuilder.Entity("ReadManager.Api.Entities.ReadingProgress", b =>
+                {
+                    b.HasOne("ReadManager.Api.Entities.Chapter", "Chapter")
+                        .WithMany()
+                        .HasForeignKey("ChapterId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("ReadManager.Api.Entities.Story", "Story")
+                        .WithMany()
+                        .HasForeignKey("StoryId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("ReadManager.Api.Entities.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Chapter");
+
+                    b.Navigation("Story");
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("ReadManager.Api.Entities.Report", b =>
