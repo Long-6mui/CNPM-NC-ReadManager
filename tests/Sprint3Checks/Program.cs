@@ -27,7 +27,7 @@ void Assert(bool condition, string message)
 
 // 1. Cấu hình DB tạm thời
 var config = new ConfigurationBuilder()
-    .AddUserSecrets("7fb0539b-fdcb-468b-a959-03ab550ad094", optional: true)
+    .AddUserSecrets("7fb0539b-fdcb-468b-a959-03ab550ad094")
     .AddEnvironmentVariables()
     .Build();
 

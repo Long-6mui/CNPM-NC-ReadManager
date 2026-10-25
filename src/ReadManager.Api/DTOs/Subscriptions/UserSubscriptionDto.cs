@@ -13,10 +13,17 @@ public class UserSubscriptionDto
     public DateTime? RevokedAt { get; set; }
     public bool IsActive { get; set; }
     public int DaysRemaining { get; set; }
+
+    // Mở rộng thực tế: Cảnh báo sắp hết hạn (<= 7 ngày) & trạng thái hiển thị
+    public bool IsExpiringSoon { get; set; }
+    public string StatusBadge { get; set; } = string.Empty; // "Đang hoạt động" | "Sắp hết hạn" | "Đã hết hạn" | "Đã thu hồi"
+    public bool CanRenew { get; set; }
 }
 
 public class UserSubscriptionSummaryDto
 {
     public UserSubscriptionDto? ActiveSubscription { get; set; }
+    public bool HasExpiringAlert { get; set; }
+    public string? AlertMessage { get; set; }
     public List<UserSubscriptionDto> History { get; set; } = new();
 }
