@@ -23,6 +23,7 @@ builder.Services.AddScoped<IStoryService, StoryService>();
 builder.Services.AddScoped<IGenreService, GenreService>();
 builder.Services.AddScoped<IChapterService, ChapterService>();
 builder.Services.AddScoped<IEntitlementService, EntitlementService>();
+builder.Services.AddScoped<IActivityStatisticsService, ActivityStatisticsService>(); // BE2 — PB37 thống kê hoạt động
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IOrderService, OrderService>();   // BE3 — đơn hàng (PB19, PB21, PB26)
 builder.Services.Configure<PaymentOptions>(builder.Configuration.GetSection(PaymentOptions.SectionName));
