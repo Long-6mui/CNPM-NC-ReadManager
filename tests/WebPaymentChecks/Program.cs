@@ -1,0 +1,85 @@
+using System.Diagnostics;
+using System.Net;
+using System.Net.Http.Json;
+using System.Text.Json;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
+using MySqlConnector;
+using ReadManager.Api.Data;
+using ReadManager.Api.Entities;
+using ReadManager.Web.Services;
+
+var cfg = new ConfigurationBuilder().AddUserSecrets("7fb0539b-fdcb-468b-a959-03ab550ad094").AddEnvironmentVariables().Build();
+var cs = new MySqlConnectionStringBuilder(cfg.GetConnectionString("DefaultConnection") ?? throw new Exception("Missing DB configuration"));
+var database = "rm_webpay_" + Guid.NewGuid().ToString("N")[..16]; cs.Database = database;
+await using var db = new AppDbContext(new DbContextOptionsBuilder<AppDbContext>().UseMySql(cs.ConnectionString,ServerVersion.AutoDetect(cs.ConnectionString)).Options);
+Process? process=null;
+int count=0;
+void Check(bool ok,string message) { if(!ok)throw new Exception("FAIL: "+message); Console.WriteLine("PASS: "+message);count++; }
+try
+{
+    await db.Database.MigrateAsync();
+    var password="Test_"+Guid.NewGuid().ToString("N");
+    foreach(var name in new[]{"admin","alice","bob"})
+    {
+        var u=new User { Username=name,Email=name+"@example.test",DisplayName=name,Role=name=="admin"?"Admin":"Member" };
+        u.PasswordHash=new PasswordHasher<User>().HashPassword(u,password);db.Users.Add(u);
+    }
+    await db.SaveChangesAsync();
+    var admin=await db.Users.SingleAsync(x=>x.Role=="Admin");
+    var story=new Story {Title="Paid",Slug="paid",AuthorName="Test",CreatedBy=admin.UserId,Visibility="Public",AccessPolicy="Paid",CurrentPrice=50000};
+    var other=new Story {Title="Outside",Slug="outside",AuthorName="Test",CreatedBy=admin.UserId,Visibility="Public",AccessPolicy="Paid",CurrentPrice=50000};
+    db.Stories.AddRange(story,other);await db.SaveChangesAsync();
+    var chapter=new Chapter {StoryId=story.StoryId,ChapterNumber=1,Title="Paid",Content="Protected text",AccessLevel="Paid",PublicationStatus="Published"};
+    var outside=new Chapter {StoryId=other.StoryId,ChapterNumber=1,Title="Paid",Content="Other text",AccessLevel="Paid",PublicationStatus="Published"};
+    db.Chapters.AddRange(chapter,outside);
+    var plan=new ReadingPlan {Name="Selected",IsAvailable=true};
+    var version=new ReadingPlanVersion {Plan=plan,VersionNumber=1,Price=50000,DurationMonths=1,ScopeType="Selected",PublishedAt=DateTime.UtcNow.AddMinutes(-1)};
+    version.PlanVersionStories.Add(new PlanVersionStory {StoryId=story.StoryId});db.ReadingPlanVersions.Add(version);await db.SaveChangesAsync();
+    var listener=new System.Net.Sockets.TcpListener(System.Net.IPAddress.Loopback,0);listener.Start();var port=((System.Net.IPEndPoint)listener.LocalEndpoint).Port;listener.Stop();
+    var url=$"http://127.0.0.1:{port}";
+    var root=Path.GetFullPath(Path.Combine(AppContext.BaseDirectory,"../../../../../"));
+    var dll=Path.Combine(root,"src/ReadManager.Api/bin/Debug/net8.0/ReadManager.Api.dll");
+    var psi=new ProcessStartInfo("dotnet") {UseShellExecute=false,CreateNoWindow=true,WorkingDirectory=Path.GetDirectoryName(dll)!};psi.ArgumentList.Add(dll);
+    psi.Environment["ConnectionStrings__DefaultConnection"]=cs.ConnectionString;
+    psi.Environment["ASPNETCORE_ENVIRONMENT"]="Development";psi.Environment["ASPNETCORE_URLS"]=url;
+    psi.Environment["Payment__SecretKey"]=Guid.NewGuid().ToString("N")+Guid.NewGuid().ToString("N");psi.Environment["Logging__LogLevel__Default"]="Critical";
+    process=Process.Start(psi)!;
+    using var http=new HttpClient {BaseAddress=new Uri(url),Timeout=TimeSpan.FromSeconds(20)};
+    for(int i=0;i<60;i++){try{await http.GetAsync("api/reading-plans");break;}catch(HttpRequestException){await Task.Delay(200);}}
+    async Task<string> Token(string name) {var response=await http.PostAsJsonAsync("api/auth/login",new {email=name+"@example.test",password});response.EnsureSuccessStatusCode();return (await response.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("accessToken").GetString()!;}
+    var alice=await Token("alice");var bob=await Token("bob");var adminToken=await Token("admin");
+    var webOrders=new StoriesApiClient(http);var payments=new PaymentsApiClient(http);
+    var created=await webOrders.CreatePlanOrderAsync(plan.PlanId,version.PlanVersionId,alice);
+    Check(created.Ok && created.Id.HasValue,"Web client creates plan order via API");var orderId=created.Id!.Value;
+    Check(!(await payments.StartAsync(orderId,bob)).Ok,"other member cannot start payment");
+    Check(!(await payments.SimulateAsync(orderId,"Success",bob)).Ok,"other member cannot simulate payment");
+    var start=await payments.StartAsync(orderId,alice);
+    Check(start.Ok && start.Data!.Amount==50000,"payment starts with database amount");
+    var before=await webOrders.GetChapterAsync(story.StoryId,1,alice);
+    Check(before!.IsLocked && before.Content=="","pending payment does not unlock chapter");
+    var paid=await payments.SimulateAsync(orderId,"Success",alice);
+    Check(paid.Ok && paid.Data!.EntitlementGranted,"simulation uses signed callback and grants entitlement");
+    var after=await webOrders.GetChapterAsync(story.StoryId,1,alice);
+    Check(!after!.IsLocked && after.Content=="Protected text","paid member reads chapter via Web API client");
+    Check((await webOrders.GetChapterAsync(other.StoryId,1,alice))!.IsLocked,"selected plan does not unlock outside story");
+    Check((await webOrders.GetChapterAsync(story.StoryId,1,bob))!.IsLocked,"other member stays locked");
+    var library=await payments.LibraryAsync(alice);
+    Check(library.Ok && library.Data!.Subscriptions.History.Any(x=>x.OrderId==orderId && x.IsActive),"Web reads granted subscription from API");
+    var duplicate=await payments.SimulateAsync(orderId,"Success",alice);
+    Check(await db.UserSubscriptions.CountAsync(x=>x.OrderId==orderId)==1,"repeat confirmation does not grant twice");
+    await db.UserSubscriptions.Where(x=>x.OrderId==orderId).ExecuteDeleteAsync();
+    Check(!(await payments.RecoveryAsync(1,alice)).Ok,"Member cannot inspect recovery queue");
+    var recoveries=await payments.RecoveryAsync(1,adminToken);
+    Check(recoveries.Ok && recoveries.Data!.Items.Any(x=>x.OrderId==orderId),"Admin sees verified payment missing grant");
+    Check((await payments.RegrantAsync(orderId,adminToken)).Data!.Granted,"Admin regrants through API");
+    Check((await payments.RegrantAsync(orderId,adminToken)).Data!.AlreadyGranted,"regrant is idempotent");
+    Check((await db.Payments.CountAsync(x=>x.OrderId==orderId))==1,"recovery creates no extra payment");
+    Console.WriteLine($"ALL {count} WEB PAYMENT CHECKS PASSED");
+}
+finally
+{
+    if(process is {HasExited:false}) {process.Kill(true);await process.WaitForExitAsync();}
+    if(cs.Database==database && database.StartsWith("rm_webpay_") && database.Length==26) await db.Database.EnsureDeletedAsync();
+}
