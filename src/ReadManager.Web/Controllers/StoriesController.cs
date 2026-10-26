@@ -141,17 +141,26 @@ public class StoriesController(StoriesApiClient api, DemoReadingProgressStore pr
             // PB32 + PB33 — chương đã ra mắt thì tải bình luận + danh sách lý do báo cáo
             if (!c.IsUpcoming)
             {
-                var comments = await api.CommentsAsync(storyId, c.ChapterId, token);
-                vm.Comments = comments.Items;
-                vm.CommentTotal = comments.TotalCount;
-                vm.ReportReasons = await api.ReportReasonsAsync();
+                try
+                {
+                    var comments = await api.CommentsAsync(storyId, c.ChapterId, token);
+                    vm.Comments = comments.Items;
+                    vm.CommentTotal = comments.TotalCount;
+                    vm.ReportReasons = await api.ReportReasonsAsync();
+                }
+                catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException)
+                {
+                    TempData["Toast"] = "Chưa tải được phần bình luận. Bạn vẫn có thể đọc chương và thử tải lại sau.";
+                }
             }
 
             return View(vm);
         }
         catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException)
         {
-            TempData["Toast"] = "Không kết nối được API. Hãy chạy ReadManager.Api rồi thử lại.";
+            TempData["Toast"] = ex is HttpRequestException { StatusCode: not null } httpError
+                ? $"API đọc chương trả lỗi {(int)httpError.StatusCode.Value}. Vui lòng thử lại."
+                : "Không kết nối được API đọc chương hoặc yêu cầu đã quá thời gian. Vui lòng thử lại.";
             return RedirectToAction(nameof(Details), new { id = storyId });
         }
     }

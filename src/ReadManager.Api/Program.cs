@@ -5,6 +5,7 @@ using ReadManager.Api.Authentication;
 using ReadManager.Api.Data;
 using ReadManager.Api.Services;
 using System.Threading.RateLimiting;
+using Microsoft.AspNetCore.Authorization;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -23,11 +24,17 @@ builder.Services.AddScoped<IGenreService, GenreService>();
 builder.Services.AddScoped<IChapterService, ChapterService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IOrderService, OrderService>();   // BE3 — đơn hàng (PB19, PB21, PB26)
+builder.Services.Configure<PaymentOptions>(builder.Configuration.GetSection(PaymentOptions.SectionName));
+builder.Services.AddScoped<IEntitlementGrantService, EntitlementGrantService>();   // BE4 — cấp quyền đọc
+builder.Services.AddScoped<IPaymentService, PaymentService>();                      // BE4 — PB19/PB21/PB24/PB25 thanh toán
 builder.Services.AddScoped<IContentStatisticsService, ContentStatisticsService>();   // BE3 — PB40 thống kê nội dung
 builder.Services.AddScoped<ICommentService, CommentService>();             // BE4 — PB32 bình luận
 builder.Services.AddScoped<IReportService, ReportService>();               // BE4 — PB33 báo cáo vi phạm
 builder.Services.AddScoped<IFollowService, FollowService>();               // BE4 — PB31 theo dõi truyện
 builder.Services.AddScoped<INotificationService, NotificationService>();   // BE4 — PB31 thông báo chương mới
+builder.Services.AddScoped<IReadingProgressService, ReadingProgressService>();   // BE2 — PB28–29 tiến độ đọc
+builder.Services.AddScoped<IUserManagementService, UserManagementService>();      // BE2 — PB35 quản lý thành viên
+builder.Services.AddScoped<IUserRestrictionService, UserRestrictionService>();    // BE2 — PB36 hạn chế / tạm ngừng
 
 builder.Services.AddDataProtection()
     .SetApplicationName("ReadManager.Api");
@@ -37,7 +44,12 @@ builder.Services.AddAuthentication(ApiSessionHandler.SchemeName)
         ApiSessionHandler.SchemeName,
         _ => { });
 
-builder.Services.AddAuthorization();
+builder.Services.AddScoped<IAuthorizationHandler, ActiveAccountHandler>();
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy(AuthPolicies.ActiveMember, policy =>
+        policy.RequireAuthenticatedUser().AddRequirements(new ActiveAccountRequirement()));
+});
 
 builder.Services.AddRateLimiter(options =>
 {

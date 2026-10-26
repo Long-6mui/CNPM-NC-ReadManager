@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using ReadManager.Api.Entities;
 
 namespace ReadManager.Api.Data;
@@ -34,9 +34,15 @@ public class AppDbContext : DbContext
     // ----- BE3: Thống kê nội dung (PB40) -----
     public DbSet<ChapterRead> ChapterReads => Set<ChapterRead>();
 
+    public DbSet<Payment> Payments => Set<Payment>();
+    public DbSet<PaymentEvent> PaymentEvents => Set<PaymentEvent>();
+    public DbSet<UserSubscription> UserSubscriptions => Set<UserSubscription>();
+    public DbSet<StoryPurchase> StoryPurchases => Set<StoryPurchase>();
+    public DbSet<ReadingProgress> ReadingProgresses => Set<ReadingProgress>();
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
+        PaymentModelConfiguration.Configure(modelBuilder);
         modelBuilder.HasCharSet("utf8mb4");
         modelBuilder.UseCollation("utf8mb4_unicode_ci");
 
@@ -55,6 +61,8 @@ public class AppDbContext : DbContext
             entity.Property(x => x.Role).HasMaxLength(20).HasDefaultValue("Member").IsRequired();
             entity.Property(x => x.AccountStatus).HasMaxLength(20).HasDefaultValue("Active").IsRequired();
             entity.Property(x => x.SecurityVersion).HasDefaultValue(0);
+            entity.Property(x => x.StatusReason).HasMaxLength(500).IsRequired(false);
+            entity.Property(x => x.StatusChangedAt).HasColumnType("datetime(6)");
             entity.Property(x => x.CreatedAt).HasColumnType("datetime(6)");
             entity.Property(x => x.UpdatedAt).HasColumnType("datetime(6)");
         });
@@ -286,6 +294,20 @@ public class AppDbContext : DbContext
             entity.HasOne(x => x.User).WithMany().HasForeignKey(x => x.UserId).OnDelete(DeleteBehavior.Restrict);
             entity.HasOne(x => x.PlanVersion).WithMany().HasForeignKey(x => x.PlanVersionId).OnDelete(DeleteBehavior.Restrict);
             entity.HasOne(x => x.Story).WithMany().HasForeignKey(x => x.StoryId).OnDelete(DeleteBehavior.Restrict);
+        });
+
+        // ===== BE2: TIẾN ĐỘ ĐỌC (PB28–29) =====
+        modelBuilder.Entity<ReadingProgress>(entity =>
+        {
+            entity.ToTable("ReadingProgress", table =>
+                table.HasCheckConstraint("CK_ReadingProgress_ScrollPercent", "`ScrollPercent` >= 0 AND `ScrollPercent` <= 100"));
+            entity.HasKey(x => new { x.UserId, x.StoryId });
+            entity.Property(x => x.ScrollPercent).HasPrecision(5, 2);
+            entity.Property(x => x.UpdatedAt).HasColumnType("datetime(6)");
+            entity.HasIndex(x => new { x.UserId, x.UpdatedAt });
+            entity.HasOne(x => x.User).WithMany().HasForeignKey(x => x.UserId).OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne(x => x.Story).WithMany().HasForeignKey(x => x.StoryId).OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne(x => x.Chapter).WithMany().HasForeignKey(x => x.ChapterId).OnDelete(DeleteBehavior.Cascade);
         });
 
         // ===== BE3: LƯỢT ĐỌC CHƯƠNG (PB40 — thống kê nội dung) =====
