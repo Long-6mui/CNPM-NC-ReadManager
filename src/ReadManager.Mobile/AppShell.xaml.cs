@@ -25,6 +25,11 @@ namespace ReadManager.Mobile
             Routing.RegisterRoute(nameof(OrderDetailPage), typeof(OrderDetailPage));
             Routing.RegisterRoute(nameof(OrderHistoryPage), typeof(OrderHistoryPage));
 
+            // Sprint 3: thông báo, theo dõi, bình luận
+            Routing.RegisterRoute(nameof(NotificationsPage), typeof(NotificationsPage));
+            Routing.RegisterRoute(nameof(FollowedStoriesPage), typeof(FollowedStoriesPage));
+            Routing.RegisterRoute(nameof(CommentsPage), typeof(CommentsPage));
+
         }
 
         // Bấm menu dưới để sang mục khác: mục vừa rời đi được đưa về TRANG ĐẦU của nó

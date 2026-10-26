@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:ReadManager.Mobile.ViewModels"
+             xmlns:models="clr-namespace:ReadManager.Mobile.Models"
+             x:DataType="vm:NotificationsViewModel"
+             x:Class="ReadManager.Mobile.Views.NotificationsPage"
+             Title="Thông báo"
+             BackgroundColor="{StaticResource WebBg}">
+
+    <Shell.BackButtonBehavior>
+        <BackButtonBehavior IconOverride="ic_back.png" />
+    </Shell.BackButtonBehavior>
+
+    <Grid RowDefinitions="Auto,*">
+
+        <VerticalStackLayout Grid.Row="0" Padding="16,12,16,4" Spacing="6">
+            <Grid ColumnDefinitions="*,Auto">
+                <Label Text="{Binding CountText}" Style="{StaticResource LblMuted}" VerticalOptions="Center" />
+                <Button Grid.Column="1" Text="Đánh dấu đã đọc hết" Style="{StaticResource BtnLink}"
+                        Command="{Binding MarkAllReadCommand}" IsVisible="{Binding HasUnread}" />
+            </Grid>
+            <Label Text="{Binding ErrorMessage}" TextColor="{StaticResource WebCrimson}"
+                   IsVisible="{Binding ErrorMessage, Converter={StaticResource StringToBoolConverter}}" />
+            <ActivityIndicator IsRunning="{Binding IsBusy}" IsVisible="{Binding IsBusy}" Color="{StaticResource WebRoyal}" />
+        </VerticalStackLayout>
+
+        <CollectionView Grid.Row="1" ItemsSource="{Binding Items}" SelectionMode="None" Margin="16,6,16,0">
+            <CollectionView.Footer>
+                <VerticalStackLayout Padding="0,4,0,24">
+                    <Button Text="Tải thêm" Style="{StaticResource BtnOutlineSm}"
+                            Command="{Binding LoadMoreCommand}" IsVisible="{Binding HasMore}" />
+                </VerticalStackLayout>
+            </CollectionView.Footer>
+            <CollectionView.ItemTemplate>
+                <DataTemplate x:DataType="models:AppNotification">
+                    <Border Style="{StaticResource Panel}" Padding="14" Margin="0,0,0,10">
+                        <Border.GestureRecognizers>
+                            <TapGestureRecognizer
+                                Command="{Binding Source={RelativeSource AncestorType={x:Type vm:NotificationsViewModel}}, Path=OpenCommand}"
+                                CommandParameter="{Binding .}" />
+                        </Border.GestureRecognizers>
+                        <Grid ColumnDefinitions="Auto,*" ColumnSpacing="10">
+                            <BoxView WidthRequest="10" HeightRequest="10" CornerRadius="5" VerticalOptions="Start" Margin="0,5,0,0"
+                                     Color="{StaticResource WebAmber}" IsVisible="{Binding IsUnread}" />
+                            <VerticalStackLayout Grid.Column="1" Spacing="3">
+                                <Label Text="{Binding Message}" FontSize="14" TextColor="{StaticResource WebText}" />
+                                <Label Text="{Binding TargetText}" FontSize="12" FontAttributes="Bold" TextColor="{StaticResource WebRoyal}" />
+                                <Label Text="{Binding TimeText}" Style="{StaticResource LblCardMeta}" />
+                            </VerticalStackLayout>
+                        </Grid>
+                    </Border>
+                </DataTemplate>
+            </CollectionView.ItemTemplate>
+        </CollectionView>
+
+        <VerticalStackLayout Grid.Row="1" IsVisible="{Binding ShowEmpty}" VerticalOptions="Start"
+                             Padding="24,60" Spacing="8" InputTransparent="True">
+            <Label Text="Chưa có thông báo nào." Style="{StaticResource LblH2}" FontSize="18" HorizontalTextAlignment="Center" />
+            <Label Text="Theo dõi truyện để nhận thông báo khi có chương mới." Style="{StaticResource LblMuted}"
+                   HorizontalTextAlignment="Center" />
+        </VerticalStackLayout>
+
+        <VerticalStackLayout Grid.Row="1" IsVisible="{Binding IsLoggedIn, Converter={StaticResource InvertedBoolConverter}}"
+                             VerticalOptions="Start" Padding="24,60" Spacing="12">
+            <Label Text="Đăng nhập để xem thông báo." Style="{StaticResource LblH2}" FontSize="18" HorizontalTextAlignment="Center" />
+            <Button Text="Đăng nhập" Style="{StaticResource BtnBrass}" Command="{Binding GoToLoginCommand}" />
+        </VerticalStackLayout>
+    </Grid>
+</ContentPage>

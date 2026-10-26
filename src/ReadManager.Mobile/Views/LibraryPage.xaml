@@ -11,7 +11,18 @@
     <Grid RowDefinitions="Auto,Auto,*">
 
         <!-- Ba mục: Đã xem gần đây | Yêu thích | Đã mua -->
-        <HorizontalStackLayout Grid.Row="0" Spacing="8" Padding="16,12" BackgroundColor="White">
+        <ScrollView Grid.Row="0" Orientation="Horizontal" BackgroundColor="White" HorizontalScrollBarVisibility="Never">
+        <HorizontalStackLayout Spacing="8" Padding="16,12">
+            <Button Text="Đang đọc" Style="{StaticResource TabBtn}"
+                    Command="{Binding SelectTabCommand}" CommandParameter="3">
+                <Button.Triggers>
+                    <DataTrigger TargetType="Button" Binding="{Binding IsTab3}" Value="True">
+                        <Setter Property="BackgroundColor" Value="{StaticResource WebNavy}" />
+                        <Setter Property="TextColor" Value="White" />
+                        <Setter Property="BorderColor" Value="{StaticResource WebNavy}" />
+                    </DataTrigger>
+                </Button.Triggers>
+            </Button>
             <Button Text="Đã xem gần đây" Style="{StaticResource TabBtn}"
                     Command="{Binding SelectTabCommand}" CommandParameter="0">
                 <Button.Triggers>
@@ -43,6 +54,7 @@
                 </Button.Triggers>
             </Button>
         </HorizontalStackLayout>
+        </ScrollView>
 
         <!-- Số truyện + nút xóa lịch sử -->
         <Grid Grid.Row="1" ColumnDefinitions="*,Auto" Padding="16,10,16,0">
@@ -100,7 +112,7 @@
 
                                 <!-- Mục "Đã xem": chương đang đọc + thời điểm xem -->
                                 <VerticalStackLayout Spacing="2"
-                                    IsVisible="{Binding Source={RelativeSource AncestorType={x:Type vm:LibraryViewModel}}, Path=IsTab0}">
+                                    IsVisible="{Binding Source={RelativeSource AncestorType={x:Type vm:LibraryViewModel}}, Path=ShowProgressInfo}">
                                     <Label Text="{Binding ProgressText}" FontSize="12" TextColor="{StaticResource WebText}" />
                                     <Label Text="{Binding ViewedText}" Style="{StaticResource LblCardMeta}" />
                                 </VerticalStackLayout>

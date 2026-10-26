@@ -48,6 +48,24 @@
             <!-- ============ ĐÃ ĐĂNG NHẬP ============ -->
             <VerticalStackLayout IsVisible="{Binding IsLoggedIn}" Spacing="14">
 
+                <!-- Tài khoản bị hạn chế / khóa (Sprint 3 — dữ liệu từ Backend 2) -->
+                <Border Padding="14" StrokeThickness="0" BackgroundColor="#FDECEC" IsVisible="{Binding HasStatusBanner}">
+                    <Border.StrokeShape>
+                        <RoundRectangle CornerRadius="8" />
+                    </Border.StrokeShape>
+                    <Label Text="{Binding StatusBanner}" TextColor="{StaticResource WebCrimson}" FontSize="13.5" FontAttributes="Bold" />
+                </Border>
+
+                <!-- Thông báo + theo dõi (Sprint 3) -->
+                <Border Style="{StaticResource Panel}">
+                    <VerticalStackLayout Spacing="10">
+                        <Button Text="{Binding NotificationsText}" Style="{StaticResource BtnBrass}"
+                                Command="{Binding GoToNotificationsCommand}" />
+                        <Button Text="Truyện đang theo dõi" Style="{StaticResource BtnOutlineSm}" HeightRequest="44"
+                                Command="{Binding GoToFollowedCommand}" />
+                    </VerticalStackLayout>
+                </Border>
+
                 <!-- Thẻ thông tin (pf-side) -->
                 <Border Style="{StaticResource Panel}">
                     <VerticalStackLayout Spacing="10" HorizontalOptions="Fill">

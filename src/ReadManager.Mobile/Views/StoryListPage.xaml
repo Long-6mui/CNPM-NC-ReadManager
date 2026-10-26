@@ -8,6 +8,10 @@
              Title="Chữ &amp; Đêm"
              BackgroundColor="{StaticResource WebBg}">
 
+    <ContentPage.ToolbarItems>
+        <ToolbarItem x:Name="BellItem" Text="🔔" Clicked="OnBellClicked" />
+    </ContentPage.ToolbarItems>
+
     <ContentPage.Resources>
         <ResourceDictionary>
 

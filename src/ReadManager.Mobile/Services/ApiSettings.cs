@@ -12,6 +12,11 @@ public static class ApiSettings
     // Khi Backend 4 xong: sửa Models/PaymentDtos.cs + đường dẫn trong ApiPaymentService.cs, rồi đặt true.
     public const bool UsePaymentApi = false;
 
+    // Công tắc nối API "tiếp tục đọc" (ReadingProgress) của Backend 2.
+    // false = dùng dữ liệu lưu trên máy (LibraryService).
+    // Khi Backend 2 xong: sửa Models/ReadingProgressDtos.cs + đường dẫn trong ApiReadingProgressService.cs, rồi đặt true.
+    public const bool UseReadingProgressApi = false;
+
     // Chạy API bằng:  dotnet run --launch-profile http   (cổng 5283, http để emulator khỏi lỗi chứng chỉ).
     // Điện thoại thật: đổi 10.0.2.2 thành IP LAN của máy chạy API, vd http://192.168.1.25:5283/api/
     // - Android Emulator không gọi được "localhost" của máy host -> phải dùng 10.0.2.2
