@@ -9,7 +9,8 @@ namespace ReadManager.Mobile.ViewModels;
 public partial class ChapterReaderViewModel : BaseViewModel
 {
     private readonly IChapterService _chapterService;
-    private readonly ILibraryService _library;
+    private readonly IReadingProgressService _progress;
+    private readonly ReportFlow _report;
 
     [ObservableProperty]
     private int chapterId;
@@ -23,10 +24,11 @@ public partial class ChapterReaderViewModel : BaseViewModel
     public bool IsLocked => Chapter?.IsLocked == true;
     public bool IsReadable => Chapter is not null && !Chapter.IsLocked;
 
-    public ChapterReaderViewModel(IChapterService chapterService, ILibraryService library)
+    public ChapterReaderViewModel(IChapterService chapterService, IReadingProgressService progress, ReportFlow report)
     {
         _chapterService = chapterService;
-        _library = library;
+        _progress = progress;
+        _report = report;
     }
 
     partial void OnChapterIdChanged(int value)
@@ -34,7 +36,7 @@ public partial class ChapterReaderViewModel : BaseViewModel
         _ = RunSafeAsync(async () =>
         {
             Chapter = await _chapterService.GetChapterContentAsync(value);
-            if (!Chapter.IsLocked) _library.RecordChapter(Chapter.StoryId, Chapter.ChapterId, Chapter.ChapterNumber, Chapter.Title); // Tủ sách: nhớ chương đang đọc
+            if (!Chapter.IsLocked) await SaveProgressAsync(); // "Đang đọc / Đọc tiếp": nhớ chương đang đọc
         });
     }
 
@@ -44,8 +46,11 @@ public partial class ChapterReaderViewModel : BaseViewModel
     private Task ReloadAsync() => RunSafeAsync(async () =>
     {
         Chapter = await _chapterService.GetChapterContentAsync(ChapterId);
-        if (!Chapter.IsLocked) _library.RecordChapter(Chapter.StoryId, Chapter.ChapterId, Chapter.ChapterNumber, Chapter.Title);
+        if (!Chapter.IsLocked) await SaveProgressAsync();
     });
+
+    private Task SaveProgressAsync()
+        => _progress.SaveAsync(Chapter!.StoryId, Chapter.ChapterId, Chapter.ChapterNumber, Chapter.Title);
 
     // Chương trả phí: mở màn "Mua trọn bộ" (PB21)
     [RelayCommand]
@@ -57,6 +62,23 @@ public partial class ChapterReaderViewModel : BaseViewModel
             { "storyId", Chapter.StoryId }
         });
     }
+
+    // Bình luận của riêng chương này (Sprint 3)
+    [RelayCommand]
+    private async Task OpenCommentsAsync()
+    {
+        if (Chapter is null) return;
+        await Shell.Current.GoToAsync(nameof(Views.CommentsPage), new Dictionary<string, object>
+        {
+            { "storyId", Chapter.StoryId },
+            { "chapterId", Chapter.ChapterId },
+            { "heading", $"Bình luận chương {Chapter.ChapterNumber}" }
+        });
+    }
+
+    [RelayCommand]
+    private Task ReportChapterAsync()
+        => Chapter is null ? Task.CompletedTask : _report.RunAsync("Chapter", Chapter.ChapterId, "chương");
 
     [RelayCommand]
     private async Task OpenPlansAsync() => await Shell.Current.GoToAsync(nameof(Views.PlansPage));

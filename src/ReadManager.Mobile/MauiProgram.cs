@@ -56,6 +56,15 @@ namespace ReadManager.Mobile
                 builder.Services.AddTransient<IReadingAccessService>(sp => sp.GetRequiredService<OrderBasedReadingAccessService>());
 
             // ---- ViewModels ----
+            // Sprint 3: cộng đồng (Backend 3) + tiến độ đọc (Backend 2, chưa có -> dữ liệu trên máy)
+            builder.Services.AddTransient<ICommunityService, CommunityService>();
+            builder.Services.AddTransient<ReportFlow>();
+            builder.Services.AddTransient<LocalReadingProgressService>();
+            if (ApiSettings.UseReadingProgressApi)
+                builder.Services.AddTransient<IReadingProgressService, ApiReadingProgressService>();
+            else
+                builder.Services.AddTransient<IReadingProgressService>(sp => sp.GetRequiredService<LocalReadingProgressService>());
+
             builder.Services.AddTransient<LoginViewModel>();
             builder.Services.AddTransient<RegisterViewModel>();
             builder.Services.AddTransient<StoryListViewModel>();
@@ -69,6 +78,9 @@ namespace ReadManager.Mobile
             builder.Services.AddTransient<CheckoutViewModel>();
             builder.Services.AddTransient<OrderDetailViewModel>();
             builder.Services.AddTransient<OrderHistoryViewModel>();
+            builder.Services.AddTransient<NotificationsViewModel>();
+            builder.Services.AddTransient<FollowedStoriesViewModel>();
+            builder.Services.AddTransient<CommentsViewModel>();
 
             // ---- Pages ----
             builder.Services.AddTransient<LoginPage>();
@@ -84,6 +96,9 @@ namespace ReadManager.Mobile
             builder.Services.AddTransient<CheckoutPage>();
             builder.Services.AddTransient<OrderDetailPage>();
             builder.Services.AddTransient<OrderHistoryPage>();
+            builder.Services.AddTransient<NotificationsPage>();
+            builder.Services.AddTransient<FollowedStoriesPage>();
+            builder.Services.AddTransient<CommentsPage>();
 
             return builder.Build();
         }

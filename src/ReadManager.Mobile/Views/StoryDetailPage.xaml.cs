@@ -18,5 +18,6 @@ public partial class StoryDetailPage : ContentPage
     {
         base.OnAppearing();
         await _viewModel.RefreshPurchaseAsync();
+        await _viewModel.RefreshFollowAsync();
     }
 }

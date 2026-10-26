@@ -16,6 +16,7 @@ public partial class AccountViewModel : BaseViewModel
 
     private readonly IAuthService _authService;
     private readonly ILibraryService _library;
+    private readonly ICommunityService _community;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(IsGuest))]
@@ -32,6 +33,11 @@ public partial class AccountViewModel : BaseViewModel
     private ImageSource? avatarSource;
 
     [ObservableProperty] private bool hasAvatar;
+
+    // Sprint 3: thông báo chưa đọc + trạng thái tài khoản (bị hạn chế / khóa)
+    [ObservableProperty] private string notificationsText = "Thông báo";
+    [ObservableProperty] private string statusBanner = string.Empty;
+    [ObservableProperty] private bool hasStatusBanner;
 
     [ObservableProperty] private bool hasHistory;
     [ObservableProperty] private bool hasFavorites;
@@ -50,10 +56,11 @@ public partial class AccountViewModel : BaseViewModel
     public ObservableCollection<LibraryEntry> HistoryPreview { get; } = new();
     public ObservableCollection<LibraryEntry> FavoritePreview { get; } = new();
 
-    public AccountViewModel(IAuthService authService, ILibraryService library)
+    public AccountViewModel(IAuthService authService, ILibraryService library, ICommunityService community)
     {
         _authService = authService;
         _library = library;
+        _community = community;
     }
 
     partial void OnHasAvatarChanged(bool value) => OnPropertyChanged(nameof(HasNoAvatar));
@@ -90,6 +97,16 @@ public partial class AccountViewModel : BaseViewModel
         Fill(FavoritePreview, _library.GetFavorites());
         HasHistory = HistoryPreview.Count > 0;
         HasFavorites = FavoritePreview.Count > 0;
+
+        StatusBanner = user.StatusMessage;
+        HasStatusBanner = user.IsRestricted;
+
+        try
+        {
+            var unread = await _community.GetUnreadCountAsync();
+            NotificationsText = unread > 0 ? $"🔔 Thông báo ({unread} mới)" : "🔔 Thông báo";
+        }
+        catch { NotificationsText = "🔔 Thông báo"; }
     }
 
     // "Đổi ảnh đại diện" — ảnh lưu trên thiết bị này (giống web: lưu trên trình duyệt)
@@ -169,6 +186,13 @@ public partial class AccountViewModel : BaseViewModel
     [RelayCommand]
     private async Task GoToOrderHistoryAsync() => await Shell.Current.GoToAsync(nameof(Views.OrderHistoryPage));
 
+
+    // Sprint 3: thông báo, truyện đang theo dõi
+    [RelayCommand]
+    private async Task GoToNotificationsAsync() => await Shell.Current.GoToAsync(nameof(Views.NotificationsPage));
+
+    [RelayCommand]
+    private async Task GoToFollowedAsync() => await Shell.Current.GoToAsync(nameof(Views.FollowedStoriesPage));
 
     [RelayCommand]
     private async Task GoToLoginAsync() => await Shell.Current.GoToAsync("//LoginPage");

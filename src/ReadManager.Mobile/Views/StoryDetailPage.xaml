@@ -92,6 +92,13 @@
                                     Command="{Binding ToggleFavoriteCommand}" />
                         </HorizontalStackLayout>
 
+                        <!-- Theo dõi truyện (Sprint 3): nhận thông báo khi có chương mới -->
+                        <HorizontalStackLayout Spacing="10">
+                            <Button Text="{Binding FollowText}" Style="{StaticResource BtnLight}"
+                                    Command="{Binding ToggleFollowCommand}" />
+                            <Label Text="{Binding FollowerText}" TextColor="#9DB0D6" FontSize="12.5" VerticalOptions="Center" />
+                        </HorizontalStackLayout>
+
                         <!-- Mua trọn bộ (PB21) / đã sở hữu -->
                         <Button Text="{Binding BuyText}" Style="{StaticResource BtnAmber}"
                                 Command="{Binding BuyCommand}" IsVisible="{Binding ShowBuy}" />
@@ -122,6 +129,10 @@
                 <VerticalStackLayout Padding="16,24,16,0" Spacing="12">
                     <Label Text="Danh sách chương" Style="{StaticResource LblH2}" FontSize="18" />
                     <Button Text="Xem danh sách chương" Command="{Binding OpenChaptersCommand}" />
+                    <Button Text="💬 Bình luận" Style="{StaticResource BtnOutlineSm}" HeightRequest="44"
+                            Command="{Binding OpenCommentsCommand}" />
+                    <Button Text="⚑ Báo cáo truyện này" Style="{StaticResource BtnLink}" HorizontalOptions="Start"
+                            TextColor="{StaticResource WebCrimson}" Command="{Binding ReportStoryCommand}" />
                 </VerticalStackLayout>
 
                 <!-- Giới thiệu (panel bên phải của web) -->

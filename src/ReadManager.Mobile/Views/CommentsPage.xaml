@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:ReadManager.Mobile.ViewModels"
+             xmlns:models="clr-namespace:ReadManager.Mobile.Models"
+             x:DataType="vm:CommentsViewModel"
+             x:Class="ReadManager.Mobile.Views.CommentsPage"
+             Title="{Binding Heading}"
+             BackgroundColor="{StaticResource WebBg}">
+
+    <Shell.BackButtonBehavior>
+        <BackButtonBehavior IconOverride="ic_back.png" />
+    </Shell.BackButtonBehavior>
+
+    <Grid RowDefinitions="*,Auto">
+
+        <Grid Grid.Row="0" RowDefinitions="Auto,*">
+            <VerticalStackLayout Grid.Row="0" Padding="16,12,16,4" Spacing="6">
+                <Label Text="{Binding CountText}" Style="{StaticResource LblMuted}" />
+                <ActivityIndicator IsRunning="{Binding IsBusy}" IsVisible="{Binding IsBusy}" Color="{StaticResource WebRoyal}" />
+            </VerticalStackLayout>
+
+            <CollectionView Grid.Row="1" ItemsSource="{Binding Items}" SelectionMode="None" Margin="16,6,16,0">
+                <CollectionView.Footer>
+                    <VerticalStackLayout Padding="0,4,0,16">
+                        <Button Text="Tải thêm" Style="{StaticResource BtnOutlineSm}"
+                                Command="{Binding LoadMoreCommand}" IsVisible="{Binding HasMore}" />
+                    </VerticalStackLayout>
+                </CollectionView.Footer>
+                <CollectionView.ItemTemplate>
+                    <DataTemplate x:DataType="models:CommentItem">
+                        <Border Style="{StaticResource Panel}" Padding="14" Margin="0,0,0,10">
+                            <Grid ColumnDefinitions="40,*" ColumnSpacing="12">
+                                <Border WidthRequest="40" HeightRequest="40" StrokeThickness="0"
+                                        BackgroundColor="{StaticResource WebNavy}" VerticalOptions="Start">
+                                    <Border.StrokeShape>
+                                        <RoundRectangle CornerRadius="20" />
+                                    </Border.StrokeShape>
+                                    <Label Text="{Binding Initial}" TextColor="White" FontAttributes="Bold" FontSize="16"
+                                           HorizontalOptions="Center" VerticalOptions="Center" />
+                                </Border>
+                                <VerticalStackLayout Grid.Column="1" Spacing="3">
+                                    <Label Text="{Binding DisplayName}" FontSize="14" FontAttributes="Bold" TextColor="{StaticResource WebText}" />
+                                    <Label Style="{StaticResource LblCardMeta}">
+                                        <Label.FormattedText>
+                                            <FormattedString>
+                                                <Span Text="{Binding ChapterText}" />
+                                                <Span Text=" · " />
+                                                <Span Text="{Binding TimeText}" />
+                                            </FormattedString>
+                                        </Label.FormattedText>
+                                    </Label>
+                                    <Label Text="{Binding Content}" FontSize="14" TextColor="{StaticResource WebText}" Margin="0,4,0,0" />
+                                    <HorizontalStackLayout Spacing="12" Margin="0,4,0,0">
+                                        <Button Text="Báo cáo" Style="{StaticResource BtnLink}" Padding="0"
+                                                Command="{Binding Source={RelativeSource AncestorType={x:Type vm:CommentsViewModel}}, Path=ReportCommand}"
+                                                CommandParameter="{Binding .}" />
+                                        <Button Text="Xóa" Style="{StaticResource BtnLink}" Padding="0" TextColor="{StaticResource WebCrimson}"
+                                                IsVisible="{Binding CanDelete}"
+                                                Command="{Binding Source={RelativeSource AncestorType={x:Type vm:CommentsViewModel}}, Path=DeleteCommand}"
+                                                CommandParameter="{Binding .}" />
+                                    </HorizontalStackLayout>
+                                </VerticalStackLayout>
+                            </Grid>
+                        </Border>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+            </CollectionView>
+
+            <VerticalStackLayout Grid.Row="1" IsVisible="{Binding ShowEmpty}" VerticalOptions="Start"
+                                 Padding="24,50" Spacing="8" InputTransparent="True">
+                <Label Text="Chưa có bình luận nào." Style="{StaticResource LblH2}" FontSize="18" HorizontalTextAlignment="Center" />
+                <Label Text="Hãy là người đầu tiên bình luận." Style="{StaticResource LblMuted}" HorizontalTextAlignment="Center" />
+            </VerticalStackLayout>
+        </Grid>
+
+        <!-- Ô viết bình luận -->
+        <Border Grid.Row="1" Style="{StaticResource Panel}" Padding="12" Margin="0" StrokeThickness="1">
+            <VerticalStackLayout Spacing="8">
+                <Label Text="{Binding ErrorMessage}" TextColor="{StaticResource WebCrimson}" FontSize="13"
+                       IsVisible="{Binding ErrorMessage, Converter={StaticResource StringToBoolConverter}}" />
+
+                <VerticalStackLayout Spacing="8" IsVisible="{Binding IsLoggedIn}">
+                    <Border Style="{StaticResource FieldBorder}">
+                        <Editor Text="{Binding NewComment}" Placeholder="Viết bình luận..." MaxLength="1000"
+                                AutoSize="TextChanges" HeightRequest="80" BackgroundColor="Transparent"
+                                TextColor="{StaticResource WebText}" FontSize="14" />
+                    </Border>
+                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
+                        <Label Text="{Binding LengthText}" Style="{StaticResource LblCardMeta}" VerticalOptions="Center" />
+                        <Button Grid.Column="1" Text="Gửi" Style="{StaticResource BtnBrassSm}"
+                                Command="{Binding SendCommand}" IsEnabled="{Binding IsSending, Converter={StaticResource InvertedBoolConverter}}" />
+                    </Grid>
+                </VerticalStackLayout>
+
+                <HorizontalStackLayout Spacing="10" IsVisible="{Binding IsLoggedIn, Converter={StaticResource InvertedBoolConverter}}">
+                    <Label Text="Đăng nhập để bình luận." Style="{StaticResource LblMuted}" VerticalOptions="Center" />
+                    <Button Text="Đăng nhập" Style="{StaticResource BtnBrassSm}" Command="{Binding GoToLoginCommand}" />
+                </HorizontalStackLayout>
+            </VerticalStackLayout>
+        </Border>
+    </Grid>
+</ContentPage>

@@ -1,6 +1,7 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using ReadManager.Mobile.Models.Auth;
+using ReadManager.Mobile.Services;
 using ReadManager.Mobile.Services.Auth;
 
 namespace ReadManager.Mobile.ViewModels;
@@ -31,11 +32,21 @@ public partial class LoginViewModel : BaseViewModel
 
         await RunSafeAsync(async () =>
         {
-            var user = await _authService.LoginAsync(new LoginRequest
+            try
             {
-                UsernameOrEmail = UsernameOrEmail.Trim(),
-                Password = Password
-            });
+                await _authService.LoginAsync(new LoginRequest
+                {
+                    UsernameOrEmail = UsernameOrEmail.Trim(),
+                    Password = Password
+                });
+            }
+            catch (ApiException ex) when (ex.StatusCode == 403)
+            {
+                // Tài khoản bị khóa / tạm ngừng: hiện đúng lời của API, nếu API không kèm lời thì dùng câu mặc định
+                throw new ApiException(403, ex.Message.Contains("HTTP 403")
+                    ? "Tài khoản của bạn đang bị khóa hoặc tạm ngừng. Vui lòng liên hệ quản trị viên."
+                    : ex.Message, ex.Error);
+            }
 
             // "//" thay toàn bộ stack để không back lại màn Login.
             await Shell.Current.GoToAsync("//StoryListPage");
