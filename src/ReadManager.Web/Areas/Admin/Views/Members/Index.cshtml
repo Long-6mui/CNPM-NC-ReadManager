@@ -1,0 +1,70 @@
+@model ReadManager.Web.Areas.Admin.Controllers.MembersIndexVm
+@using ReadManager.Web.Services
+@{
+    ViewData["Title"] = "Thành viên";
+    string StLabel(MemberState s) => s == MemberState.Suspended ? "Tạm ngừng" : s == MemberState.Restricted ? "Bị hạn chế" : "Hoạt động";
+    string StCss(MemberState s) => s == MemberState.Active ? "Paid" : s == MemberState.Restricted ? "Pending" : "Failed";
+}
+<link rel="stylesheet" href="~/css/plans.css" asp-append-version="true" />
+<link rel="stylesheet" href="~/css/community.css" asp-append-version="true" />
+<div class="container section">
+    <div class="section-head"><h2>Trang quản trị</h2></div>
+    <div class="admin-shell">
+        <partial name="_AdminNav" />
+        <div>
+            <span class="pl-demo">Dữ liệu mẫu: chưa nối API quản lý thành viên (Backend 2)</span>
+            <form method="get" asp-action="Index" class="mem-filter">
+                <input type="search" name="q" value="@Model.Q" placeholder="Tìm theo tên hoặc email…" aria-label="Tìm thành viên" />
+                <select name="state" aria-label="Trạng thái">
+                    <option value="">Mọi trạng thái</option>
+                    <option value="Active" selected="@(Model.State == "Active")">Hoạt động</option>
+                    <option value="Restricted" selected="@(Model.State == "Restricted")">Bị hạn chế</option>
+                    <option value="Suspended" selected="@(Model.State == "Suspended")">Tạm ngừng</option>
+                </select>
+                <select name="role" aria-label="Vai trò">
+                    <option value="">Mọi vai trò</option>
+                    <option value="User" selected="@(Model.Role == "User")">Thành viên</option>
+                    <option value="Admin" selected="@(Model.Role == "Admin")">Quản trị</option>
+                </select>
+                <button class="btn btn-brass btn-sm" type="submit">Lọc</button>
+                <a class="btn btn-ghost btn-sm" asp-action="Index">Xóa lọc</a>
+            </form>
+            <p class="pl-sub">@Model.Total tài khoản</p>
+
+            @if (Model.Items.Count == 0) { <div class="empty-state"><h3>Không có tài khoản phù hợp</h3></div> }
+            else
+            {
+                <div style="overflow-x:auto">
+                <table class="pl-table">
+                    <thead><tr><th>Tên</th><th>Email</th><th>Vai trò</th><th>Ngày tham gia</th><th>Trạng thái</th><th></th></tr></thead>
+                    <tbody>
+                    @foreach (var m in Model.Items)
+                    {
+                        var st = Model.States[m.Id];
+                        <tr>
+                            <td>@m.Name @if (m.IsSample) { <span class="mem-tag">mẫu</span> }</td>
+                            <td>@m.Email</td>
+                            <td>@(m.Role == "Admin" ? "Quản trị" : "Thành viên")</td>
+                            <td>@m.JoinedAt.ToLocalTime().ToString("dd/MM/yyyy")</td>
+                            <td><span class="pl-st @StCss(st.State)">@StLabel(st.State)</span>
+                                @if (st.Info?.Until is { } until) { <br /><small>đến @until.ToLocalTime().ToString("dd/MM/yyyy")</small> }</td>
+                            <td><a class="btn btn-outline btn-sm" asp-action="Detail" asp-route-id="@m.Id">Chi tiết</a></td>
+                        </tr>
+                    }
+                    </tbody>
+                </table>
+                </div>
+                @if (Model.PageCount > 1)
+                {
+                    <nav class="pager" aria-label="Phân trang thành viên">
+                        @for (int p = 1; p <= Model.PageCount; p++)
+                        {
+                            if (p == Model.Page) { <span class="current">@p</span> }
+                            else { <a asp-action="Index" asp-route-q="@Model.Q" asp-route-state="@Model.State" asp-route-role="@Model.Role" asp-route-page="@p">@p</a> }
+                        }
+                    </nav>
+                }
+            }
+        </div>
+    </div>
+</div>

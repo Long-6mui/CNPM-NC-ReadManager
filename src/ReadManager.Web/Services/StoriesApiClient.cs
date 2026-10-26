@@ -56,6 +56,7 @@ public record ReportApi(
     string Reason, string? Note, string Status, DateTime CreatedAt, DateTime? HandledAt);
 
 public record FollowStatusApi(int StoryId, bool IsFollowing, int FollowerCount);
+public record FollowedStoryApi(int StoryId, string Title, string? CoverUrl, DateTime FollowedAt);
 
 public record NotificationApi(
     int NotificationId, int StoryId, int? ChapterId, int? ChapterNumber,
@@ -291,6 +292,15 @@ public class StoriesApiClient(HttpClient http)
         using var res = await http.SendAsync(req);
         if (!res.IsSuccessStatusCode) return null;
         return await res.Content.ReadFromJsonAsync<FollowStatusApi>();
+    }
+
+    // PB30 — danh sách truyện tôi đang theo dõi (api/me/follows, cần đăng nhập)
+    public async Task<List<FollowedStoryApi>> MyFollowsAsync(string? token)
+    {
+        using var req = Build(HttpMethod.Get, "api/me/follows", token);
+        using var res = await http.SendAsync(req);
+        if (!res.IsSuccessStatusCode) return [];
+        return await res.Content.ReadFromJsonAsync<List<FollowedStoryApi>>() ?? [];
     }
 
     // follow = true → theo dõi, false → bỏ theo dõi

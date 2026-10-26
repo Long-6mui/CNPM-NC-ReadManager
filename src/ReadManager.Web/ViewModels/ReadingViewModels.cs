@@ -9,6 +9,9 @@ public class BrowseVm
     public AccessPolicy? Access { get; set; }
     public StoryStatus? Status { get; set; }
     public string Sort { get; set; } = "updated";
+    public int Page { get; set; } = 1;          // PB14 — phân trang khám phá
+    public int PageCount { get; set; } = 1;
+    public int Total { get; set; }
 }
 
 public class ChapterRowVm
@@ -51,6 +54,7 @@ public class ReadVm
     public bool Locked { get; set; }
     public bool NotYetPublicPreview { get; set; }
     public DateTime? UpcomingAt { get; set; }   // có giá trị = chưa tới giờ ra mắt (giờ Việt Nam)
+    public string? RestrictionNote { get; set; } // PB36 — tài khoản đang bị hạn chế bình luận
     public int? PrevNo { get; set; }
     public int? NextNo { get; set; }
 

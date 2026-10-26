@@ -1,0 +1,71 @@
+@model ReadManager.Web.Areas.Admin.Controllers.MemberDetailVm
+@using ReadManager.Web.Services
+@{
+    var m = Model.Member;
+    ViewData["Title"] = m.Name;
+    string StLabel = Model.State == MemberState.Suspended ? "Tạm ngừng" : Model.State == MemberState.Restricted ? "Bị hạn chế bình luận" : "Hoạt động";
+}
+<link rel="stylesheet" href="~/css/plans.css" asp-append-version="true" />
+<link rel="stylesheet" href="~/css/community.css" asp-append-version="true" />
+<div class="container section">
+    <div class="section-head"><h2>Trang quản trị</h2></div>
+    <div class="admin-shell">
+        <partial name="_AdminNav" />
+        <div>
+            <p><a asp-action="Index">← Danh sách thành viên</a></p>
+            <h3>@m.Name @if (m.IsSample) { <span class="mem-tag">mẫu</span> }</h3>
+
+            <dl class="mem-info">
+                <dt>Email</dt><dd>@m.Email</dd>
+                <dt>Vai trò</dt><dd>@(m.Role == "Admin" ? "Quản trị viên" : "Thành viên")</dd>
+                <dt>Ngày tham gia</dt><dd>@m.JoinedAt.ToLocalTime().ToString("dd/MM/yyyy")</dd>
+                <dt>Đăng nhập gần nhất</dt><dd>@(m.LastLoginAt?.ToLocalTime().ToString("dd/MM/yyyy HH:mm") ?? "—")</dd>
+                <dt>Gói đang dùng</dt><dd>@Model.PlanText</dd>
+                <dt>Truyện đã mua</dt><dd>@Model.OwnedStories</dd>
+                <dt>Đang đọc</dt><dd>@Model.ReadingStories truyện</dd>
+                <dt>Giao dịch</dt><dd>@Model.OrderCount</dd>
+                @if (Model.CommentCount is { } cc) { <dt>Bình luận</dt><dd>@cc</dd> }
+                <dt>Trạng thái</dt><dd><b>@StLabel</b></dd>
+            </dl>
+
+            @if (Model.Restriction is { } r)
+            {
+                <div class="banner banner-warn" style="margin:14px 0">
+                    <b>@(r.Kind == MemberState.Suspended ? "Tạm ngừng tài khoản" : "Hạn chế bình luận")</b>
+                    · từ @r.From.ToLocalTime().ToString("dd/MM/yyyy") · @(r.Until is { } u ? "đến " + u.ToLocalTime().ToString("dd/MM/yyyy") : "đến khi Admin khôi phục")<br />
+                    Lý do: @r.Reason (bởi @r.By)
+                </div>
+                <form asp-action="Restore" method="post" onsubmit="return confirm('Khôi phục tài khoản này?');">
+                    <input type="hidden" name="id" value="@m.Id" />
+                    <button class="btn btn-brass" type="submit">Khôi phục tài khoản</button>
+                </form>
+            }
+            else if (m.Role != "Admin")
+            {
+                <h4>Hạn chế / tạm ngừng</h4>
+                <form asp-action="Restrict" method="post" class="pl-form">
+                    <input type="hidden" name="id" value="@m.Id" />
+                    <label>Hình thức
+                        <select name="kind">
+                            <option value="Restricted">Hạn chế bình luận (vẫn đọc truyện được)</option>
+                            <option value="Suspended">Tạm ngừng tài khoản (không đăng nhập được)</option>
+                        </select>
+                    </label>
+                    <label>Số ngày (để trống = không giới hạn)<input name="days" type="number" min="1" max="365" /></label>
+                    <label style="flex-basis:100%">Lý do (bắt buộc)<textarea name="reason" rows="2" maxlength="500" required minlength="5"></textarea></label>
+                    <button class="btn btn-outline btn-sm" type="submit" onclick="return confirm('Áp dụng hạn chế cho tài khoản này?');">Áp dụng</button>
+                </form>
+            }
+            else { <p class="pl-sub">Không thể hạn chế tài khoản quản trị viên.</p> }
+
+            <h4>Lịch sử xử lý</h4>
+            @if (Model.History.Count == 0) { <p class="pl-sub">Chưa có lịch sử.</p> }
+            else
+            {
+                <table class="pl-table"><thead><tr><th>Thời gian</th><th>Quản trị viên</th><th>Hành động</th><th>Lý do</th></tr></thead><tbody>
+                @foreach (var h in Model.History) { <tr><td>@h.At.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</td><td>@h.Admin</td><td>@h.Action</td><td>@h.Reason</td></tr> }
+                </tbody></table>
+            }
+        </div>
+    </div>
+</div>

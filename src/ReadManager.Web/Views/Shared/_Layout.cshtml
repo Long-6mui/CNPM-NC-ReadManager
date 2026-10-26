@@ -77,6 +77,7 @@
                         <div class="user-menu">
                             <div class="user-menu-name">@User.Identity.Name</div>
                             <a asp-area="" asp-controller="Account" asp-action="Profile">Tài khoản của tôi</a>
+                            <a asp-area="" asp-controller="Library" asp-action="Index">Thư viện của tôi</a>
                             <a asp-area="" asp-controller="Plans" asp-action="Mine">Gói &amp; thanh toán của tôi</a>
                             <a asp-area="" asp-controller="Notifications" asp-action="Index">Thông báo @(unreadNoti > 0 ? $"({unreadNoti})" : "")</a>
                             @if (User.IsInRole("Admin"))

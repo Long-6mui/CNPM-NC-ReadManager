@@ -1,0 +1,83 @@
+@model ReadManager.Web.Controllers.LibraryVm
+@using ReadManager.Web.Services
+@{
+    ViewData["Title"] = "Thư viện của tôi";
+    string Ago(DateTime utc)
+    {
+        var d = DateTime.UtcNow - utc;
+        return d.TotalMinutes < 1 ? "vừa xong" : d.TotalHours < 1 ? $"{(int)d.TotalMinutes} phút trước"
+             : d.TotalDays < 1 ? $"{(int)d.TotalHours} giờ trước" : $"{(int)d.TotalDays} ngày trước";
+    }
+}
+<link rel="stylesheet" href="~/css/community.css" asp-append-version="true" />
+<div class="container section" style="max-width:860px;">
+    <div class="section-head"><h2>Thư viện của tôi</h2></div>
+    <div class="pillbar">
+        <a class="pill @(Model.Tab == "reading" ? "active" : "")" asp-action="Index" asp-route-tab="reading">Đang đọc (@Model.Reading.Count)</a>
+        <a class="pill @(Model.Tab == "following" ? "active" : "")" asp-action="Index" asp-route-tab="following">Đang theo dõi (@Model.Following.Count)</a>
+    </div>
+
+    @if (Model.Tab == "reading")
+    {
+        @if (Model.Reading.Count == 0)
+        {
+            <div class="empty-state"><h3>Bạn chưa đọc truyện nào</h3><p>Mở một chương bất kỳ, hệ thống sẽ nhớ chương bạn đọc gần nhất để đọc tiếp.</p>
+                <a class="btn btn-brass" asp-controller="Stories" asp-action="Browse">Khám phá truyện</a></div>
+        }
+        else
+        {
+            <ul class="lib-list">
+            @foreach (var p in Model.Reading)
+            {
+                <li class="lib-row">
+                    <div class="lib-cover"><span>@p.StoryTitle.Trim()[0]</span></div>
+                    <div class="lib-info">
+                        <a class="lib-title" asp-controller="Stories" asp-action="Details" asp-route-id="@p.StoryId">@p.StoryTitle</a>
+                        <div class="lib-sub">Đọc đến Chương @p.ChapterNo@(string.IsNullOrWhiteSpace(p.ChapterTitle) ? "" : $" — {p.ChapterTitle}") · @Ago(p.UpdatedAt)</div>
+                    </div>
+                    <div class="lib-actions">
+                        <a class="btn btn-brass btn-sm" asp-controller="Stories" asp-action="Read" asp-route-storyId="@p.StoryId" asp-route-no="@p.ChapterNo">Đọc tiếp</a>
+                        <form asp-action="RemoveProgress" method="post" onsubmit="return confirm('Xóa truyện này khỏi danh sách đang đọc?');">
+                            <input type="hidden" name="storyId" value="@p.StoryId" />
+                            <button class="btn btn-outline btn-sm" type="submit">Xóa</button>
+                        </form>
+                    </div>
+                </li>
+            }
+            </ul>
+        }
+        <p class="lib-note"><span class="pl-demo">Dữ liệu mẫu</span> Tiến độ đọc đang lưu tạm trong bộ nhớ Web, sẽ nối API tiến độ (Backend 2) sau.</p>
+    }
+    else
+    {
+        @if (Model.Following.Count == 0)
+        {
+            <div class="empty-state"><h3>Bạn chưa theo dõi truyện nào</h3><p>Bấm “Theo dõi” ở trang truyện để nhận thông báo khi có chương mới.</p>
+                <a class="btn btn-brass" asp-controller="Stories" asp-action="Browse">Khám phá truyện</a></div>
+        }
+        else
+        {
+            <ul class="lib-list">
+            @foreach (var f in Model.Following)
+            {
+                <li class="lib-row">
+                    <div class="lib-cover">
+                        @if (!string.IsNullOrEmpty(f.CoverUrl)) { <img src="@f.CoverUrl" alt="Bìa truyện @f.Title" loading="lazy" /> }
+                        else { <span>@f.Title.Trim()[0]</span> }
+                    </div>
+                    <div class="lib-info">
+                        <a class="lib-title" asp-controller="Stories" asp-action="Details" asp-route-id="@f.StoryId">@f.Title</a>
+                        <div class="lib-sub">Theo dõi từ @StoriesApiClient.ToLocal(f.FollowedAt)?.ToString("dd/MM/yyyy")</div>
+                    </div>
+                    <div class="lib-actions">
+                        <form asp-action="Unfollow" method="post">
+                            <input type="hidden" name="storyId" value="@f.StoryId" />
+                            <button class="btn btn-outline btn-sm" type="submit">Bỏ theo dõi</button>
+                        </form>
+                    </div>
+                </li>
+            }
+            </ul>
+        }
+    }
+</div>
