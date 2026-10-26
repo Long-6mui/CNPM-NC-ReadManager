@@ -2,11 +2,11 @@ using ReadManager.Mobile.ViewModels;
 
 namespace ReadManager.Mobile.Views;
 
-public partial class AdminBulkImportPage : ContentPage
+public partial class OrderHistoryPage : ContentPage
 {
-    private readonly AdminBulkImportViewModel _viewModel;
+    private readonly OrderHistoryViewModel _viewModel;
 
-    public AdminBulkImportPage(AdminBulkImportViewModel viewModel)
+    public OrderHistoryPage(OrderHistoryViewModel viewModel)
     {
         InitializeComponent();
         _viewModel = viewModel;

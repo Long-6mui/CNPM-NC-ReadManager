@@ -7,6 +7,10 @@
              Title="Chi tiết truyện"
              BackgroundColor="{StaticResource WebBg}">
 
+    <Shell.BackButtonBehavior>
+        <BackButtonBehavior IconOverride="ic_back.png" />
+    </Shell.BackButtonBehavior>
+
     <ScrollView>
         <VerticalStackLayout Spacing="0">
 
@@ -87,6 +91,12 @@
                             <Button Text="{Binding FavoriteText}" Style="{StaticResource BtnLight}"
                                     Command="{Binding ToggleFavoriteCommand}" />
                         </HorizontalStackLayout>
+
+                        <!-- Mua trọn bộ (PB21) / đã sở hữu -->
+                        <Button Text="{Binding BuyText}" Style="{StaticResource BtnAmber}"
+                                Command="{Binding BuyCommand}" IsVisible="{Binding ShowBuy}" />
+                        <Label Text="✔ Bạn đã sở hữu truyện này" TextColor="#7DDBA3" FontAttributes="Bold" FontSize="14"
+                               IsVisible="{Binding ShowOwned}" />
 
                         <HorizontalStackLayout Spacing="26" Margin="0,6,0,0">
                             <VerticalStackLayout Spacing="2">
