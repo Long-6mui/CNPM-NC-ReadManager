@@ -48,7 +48,8 @@ public partial class PlansViewModel : BaseViewModel
                 foreach (var p in purchases.Plans) MyPlans.Add(p);
             }
         }
-        catch { /* bỏ qua */ }
+        catch (Exception ex) when (ex is ApiException or HttpRequestException or TaskCanceledException or System.Text.Json.JsonException)
+        { ErrorMessage = "Chưa tải được gói đang dùng. Vui lòng tải lại hoặc đăng nhập lại."; }
         HasMyPlans = MyPlans.Count > 0;
     }
 

@@ -37,7 +37,7 @@ Mô phỏng chỉ hoạt động khi cả API và Web chạy Development. Produc
 dotnet run --project tests/WebPaymentChecks
 ```
 
-Tạo database thử ngẫu nhiên riêng bằng kết nối User Secrets, chạy API ở cổng tạm, kiểm tra 16 tình huống qua client Web rồi xóa database thử. Tài khoản MySQL cần quyền tạo/xóa database thử. Không dùng dữ liệu người dùng để giả thanh toán.
+Tạo database thử ngẫu nhiên riêng bằng kết nối User Secrets, chạy API ở cổng tạm, kiểm tra 26 tình huống Web/Mobile qua client Web rồi xóa database thử. Tài khoản MySQL cần quyền tạo/xóa database thử. Không dùng dữ liệu người dùng để giả thanh toán.
 
 ## Mobile: đồng bộ route và DTO
 
@@ -46,4 +46,4 @@ Route là địa chỉ và phương thức HTTP. DTO là cấu trúc JSON gửi/
 - Quyền đọc: GET /api/me/library trả purchasedStories và subscriptions; subscriptions là đối tượng có history, không phải mảng trực tiếp.
 - Tiến độ: PUT /api/stories/{storyId}/progress gửi chapterId, scrollPercent; GET cùng địa chỉ lấy tiến độ; GET /api/me/reading lấy danh sách đang đọc.
 
-Cần sửa client/model Mobile khớp các hợp đồng này, gửi bearer token, kiểm tra lỗi và trạng thái rồi mới bật các cờ sử dụng API. Thay đổi hiện tại chỉ nối phần Web.
+Mobile đã cập nhật route/DTO và bật ba cờ API. Bản Debug có lựa chọn mô phỏng thanh toán (API phải chạy Development); Release chỉ tạo giao dịch và báo cổng thật chưa tích hợp. Tiến độ đọc lưu và khôi phục phần trăm cuộn, danh sách có phân trang, xóa tiến độ qua API. Quyền đọc dùng dữ liệu server, không suy ra từ đơn đã trả tiền.

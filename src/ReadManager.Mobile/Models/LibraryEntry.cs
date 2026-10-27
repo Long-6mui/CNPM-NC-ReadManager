@@ -18,6 +18,7 @@ public class LibraryEntry
     public DateTime SavedAt { get; set; } = DateTime.UtcNow;  // lúc bấm yêu thích (UTC)
 
     // Chương đọc gần nhất (nếu có)
+    public decimal ScrollPercent { get; set; }
     public int LastChapterId { get; set; }
     public int LastChapterNumber { get; set; }
     public string LastChapterTitle { get; set; } = string.Empty;

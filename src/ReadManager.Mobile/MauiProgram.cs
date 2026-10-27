@@ -56,7 +56,7 @@ namespace ReadManager.Mobile
                 builder.Services.AddTransient<IReadingAccessService>(sp => sp.GetRequiredService<OrderBasedReadingAccessService>());
 
             // ---- ViewModels ----
-            // Sprint 3: cộng đồng (Backend 3) + tiến độ đọc (Backend 2, chưa có -> dữ liệu trên máy)
+            // Sprint 3: cộng đồng (Backend 3) + tiến độ đọc qua API; khách lưu trên máy
             builder.Services.AddTransient<ICommunityService, CommunityService>();
             builder.Services.AddTransient<ReportFlow>();
             builder.Services.AddTransient<LocalReadingProgressService>();

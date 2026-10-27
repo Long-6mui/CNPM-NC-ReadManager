@@ -55,21 +55,59 @@ try
     Check(created.Ok && created.Id.HasValue,"Web client creates plan order via API");var orderId=created.Id!.Value;
     Check(!(await payments.StartAsync(orderId,bob)).Ok,"other member cannot start payment");
     Check(!(await payments.SimulateAsync(orderId,"Success",bob)).Ok,"other member cannot simulate payment");
+    using var mobileHttp = new HttpClient { BaseAddress = new Uri(url + "/api/") };
+    var mobileToken = new TestTokenStore(alice);
+    var mobileApi = new ReadManager.Mobile.Services.ApiClient(mobileHttp, mobileToken);
+    var mobilePayments = new ReadManager.Mobile.Services.ApiPaymentService(mobileApi);
+    var mobileStart = await mobilePayments.StartAsync(orderId);
+    Check(mobileStart.OrderId == orderId && mobileStart.Amount == 50000 && mobileStart.Currency == "VND", "Mobile payment route/DTO match actual API");
     var start=await payments.StartAsync(orderId,alice);
     Check(start.Ok && start.Data!.Amount==50000,"payment starts with database amount");
     var before=await webOrders.GetChapterAsync(story.StoryId,1,alice);
     Check(before!.IsLocked && before.Content=="","pending payment does not unlock chapter");
-    var paid=await payments.SimulateAsync(orderId,"Success",alice);
-    Check(paid.Ok && paid.Data!.EntitlementGranted,"simulation uses signed callback and grants entitlement");
+    var paid=await mobilePayments.SimulateAsync(orderId,"Success");
+    Check(paid.EntitlementGranted,"simulation uses signed callback and grants entitlement");
     var after=await webOrders.GetChapterAsync(story.StoryId,1,alice);
     Check(!after!.IsLocked && after.Content=="Protected text","paid member reads chapter via Web API client");
     Check((await webOrders.GetChapterAsync(other.StoryId,1,alice))!.IsLocked,"selected plan does not unlock outside story");
     Check((await webOrders.GetChapterAsync(story.StoryId,1,bob))!.IsLocked,"other member stays locked");
     var library=await payments.LibraryAsync(alice);
     Check(library.Ok && library.Data!.Subscriptions.History.Any(x=>x.OrderId==orderId && x.IsActive),"Web reads granted subscription from API");
+    var mobileAccess = new ReadManager.Mobile.Services.ApiReadingAccessService(mobileApi);
+    Check((await mobileAccess.GetPurchasesAsync()).Plans.Any(p => p.PlanId == plan.PlanId), "Mobile library maps active subscription and EndsAt");
+    var local = new ReadManager.Mobile.Services.LocalReadingProgressService(new TestLibrary());
+    var mobileProgress = new ReadManager.Mobile.Services.ApiReadingProgressService(mobileApi, local, mobileToken);
+    Check((await mobileProgress.GetReadingAsync()).Count == 0, "Empty server progress does not resurrect local history");
+    await mobileProgress.SaveAsync(story.StoryId, chapter.ChapterId, 1, chapter.Title, 63.5m);
+    Check((await mobileProgress.GetProgressAsync(story.StoryId))?.ScrollPercent == 63.5m, "Mobile saves and restores scroll percentage via API");
+    var reading = await mobileProgress.GetReadingAsync();
+    Check(reading.Count == 1 && reading[0].Title == story.Title && reading[0].LastChapterId == chapter.ChapterId && reading[0].ScrollPercent == 63.5m,
+        "Mobile maps paged reading response and lastReadAt");
+    await mobileProgress.RemoveAsync(story.StoryId);
+    Check((await mobileProgress.GetReadingAsync()).Count == 0, "Mobile removal deletes server progress");
+    await mobileProgress.SaveAsync(story.StoryId, chapter.ChapterId, 1, chapter.Title, 63.5m);
+    var aliceId = (await db.Users.SingleAsync(u => u.Username == "alice")).UserId;
+    for (var n=0; n<50; n++)
+    {
+        var pagedStory = new Story { Title=$"Paged {n}", Slug=$"paged-{n}", AuthorName="Test", CreatedBy=admin.UserId, Visibility="Public", AccessPolicy="Free" };
+        var pagedChapter = new Chapter { Story=pagedStory, ChapterNumber=1, Title="Page", Content="Text", PublicationStatus="Published", AccessLevel="Free" };
+        db.Chapters.Add(pagedChapter);
+        await db.SaveChangesAsync();
+        db.ReadingProgresses.Add(new ReadManager.Api.Entities.ReadingProgress { UserId=aliceId, StoryId=pagedStory.StoryId, ChapterId=pagedChapter.ChapterId, ScrollPercent=10, UpdatedAt=DateTime.UtcNow });
+    }
+    await db.SaveChangesAsync();
+    Check((await mobileProgress.GetReadingAsync()).Count == 51, "Mobile reads all pages rather than losing progress after 50 stories");
+    await mobileToken.SaveTokenAsync(bob);
+    Check((await mobileAccess.GetPurchasesAsync()).Plans.Count == 0 && (await mobileProgress.GetReadingAsync()).Count == 0, "Switch account does not expose previous account rights/progress");
+    await mobileToken.SaveTokenAsync("invalid");
+    var rejected = false;
+    try { await mobileProgress.GetReadingAsync(); } catch (ReadManager.Mobile.Services.ApiException ex) when (ex.StatusCode == 401) { rejected = true; }
+    Check(rejected, "Expired session surfaces error rather than stale progress");
+    await mobileToken.SaveTokenAsync(alice);
     var duplicate=await payments.SimulateAsync(orderId,"Success",alice);
     Check(await db.UserSubscriptions.CountAsync(x=>x.OrderId==orderId)==1,"repeat confirmation does not grant twice");
     await db.UserSubscriptions.Where(x=>x.OrderId==orderId).ExecuteDeleteAsync();
+    Check((await mobileAccess.GetPurchasesAsync()).Plans.Count == 0, "Mobile does not infer rights from Paid order when grant is missing");
     Check(!(await payments.RecoveryAsync(1,alice)).Ok,"Member cannot inspect recovery queue");
     var recoveries=await payments.RecoveryAsync(1,adminToken);
     Check(recoveries.Ok && recoveries.Data!.Items.Any(x=>x.OrderId==orderId),"Admin sees verified payment missing grant");
@@ -82,4 +120,24 @@ finally
 {
     if(process is {HasExited:false}) {process.Kill(true);await process.WaitForExitAsync();}
     if(cs.Database==database && database.StartsWith("rm_webpay_") && database.Length==26) await db.Database.EnsureDeletedAsync();
+}
+
+sealed class TestTokenStore(string token) : ReadManager.Mobile.Services.ITokenStore
+{
+    public Task<string?> GetTokenAsync() => Task.FromResult<string?>(token);
+    public Task SaveTokenAsync(string value) { token=value; return Task.CompletedTask; }
+    public Task ClearAsync() { token=""; return Task.CompletedTask; }
+}
+sealed class TestLibrary : ReadManager.Mobile.Services.ILibraryService
+{
+    private readonly List<ReadManager.Mobile.Models.LibraryEntry> entries = new() { new() { StoryId=9999, LastChapterId=9999, Title="Stale local" } };
+    public IReadOnlyList<ReadManager.Mobile.Models.LibraryEntry> GetHistory() => entries;
+    public IReadOnlyList<ReadManager.Mobile.Models.LibraryEntry> GetFavorites() => new List<ReadManager.Mobile.Models.LibraryEntry>();
+    public void AddToHistory(ReadManager.Mobile.Models.StoryDetail story) { }
+    public void RecordChapter(int storyId, int chapterId, int chapterNumber, string title, decimal scrollPercent=0) { }
+    public void RemoveFromHistory(int id) { }
+    public void ClearHistory() { }
+    public bool IsFavorite(int id) => false;
+    public bool ToggleFavorite(ReadManager.Mobile.Models.StoryDetail story) => false;
+    public void RemoveFavorite(int id) { }
 }
