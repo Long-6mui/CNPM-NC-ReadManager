@@ -1,54 +1,76 @@
 using ReadManager.Mobile.Models;
+using ReadManager.Mobile.Models.Common;
+using ReadManager.Mobile.Services.Auth;
 
 namespace ReadManager.Mobile.Services;
 
-// Bản nối API ReadingProgress của Backend 2 — ĐANG TẮT (ApiSettings.UseReadingProgressApi = false).
-// Đường dẫn dưới đây là DỰ ĐOÁN, sửa cho khớp Backend 2. Lỗi mạng/404 thì luôn quay về dữ liệu trên máy.
+// ============================================================================
+// NỐI API TIẾN ĐỘ ĐỌC THẬT (Backend 2 — ReadingProgressController):
+//   PUT    api/stories/{id}/progress   lưu điểm đọc tiếp
+//   GET    api/me/reading              danh sách truyện đang đọc
+//   DELETE api/stories/{id}/progress   bỏ khỏi danh sách đang đọc
+// Luôn lưu cả trên máy; lỗi mạng / chưa đăng nhập thì chỉ dùng dữ liệu trên máy.
+// ============================================================================
 public class ApiReadingProgressService : IReadingProgressService
 {
-    private const string ProgressUri = "reading-progress";
-
     private readonly ApiClient _api;
     private readonly LocalReadingProgressService _local;
+    private readonly IAuthService _auth;
 
-    public ApiReadingProgressService(ApiClient api, LocalReadingProgressService local)
+    public ApiReadingProgressService(ApiClient api, LocalReadingProgressService local, IAuthService auth)
     {
         _api = api;
         _local = local;
+        _auth = auth;
     }
 
-    public async Task SaveAsync(int storyId, int chapterId, int chapterNumber, string chapterTitle)
+    public async Task SaveAsync(int storyId, int chapterId, int chapterNumber, string chapterTitle, decimal scrollPercent = 0)
     {
-        await _local.SaveAsync(storyId, chapterId, chapterNumber, chapterTitle); // luôn nhớ trên máy
+        await _local.SaveAsync(storyId, chapterId, chapterNumber, chapterTitle, scrollPercent);
+        if (_auth.CurrentUser is null) return;   // khách: chỉ lưu trên máy
+
         try
         {
-            await _api.PutAsync<SaveReadingProgressRequest, object>(ProgressUri,
-                new SaveReadingProgressRequest { StoryId = storyId, ChapterId = chapterId });
+            var percent = Math.Clamp(scrollPercent, 0, 100);
+            await _api.PutAsync<SaveReadingProgressRequest, object>($"stories/{storyId}/progress",
+                new SaveReadingProgressRequest { ChapterId = chapterId, ScrollPercent = percent });
         }
-        catch { /* chưa có API / mất mạng: bỏ qua, đã lưu trên máy */ }
+        catch { /* mất mạng / chương chưa công khai: đã lưu trên máy */ }
     }
 
     public async Task<List<LibraryEntry>> GetReadingAsync()
     {
-        try
+        if (_auth.CurrentUser is not null)
         {
-            var items = await _api.GetAsync<List<ReadingProgressDto>>(ProgressUri);
-            if (items is { Count: > 0 })
+            try
             {
-                return items.OrderByDescending(p => p.UpdatedAt).Select(p => new LibraryEntry
+                var page = await _api.GetAsync<PagedResult<ReadingStoryDto>>("me/reading?page=1&pageSize=50");
+                if (page is not null)
                 {
-                    StoryId = p.StoryId,
-                    Title = p.StoryTitle,
-                    AuthorName = p.AuthorName,
-                    CoverUrl = p.CoverUrl,
-                    ViewedAt = p.UpdatedAt,
-                    LastChapterId = p.ChapterId,
-                    LastChapterNumber = p.ChapterNumber,
-                    LastChapterTitle = p.ChapterTitle,
-                }).ToList();
+                    return page.Items.OrderByDescending(p => p.LastReadAt).Select(p => new LibraryEntry
+                    {
+                        StoryId = p.StoryId,
+                        Title = p.Title,
+                        AuthorName = p.AuthorName,
+                        CoverUrl = p.CoverUrl,
+                        PublishedChapterCount = p.PublishedChapterCount,
+                        ViewedAt = p.LastReadAt,
+                        LastChapterId = p.ChapterId,
+                        LastChapterNumber = p.ChapterNumber,
+                        LastChapterTitle = p.ChapterTitle,
+                    }).ToList();
+                }
             }
+            catch { /* mất mạng: dùng dữ liệu trên máy */ }
         }
-        catch { /* dùng dữ liệu trên máy */ }
         return await _local.GetReadingAsync();
+    }
+
+    public async Task RemoveAsync(int storyId)
+    {
+        await _local.RemoveAsync(storyId);
+        if (_auth.CurrentUser is null) return;
+        try { await _api.DeleteAsync($"stories/{storyId}/progress"); }
+        catch { /* 404 = đã không còn trong danh sách */ }
     }
 }

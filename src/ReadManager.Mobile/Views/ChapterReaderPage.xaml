@@ -12,7 +12,7 @@
 
     <Grid RowDefinitions="*,Auto">
 
-        <ScrollView Grid.Row="0">
+        <ScrollView Grid.Row="0" x:Name="ReaderScroll" Scrolled="OnReaderScrolled">
             <VerticalStackLayout Padding="20" Spacing="12">
                 <ActivityIndicator IsRunning="{Binding IsBusy}" IsVisible="{Binding IsBusy}" />
 

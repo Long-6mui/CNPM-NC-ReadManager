@@ -13,9 +13,9 @@ public static class ApiSettings
     public const bool UsePaymentApi = false;
 
     // Công tắc nối API "tiếp tục đọc" (ReadingProgress) của Backend 2.
-    // false = dùng dữ liệu lưu trên máy (LibraryService).
-    // Khi Backend 2 xong: sửa Models/ReadingProgressDtos.cs + đường dẫn trong ApiReadingProgressService.cs, rồi đặt true.
-    public const bool UseReadingProgressApi = false;
+    // API tiến độ đọc của Backend 2 (PUT api/stories/{id}/progress, GET api/me/reading) — ĐÃ NỐI.
+    // false = chỉ dùng dữ liệu lưu trên máy (LibraryService).
+    public const bool UseReadingProgressApi = true;
 
     // Chạy API bằng:  dotnet run --launch-profile http   (cổng 5283, http để emulator khỏi lỗi chứng chỉ).
     // Điện thoại thật: đổi 10.0.2.2 thành IP LAN của máy chạy API, vd http://192.168.1.25:5283/api/

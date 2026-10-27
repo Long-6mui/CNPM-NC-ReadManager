@@ -100,12 +100,16 @@ public partial class LibraryViewModel : BaseViewModel
     }
 
     [RelayCommand]
-    private void Remove(LibraryEntry? entry)
+    private async Task RemoveAsync(LibraryEntry? entry)
     {
         if (entry is null) return;
-        if (IsTab0 || IsTab3) _library.RemoveFromHistory(entry.StoryId);
+        if (IsTab3)
+        {
+            await RunSafeAsync(() => _progress.RemoveAsync(entry.StoryId));   // xóa cả trên server (Backend 2)
+        }
+        else if (IsTab0) _library.RemoveFromHistory(entry.StoryId);
         else _library.RemoveFavorite(entry.StoryId);
-        _ = ShowAsync();
+        await ShowAsync();
     }
 
     [RelayCommand]

@@ -19,4 +19,19 @@ public partial class ChapterReaderPage : ContentPage
         base.OnAppearing();
         await _viewModel.ReloadIfLockedAsync();
     }
+
+    // Nhớ vị trí cuộn (%) để lưu cùng điểm "Đọc tiếp"
+    private void OnReaderScrolled(object? sender, ScrolledEventArgs e)
+    {
+        var scrollable = ReaderScroll.ContentSize.Height - ReaderScroll.Height;
+        if (scrollable > 0)
+            _viewModel.ScrollPercent = (decimal)Math.Clamp(e.ScrollY / scrollable * 100.0, 0, 100);
+    }
+
+    // Rời màn đọc (qua chương khác, quay lại...) -> lưu điểm đọc tiếp kèm vị trí cuộn
+    protected override async void OnDisappearing()
+    {
+        base.OnDisappearing();
+        await _viewModel.SaveProgressNowAsync();
+    }
 }

@@ -2,11 +2,15 @@ using ReadManager.Mobile.Models;
 
 namespace ReadManager.Mobile.Services;
 
-// "Đang đọc / Đọc tiếp". Hiện lưu trên máy (LibraryService); khi Backend 2 có API ReadingProgress thì đổi sang ApiReadingProgressService.
+// "Đang đọc / Đọc tiếp".
+//   - Khách (chưa đăng nhập) hoặc API tắt: lưu trên máy (LibraryService)
+//   - Đã nối Backend 2: lưu thêm lên server (ApiReadingProgressService) để đồng bộ với Web
 public interface IReadingProgressService
 {
-    Task SaveAsync(int storyId, int chapterId, int chapterNumber, string chapterTitle);
+    // scrollPercent: vị trí cuộn trong chương, 0 = đầu chương, 100 = cuối chương
+    Task SaveAsync(int storyId, int chapterId, int chapterNumber, string chapterTitle, decimal scrollPercent = 0);
     Task<List<LibraryEntry>> GetReadingAsync();
+    Task RemoveAsync(int storyId);
 }
 
 public class LocalReadingProgressService : IReadingProgressService
@@ -15,7 +19,7 @@ public class LocalReadingProgressService : IReadingProgressService
 
     public LocalReadingProgressService(ILibraryService library) => _library = library;
 
-    public Task SaveAsync(int storyId, int chapterId, int chapterNumber, string chapterTitle)
+    public Task SaveAsync(int storyId, int chapterId, int chapterNumber, string chapterTitle, decimal scrollPercent = 0)
     {
         _library.RecordChapter(storyId, chapterId, chapterNumber, chapterTitle);
         return Task.CompletedTask;
@@ -26,4 +30,10 @@ public class LocalReadingProgressService : IReadingProgressService
             .Where(e => e.LastChapterId > 0)
             .OrderByDescending(e => e.ViewedAt)
             .ToList());
+
+    public Task RemoveAsync(int storyId)
+    {
+        _library.RemoveFromHistory(storyId);
+        return Task.CompletedTask;
+    }
 }

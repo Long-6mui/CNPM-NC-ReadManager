@@ -74,7 +74,8 @@ public class CommunityService : ICommunityService
         }
         catch (ApiException ex) when (ex.StatusCode == 403 && ex.Message.Contains("HTTP 403"))
         {
-            throw new ApiException(403, "Tài khoản của bạn đang bị hạn chế hoặc khóa nên không thực hiện được thao tác này.", ex.Error);
+            SessionFlags.AccountRestricted = true;
+            throw new ApiException(403, "Tài khoản của bạn đang bị hạn chế: vẫn đọc truyện được nhưng không thể bình luận, báo cáo hay theo dõi truyện.", ex.Error);
         }
         catch (ApiException ex) when (ex.StatusCode == 401)
         {

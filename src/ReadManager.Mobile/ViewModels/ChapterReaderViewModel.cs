@@ -35,6 +35,7 @@ public partial class ChapterReaderViewModel : BaseViewModel
     {
         _ = RunSafeAsync(async () =>
         {
+            ScrollPercent = 0;
             Chapter = await _chapterService.GetChapterContentAsync(value);
             if (!Chapter.IsLocked) await SaveProgressAsync(); // "Đang đọc / Đọc tiếp": nhớ chương đang đọc
         });
@@ -49,8 +50,21 @@ public partial class ChapterReaderViewModel : BaseViewModel
         if (!Chapter.IsLocked) await SaveProgressAsync();
     });
 
+    // Vị trí cuộn hiện tại trong chương (0–100), do trang đọc cập nhật khi người dùng cuộn
+    public decimal ScrollPercent { get; set; }
+    private bool _skipFlush;
+
     private Task SaveProgressAsync()
-        => _progress.SaveAsync(Chapter!.StoryId, Chapter.ChapterId, Chapter.ChapterNumber, Chapter.Title);
+        => _progress.SaveAsync(Chapter!.StoryId, Chapter.ChapterId, Chapter.ChapterNumber, Chapter.Title, ScrollPercent);
+
+    // Gọi khi rời màn đọc: lưu lại điểm đọc tiếp cùng vị trí cuộn mới nhất
+    public async Task SaveProgressNowAsync()
+    {
+        if (_skipFlush) { _skipFlush = false; return; }   // đang sang chương khác: chương mới tự lưu, tránh lưu đè về chương cũ
+        if (Chapter is null || Chapter.IsLocked) return;
+        try { await SaveProgressAsync(); }
+        catch { /* mất mạng: bỏ qua */ }
+    }
 
     // Chương trả phí: mở màn "Mua trọn bộ" (PB21)
     [RelayCommand]
@@ -100,6 +114,7 @@ public partial class ChapterReaderViewModel : BaseViewModel
     private async Task NavigateToChapterAsync(int targetChapterId)
     {
         // Điều hướng lại chính trang này với chapterId mới để tải nội dung chương khác
+        _skipFlush = true;
         await Shell.Current.GoToAsync($"{nameof(Views.ChapterReaderPage)}?chapterId={targetChapterId}");
     }
 }
