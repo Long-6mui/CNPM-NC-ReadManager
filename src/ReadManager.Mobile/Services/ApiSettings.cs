@@ -2,19 +2,21 @@ namespace ReadManager.Mobile.Services;
 
 public static class ApiSettings
 {
-    // Công tắc nối API quyền đọc của Backend 2 (feature/s2-reading-access).
-    // false = tự tính "gói đang dùng / truyện đã mua" từ các đơn đã thanh toán.
-    // Khi Backend 2 xong: sửa Models/ReadingAccessDtos.cs + đường dẫn trong ApiReadingAccessService.cs, rồi đặt true.
-    public const bool UseReadingAccessApi = false;
+    // API quyền đọc của Backend 2 (GET api/me/library) — ĐÃ NỐI.
+    // false = quay về cách tự tính "gói đang dùng / truyện đã mua" từ các đơn đã thanh toán.
+    public const bool UseReadingAccessApi = true;
 
-    // Công tắc nối API thanh toán của Backend 4 (PaymentsController).
-    // false = nút "Thanh toán" báo "cổng thanh toán đang tích hợp".
-    // Khi Backend 4 xong: sửa Models/PaymentDtos.cs + đường dẫn trong ApiPaymentService.cs, rồi đặt true.
-    public const bool UsePaymentApi = false;
+    // API thanh toán của Backend 4 (POST api/payments/start) — ĐÃ NỐI.
+    // false = nút "Thanh toán" chỉ báo "cổng thanh toán đang tích hợp".
+    public const bool UsePaymentApi = true;
+
+    // Cho phép "thanh toán thử" bằng POST api/payments/dev/simulate (API chỉ có endpoint này khi chạy ở Development).
+    // Khi cổng thanh toán thật được tích hợp: đặt false.
+    public const bool AllowPaymentSimulation = true;
 
     // Công tắc nối API "tiếp tục đọc" (ReadingProgress) của Backend 2.
-    // false = dùng dữ liệu lưu trên máy (LibraryService).
-    // Khi Backend 2 xong: sửa Models/ReadingProgressDtos.cs + đường dẫn trong ApiReadingProgressService.cs, rồi đặt true.
+    // API tiến độ đọc của Backend 2 (PUT api/stories/{id}/progress, GET api/me/reading) — ĐÃ NỐI.
+    // false = chỉ dùng dữ liệu lưu trên máy (LibraryService).
     public const bool UseReadingProgressApi = false;
 
     // Chạy API bằng:  dotnet run --launch-profile http   (cổng 5283, http để emulator khỏi lỗi chứng chỉ).

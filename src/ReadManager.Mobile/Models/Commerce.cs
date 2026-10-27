@@ -152,7 +152,9 @@ public class OwnedStory
     public DateTime PurchasedAt { get; set; }   // giờ máy
     public decimal Amount { get; set; }
 
-    public string PurchasedText => $"Mua ngày {PurchasedAt:dd/MM/yyyy} · {Fmt.Money(Amount)}";
+    public string PurchasedText => Amount > 0
+        ? $"Mua ngày {PurchasedAt:dd/MM/yyyy} · {Fmt.Money(Amount)}"
+        : $"Mua ngày {PurchasedAt:dd/MM/yyyy}";
 }
 
 public class PurchaseSummary
