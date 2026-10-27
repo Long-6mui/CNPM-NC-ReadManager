@@ -15,6 +15,7 @@ var cs = new MySqlConnectionStringBuilder(cfg.GetConnectionString("DefaultConnec
 var database = "rm_webpay_" + Guid.NewGuid().ToString("N")[..16]; cs.Database = database;
 await using var db = new AppDbContext(new DbContextOptionsBuilder<AppDbContext>().UseMySql(cs.ConnectionString,ServerVersion.AutoDetect(cs.ConnectionString)).Options);
 Process? process=null;
+Process? webProcess=null;
 int count=0;
 void Check(bool ok,string message) { if(!ok)throw new Exception("FAIL: "+message); Console.WriteLine("PASS: "+message);count++; }
 try
@@ -83,6 +84,54 @@ try
     var reading = await mobileProgress.GetReadingAsync();
     Check(reading.Count == 1 && reading[0].Title == story.Title && reading[0].LastChapterId == chapter.ChapterId && reading[0].ScrollPercent == 63.5m,
         "Mobile maps paged reading response and lastReadAt");
+    var webProgress = new ReadingProgressApiClient(http);
+    Check((await webProgress.GetAsync(story.StoryId, alice))?.ScrollPercent == 63.5m,
+        "Web sees progress saved on Mobile");
+    await webProgress.SaveAsync(story.StoryId, chapter.ChapterId, 42.25m, alice);
+    Check((await mobileProgress.GetProgressAsync(story.StoryId))?.ScrollPercent == 42.25m,
+        "Mobile sees progress saved on Web");
+
+    // Run the actual MVC app to verify cookie auth, antiforgery and rendered reading/library pages.
+    var webListener = new System.Net.Sockets.TcpListener(System.Net.IPAddress.Loopback,0);
+    webListener.Start(); var webPort=((System.Net.IPEndPoint)webListener.LocalEndpoint).Port; webListener.Stop();
+    var webUrl=$"http://127.0.0.1:{webPort}";
+    var webPsi=new ProcessStartInfo("dotnet") { UseShellExecute=false, CreateNoWindow=true, WorkingDirectory=Path.Combine(root,"src/ReadManager.Web") };
+    webPsi.ArgumentList.Add(Path.Combine(root,"src/ReadManager.Web/bin/Debug/net8.0/ReadManager.Web.dll"));
+    webPsi.Environment["ASPNETCORE_ENVIRONMENT"]="Development"; webPsi.Environment["ASPNETCORE_URLS"]=webUrl;
+    webPsi.Environment["Api__BaseUrl"]=url+"/"; webPsi.Environment["Logging__LogLevel__Default"]="Critical";
+    webProcess=Process.Start(webPsi)!;
+    using var webHandler=new HttpClientHandler { CookieContainer=new CookieContainer(), AllowAutoRedirect=false };
+    using var browser=new HttpClient(webHandler) { BaseAddress=new Uri(webUrl) };
+    string loginHtml="";
+    for(var n=0;n<60;n++) { try {loginHtml=await browser.GetStringAsync("Account/Login"); break;} catch(HttpRequestException) {await Task.Delay(200);} }
+    string Csrf(string html) => WebUtility.HtmlDecode(System.Text.RegularExpressions.Regex.Match(html,
+        "name=\"__RequestVerificationToken\"[^>]*value=\"([^\"]+)\"").Groups[1].Value);
+    var loginForm=new Dictionary<string,string> { ["Email"]="alice@example.test", ["Password"]=password, ["__RequestVerificationToken"]=Csrf(loginHtml) };
+    var loginResponse=await browser.PostAsync("Account/Login",new FormUrlEncodedContent(loginForm));
+    Check(loginResponse.StatusCode==HttpStatusCode.Redirect,"Web test user signs in with cookie");
+    var readHtml=await browser.GetStringAsync($"Stories/Read?storyId={story.StoryId}&no=1");
+    Check(readHtml.Contains("data-percent=\"42.25\"") && readHtml.Contains("reading-progress.js"),
+        "Web reader renders saved scroll percent from API");
+    Check((await browser.GetStringAsync("Library")).Contains("42%"),"Web library renders actual API progress");
+    var saveForm=new Dictionary<string,string> { ["storyId"]=story.StoryId.ToString(), ["chapterId"]=chapter.ChapterId.ToString(), ["scrollPercent"]="71.5", ["__RequestVerificationToken"]=Csrf(readHtml) };
+    var savedHttp=await browser.PostAsync("Library/SaveProgress",new FormUrlEncodedContent(saveForm));
+    Check(savedHttp.IsSuccessStatusCode && (await mobileProgress.GetProgressAsync(story.StoryId))?.ScrollPercent==71.5m,
+        "Web MVC save updates Mobile through shared database");
+    var badForm=new Dictionary<string,string>(saveForm) { ["scrollPercent"]="101" };
+    Check((await browser.PostAsync("Library/SaveProgress",new FormUrlEncodedContent(badForm))).StatusCode==HttpStatusCode.BadRequest,
+        "Web rejects invalid scroll percent");
+    badForm=new Dictionary<string,string>(saveForm); badForm.Remove("__RequestVerificationToken");
+    Check((await browser.PostAsync("Library/SaveProgress",new FormUrlEncodedContent(badForm))).StatusCode==HttpStatusCode.BadRequest,
+        "Web save requires antiforgery token");
+    using var guest=new HttpClient(new HttpClientHandler {AllowAutoRedirect=false}) {BaseAddress=new Uri(webUrl)};
+    Check((await guest.PostAsync("Library/SaveProgress",new FormUrlEncodedContent(saveForm))).StatusCode==HttpStatusCode.Redirect,
+        "Guest cannot write progress through Web");
+    var lockedHtml=await browser.GetStringAsync($"Stories/Read?storyId={other.StoryId}&no=1");
+    Check(!lockedHtml.Contains("id=\"readingProgress\""),"Locked chapter does not render progress writer");
+    var removeHttp=await browser.PostAsync("Library/RemoveProgress",new FormUrlEncodedContent(saveForm));
+    Check(removeHttp.StatusCode==HttpStatusCode.Redirect && (await mobileProgress.GetReadingAsync()).Count==0,
+        "Web removal is reflected on Mobile");
+    await mobileProgress.SaveAsync(story.StoryId,chapter.ChapterId,1,chapter.Title,63.5m);
     await mobileProgress.RemoveAsync(story.StoryId);
     Check((await mobileProgress.GetReadingAsync()).Count == 0, "Mobile removal deletes server progress");
     await mobileProgress.SaveAsync(story.StoryId, chapter.ChapterId, 1, chapter.Title, 63.5m);
@@ -96,6 +145,7 @@ try
         db.ReadingProgresses.Add(new ReadManager.Api.Entities.ReadingProgress { UserId=aliceId, StoryId=pagedStory.StoryId, ChapterId=pagedChapter.ChapterId, ScrollPercent=10, UpdatedAt=DateTime.UtcNow });
     }
     await db.SaveChangesAsync();
+    Check((await webProgress.ListAsync(alice)).Count == 51, "Web includes all pages of server progress");
     Check((await mobileProgress.GetReadingAsync()).Count == 51, "Mobile reads all pages rather than losing progress after 50 stories");
     await mobileToken.SaveTokenAsync(bob);
     Check((await mobileAccess.GetPurchasesAsync()).Plans.Count == 0 && (await mobileProgress.GetReadingAsync()).Count == 0, "Switch account does not expose previous account rights/progress");
@@ -118,6 +168,7 @@ try
 }
 finally
 {
+    if(webProcess is {HasExited:false}) {webProcess.Kill(true);await webProcess.WaitForExitAsync();}
     if(process is {HasExited:false}) {process.Kill(true);await process.WaitForExitAsync();}
     if(cs.Database==database && database.StartsWith("rm_webpay_") && database.Length==26) await db.Database.EnsureDeletedAsync();
 }

@@ -17,6 +17,11 @@ builder.Services.AddHttpClient<PlansApiClient>(client =>
 });
 builder.Services.AddSingleton<DemoPlanStore>();
 builder.Services.AddSingleton<DemoReadingProgressStore>();
+builder.Services.AddHttpClient<ReadingProgressApiClient>(client =>
+{
+    client.BaseAddress = new Uri(builder.Configuration["Api:BaseUrl"] ?? "https://localhost:7188/");
+    client.Timeout = TimeSpan.FromSeconds(10);
+});
 builder.Services.AddSingleton<DemoMemberStore>();
 builder.Services.AddHttpClient<PaymentsApiClient>(client =>
 {

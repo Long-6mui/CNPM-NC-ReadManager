@@ -16,7 +16,7 @@ Nguồn: doc/ProductBacklog-nhom05-03.xlsx (sheet Sprint backlog), origin/main 8
 ## Kết quả kiểm tra
 
 - Build Android Debug: đạt, còn các cảnh báo XAML binding và nhánh cấu hình hằng.
-- WebPaymentChecks: 26 kiểm tra đạt qua API chạy thật và database thử riêng; liên kết trực tiếp source client/model Mobile, không dùng bản DTO chép lại.
+- WebPaymentChecks: 38 kiểm tra đạt qua API chạy thật và database thử riêng; liên kết trực tiếp source client/model Mobile, không dùng bản DTO chép lại.
 - Bao gồm: đúng route/DTO, đơn đúng chủ, giá server, quyền Selected, tài khoản khác không được đọc, callback lặp, thiếu grant, cấp lại idempotent, tiến độ và phần trăm cuộn, hơn 50 truyện, xóa tiến độ, phiên hết hạn, đổi tài khoản.
 - Sprint3Checks: 11 kiểm tra đạt (quyền đọc, thư viện, xếp hạng, xu hướng, gợi ý). Tên bộ test không có nghĩa bao phủ toàn bộ Sprint 3.
 - Chưa thao tác UI trên emulator trong phiên này vì không có thiết bị đang kết nối. Cần kiểm tra cuộn/khôi phục vị trí thực tế trên Android.
@@ -48,8 +48,8 @@ Không đánh dấu Sprint 2 hoàn thành 100% chỉ dựa vào mô phỏng. N�
 | PB13 Tìm kiếm | Có API và giao diện; cần nghiệm thu tên/tác giả/thể loại và không lộ truyện ẩn. |
 | PB14 Khám phá | Có code; bộ Sprint3Checks kiểm tra xếp hạng/xu hướng/gợi ý. |
 | PB15 Lượt đọc | Có code ghi nhận; cần nghiệm thu chống đếm lặp và chương chưa có quyền. |
-| PB28 Tiến độ đọc | Mobile đã nối API trong PR này. Web StoriesController vẫn dùng DemoReadingProgressStore nên CHƯA đồng bộ Web/Mobile. |
-| PB29 Danh sách đang đọc | Mobile đã nối API; Web LibraryController vẫn đọc/xóa dữ liệu trong bộ nhớ nên CHƯA hoàn thành xuyên nền tảng. |
+| PB28 Tiến độ đọc | Đã nối API chung Web/Mobile; Web đọc lại vị trí, lưu phần trăm cuộn qua cookie + antiforgery. Test tích hợp hai chiều đạt; còn nghiệm thu cuộn thực tế trên browser/emulator. |
+| PB29 Danh sách đang đọc | Đã nối API Web/Mobile, lấy đủ các trang và xóa đồng bộ; test qua MVC Web và client Mobile đạt. |
 | PB30 Theo dõi | Có API và client; cần nghiệm thu thêm/bỏ và đổi tài khoản. |
 | PB31 Thông báo | Có API và client; cần nghiệm thu chương hẹn giờ, đổi lịch, chương ẩn và đánh dấu đã đọc. |
 | PB32 Thảo luận | Có API và client; cần nghiệm thu phân quyền, tài khoản hạn chế và dữ liệu chương. |
@@ -60,10 +60,21 @@ Không đánh dấu Sprint 2 hoàn thành 100% chỉ dựa vào mô phỏng. N�
 
 ## Việc nên làm tiếp
 
-1. Nối Web PB28–29 vào ReadingProgress API, bao gồm vị trí cuộn và xóa tiến độ. Test đọc trên Mobile rồi mở tiếp trên Web và ngược lại.
+1. PB28–29 đã nối API và kiểm tra tự động hai chiều. Còn nghiệm thu UI: đọc/cuộn trên Mobile rồi mở tiếp trên Web và ngược lại.
 2. Nối Web Admin PB35–36 vào Users API; bỏ dùng dữ liệu tạm trong quyết định hạn chế/tạm ngừng. Test phiên đang đăng nhập sau khi bị khóa.
 3. Chạy checklist UI Android cho thay đổi PR này: mua gói → thanh toán thử → mở chương; đổi tài khoản; đọc/cuộn/đóng app/mở lại; xóa đang đọc; mất mạng/phiên hết hạn.
 4. Chốt mô phỏng hay cổng thanh toán thật, rồi nghiệm thu các nhánh thanh toán và gia hạn.
 5. Review PR #29 riêng: nhánh reading-access cũ trùng với phần đã có trên main; không merge cưỡng bức để tránh ghi đè code mới.
 
 Nhắc đọc, chuỗi đọc và điểm/thành tích là yêu cầu mở rộng Mobile; không có mã task riêng trong Sprint 2–3 của workbook hiện tại, cần bổ sung backlog nếu muốn nghiệm thu chính thức.
+
+## Bổ sung PB28–29 trên Web
+
+- `ReadingProgressApiClient`: đọc/lưu/xóa vị trí và lấy toàn bộ danh sách phân trang từ API.
+- `StoriesController`: Đọc tiếp lấy chương từ API; trang đọc lấy vị trí cùng chương, không ghi đè trong GET. Lỗi tiến độ không chặn đọc nội dung.
+- `LibraryController`: danh sách và xóa dùng API; POST SaveProgress yêu cầu đăng nhập, antiforgery và kiểm tra đầu vào. Không nhận UserId từ trình duyệt.
+- `reading-progress.js`: khôi phục phần trăm, debounce 700ms, gửi tuần tự, keepalive khi rời trang; báo lỗi riêng. Không ghi số 0 khi tải tiến độ lỗi và người dùng chưa cuộn. Không kéo người dùng khỏi #comments.
+- Danh sách không còn nhãn dữ liệu mẫu. DemoReadingProgressStore chỉ còn phục vụ phần Admin thành viên cũ (PB35–36 chưa xử lý trong đợt này).
+- `dotnet run --project tests/WebPaymentChecks`: 38 PASS, gồm HTTP vào MVC thật, cookie, antiforgery, đồng bộ hai chiều và danh sách hơn 50 truyện.
+- `node tests/WebPaymentChecks/reading-progress.test.cjs`: PASS các ca restore, token, debounce, mapping phần trăm, bảo toàn khi tải lỗi, #comments và phản hồi HTML khi hết phiên. Đây là kiểm tra DOM giả lập, chưa thay thế nghiệm thu browser thực tế.
+- Build Web đạt, còn warning nullable có sẵn trong Views/Shared/_Layout.cshtml.

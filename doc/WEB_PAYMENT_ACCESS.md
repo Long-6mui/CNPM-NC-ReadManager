@@ -37,7 +37,7 @@ Mô phỏng chỉ hoạt động khi cả API và Web chạy Development. Produc
 dotnet run --project tests/WebPaymentChecks
 ```
 
-Tạo database thử ngẫu nhiên riêng bằng kết nối User Secrets, chạy API ở cổng tạm, kiểm tra 26 tình huống Web/Mobile qua client Web rồi xóa database thử. Tài khoản MySQL cần quyền tạo/xóa database thử. Không dùng dữ liệu người dùng để giả thanh toán.
+Tạo database thử ngẫu nhiên riêng bằng kết nối User Secrets, chạy API ở cổng tạm, kiểm tra 38 tình huống Web/Mobile qua client Web rồi xóa database thử. Tài khoản MySQL cần quyền tạo/xóa database thử. Không dùng dữ liệu người dùng để giả thanh toán.
 
 ## Mobile: đồng bộ route và DTO
 
@@ -47,3 +47,16 @@ Route là địa chỉ và phương thức HTTP. DTO là cấu trúc JSON gửi/
 - Tiến độ: PUT /api/stories/{storyId}/progress gửi chapterId, scrollPercent; GET cùng địa chỉ lấy tiến độ; GET /api/me/reading lấy danh sách đang đọc.
 
 Mobile đã cập nhật route/DTO và bật ba cờ API. Bản Debug có lựa chọn mô phỏng thanh toán (API phải chạy Development); Release chỉ tạo giao dịch và báo cổng thật chưa tích hợp. Tiến độ đọc lưu và khôi phục phần trăm cuộn, danh sách có phân trang, xóa tiến độ qua API. Quyền đọc dùng dữ liệu server, không suy ra từ đơn đã trả tiền.
+
+## PB28–29: tiến độ Web–Mobile
+
+Web đã dùng API chung cho nút Đọc tiếp, danh sách Đang đọc, lưu phần trăm cuộn và xóa tiến độ. Không cần migration mới.
+
+1. Đăng nhập cùng tài khoản trên hai nền tảng.
+2. Đọc/cuộn trên Mobile, rời màn đọc; mở trang chi tiết truyện trên Web và chọn Đọc tiếp.
+3. Cuộn trên Web, chờ thông báo đã đồng bộ; mở lại Đọc tiếp trên Mobile.
+4. Xóa truyện ở Đang đọc trên Web; tải lại thư viện Mobile: truyện không còn trong danh sách.
+5. Đổi tài khoản: không thấy tiến độ tài khoản trước.
+6. Khi API không chạy, trang đọc vẫn hiển thị nội dung nếu đã tải được, nhưng báo chưa đồng bộ; không báo lưu thành công giả.
+
+Bộ kiểm tra JavaScript: `node tests/WebPaymentChecks/reading-progress.test.cjs`.
