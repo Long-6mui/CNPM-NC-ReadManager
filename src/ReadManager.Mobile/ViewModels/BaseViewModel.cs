@@ -22,11 +22,19 @@ public abstract partial class BaseViewModel : ObservableObject
         }
         catch (ApiException ex)
         {
-            ErrorMessage = ex.Message;
+            // 401 không kèm lời của server = phiên đăng nhập hết hạn
+            ErrorMessage = ex.StatusCode == 401 && ex.Message.Contains("HTTP 401")
+                ? "Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại."
+                : ex.Message;
+        }
+        catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException or OperationCanceledException)
+        {
+            // Hiện địa chỉ đang dùng để dễ tìm nguyên nhân khi demo (sai IP, API chưa chạy, khác Wi-Fi...)
+            ErrorMessage = $"Không kết nối được máy chủ ({ApiSettings.BaseUrl}). Kiểm tra API đã chạy chưa và địa chỉ máy chủ trong mục “Địa chỉ máy chủ”.";
         }
         catch (Exception)
         {
-            ErrorMessage = "Không thể kết nối máy chủ. Vui lòng thử lại.";
+            ErrorMessage = "Có lỗi xảy ra. Vui lòng thử lại.";
         }
         finally
         {

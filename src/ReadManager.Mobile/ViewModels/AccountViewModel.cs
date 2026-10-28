@@ -98,8 +98,11 @@ public partial class AccountViewModel : BaseViewModel
         HasHistory = HistoryPreview.Count > 0;
         HasFavorites = FavoritePreview.Count > 0;
 
-        StatusBanner = user.StatusMessage;
-        HasStatusBanner = user.IsRestricted;
+        var restricted = user.IsRestricted || SessionFlags.AccountRestricted;
+        StatusBanner = user.IsRestricted
+            ? user.StatusMessage
+            : restricted ? "Tài khoản của bạn đang bị hạn chế: vẫn đọc được, nhưng không thể bình luận, báo cáo hay theo dõi truyện. Liên hệ quản trị viên nếu cần hỗ trợ." : string.Empty;
+        HasStatusBanner = restricted;
 
         try
         {
@@ -195,6 +198,9 @@ public partial class AccountViewModel : BaseViewModel
     private async Task GoToFollowedAsync() => await Shell.Current.GoToAsync(nameof(Views.FollowedStoriesPage));
 
     [RelayCommand]
+    private Task OpenServerSettingsAsync() => ServerSettings.PromptAsync();
+
+    [RelayCommand]
     private async Task GoToLoginAsync() => await Shell.Current.GoToAsync("//LoginPage");
 
     [RelayCommand]
@@ -204,6 +210,7 @@ public partial class AccountViewModel : BaseViewModel
     private async Task LogoutAsync()
     {
         await _authService.LogoutAsync();
+        SessionFlags.AccountRestricted = false;
         CurrentPassword = NewPassword = ConfirmPassword = PasswordMessage = string.Empty;
         await LoadAsync();
     }

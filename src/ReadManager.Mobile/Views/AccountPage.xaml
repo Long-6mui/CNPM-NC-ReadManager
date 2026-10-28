@@ -217,6 +217,10 @@
                         Command="{Binding LogoutCommand}" />
             </VerticalStackLayout>
 
+            <!-- Cài đặt kết nối (Sprint 4: demo trên điện thoại thật) -->
+            <Button Text="⚙ Địa chỉ máy chủ" Style="{StaticResource BtnLink}"
+                    Command="{Binding OpenServerSettingsCommand}" HorizontalOptions="Center" />
+
         </VerticalStackLayout>
     </ScrollView>
 </ContentPage>

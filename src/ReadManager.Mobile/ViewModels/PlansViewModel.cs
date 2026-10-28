@@ -18,6 +18,8 @@ public partial class PlansViewModel : BaseViewModel
     public ObservableCollection<PlanEntitlement> MyPlans { get; } = new();
 
     [ObservableProperty] private bool hasMyPlans;
+    [ObservableProperty] private bool hasAlert;
+    [ObservableProperty] private string alertMessage = string.Empty;
     [ObservableProperty] private bool showEmpty;
 
     public PlansViewModel(IPlanService plans, IReadingAccessService access, IAuthService auth)
@@ -50,6 +52,13 @@ public partial class PlansViewModel : BaseViewModel
         }
         catch { /* bỏ qua */ }
         HasMyPlans = MyPlans.Count > 0;
+
+        // Gói sắp hết hạn (<= 7 ngày): nhắc gia hạn (gia hạn khi còn hạn được cộng dồn)
+        var soon = MyPlans.Where(p => p.IsExpiringSoon).OrderBy(p => p.ExpiresAt).FirstOrDefault();
+        HasAlert = soon is not null;
+        AlertMessage = soon is null
+            ? string.Empty
+            : $"Gói “{soon.PlanName}” sắp hết hạn (còn {soon.DaysLeft} ngày). Bấm “Mua / gia hạn” bên dưới để cộng dồn thời gian.";
     }
 
     [RelayCommand]

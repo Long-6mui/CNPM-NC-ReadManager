@@ -135,6 +135,8 @@ public class PlanEntitlement
     public DateTime ExpiresAt { get; set; }   // giờ máy
 
     public string ExpiresText => $"Còn hạn đến {ExpiresAt:dd/MM/yyyy}";
+    public int DaysLeft => Math.Max(0, (int)Math.Ceiling((ExpiresAt - DateTime.Now).TotalDays));
+    public bool IsExpiringSoon => DaysLeft <= 7;
     public string RemainingText
     {
         get
@@ -152,7 +154,9 @@ public class OwnedStory
     public DateTime PurchasedAt { get; set; }   // giờ máy
     public decimal Amount { get; set; }
 
-    public string PurchasedText => $"Mua ngày {PurchasedAt:dd/MM/yyyy} · {Fmt.Money(Amount)}";
+    public string PurchasedText => Amount > 0
+        ? $"Mua ngày {PurchasedAt:dd/MM/yyyy} · {Fmt.Money(Amount)}"
+        : $"Mua ngày {PurchasedAt:dd/MM/yyyy}";
 }
 
 public class PurchaseSummary
