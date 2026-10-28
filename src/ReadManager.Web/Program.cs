@@ -15,6 +15,11 @@ builder.Services.AddHttpClient<PlansApiClient>(client =>
     client.BaseAddress = new Uri(builder.Configuration["Api:BaseUrl"] ?? "https://localhost:7188/");
     client.Timeout = TimeSpan.FromSeconds(10);
 });
+builder.Services.AddHttpClient<StatisticsApiClient>(client =>
+{
+    client.BaseAddress = new Uri(builder.Configuration["Api:BaseUrl"] ?? "https://localhost:7188/");
+    client.Timeout = TimeSpan.FromSeconds(30);   // doanh thu có thể phải đọc nhiều trang đơn hàng
+});
 builder.Services.AddSingleton<DemoPlanStore>();
 builder.Services.AddSingleton<DemoReadingProgressStore>();
 builder.Services.AddSingleton<DemoMemberStore>();
