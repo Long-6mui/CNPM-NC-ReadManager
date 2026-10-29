@@ -49,6 +49,10 @@ public class StoryDetailVm
 
 public class ReadVm
 {
+    public bool SyncProgress { get; set; }
+    public bool ProgressLoaded { get; set; }
+    public decimal ScrollPercent { get; set; }
+    public string? ProgressError { get; set; }
     public Story Story { get; set; } = null!;
     public Chapter Chapter { get; set; } = null!;
     public bool Locked { get; set; }

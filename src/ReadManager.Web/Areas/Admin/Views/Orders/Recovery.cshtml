@@ -1,0 +1,21 @@
+@model ReadManager.Web.Services.PagedApi<ReadManager.Web.Services.PaymentRecoveryApi>
+@{ ViewData["Title"] = "Khôi phục quyền đọc"; }
+<div class="container section">
+    <partial name="_AdminNav" />
+    <h1>Đã thanh toán nhưng chưa được cấp quyền</h1>
+    <p>Chỉ hiển thị giao dịch thành công đã được API xác minh. Cấp lại quyền không thu thêm tiền.</p>
+    @if (Model.Items.Count == 0) { <p>Không có giao dịch cần xử lý.</p> }
+    @foreach (var item in Model.Items)
+    {
+        <div class="panel">
+            <p>Đơn #@item.OrderId — @item.ItemName — @item.Amount?.ToString("N0") đ</p>
+            @if (!string.IsNullOrWhiteSpace(item.LastError)) { <p>@item.LastError</p> }
+            <form asp-action="Regrant" method="post">
+                <input type="hidden" name="id" value="@item.OrderId" />
+                <button class="btn btn-brass" type="submit">Cấp lại quyền</button>
+            </form>
+        </div>
+    }
+    @if (Model.Page > 1) { <a asp-action="Recovery" asp-route-page="@(Model.Page - 1)">Trang trước</a> }
+    @if ((long)Model.Page * Model.PageSize < Model.TotalCount) { <a asp-action="Recovery" asp-route-page="@(Model.Page + 1)">Trang sau</a> }
+</div>

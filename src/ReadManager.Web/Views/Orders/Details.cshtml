@@ -42,10 +42,20 @@
 
         @if (Model.Status == "Pending")
         {
-            @* Cổng thanh toán: phần Thanh toán (BE4 — feature/s2-payments) sẽ nối vào đây *@
-            <p class="hint" style="margin-top:14px;">Đơn hàng đã được tạo và đang chờ thanh toán. Cổng thanh toán đang được tích hợp.</p>
+            @if (Model.CanPay)
+            {
+                <form asp-action="StartPayment" method="post" style="margin-top:14px;">
+                    <input type="hidden" name="id" value="@Model.OrderId" />
+                    <button class="btn btn-brass" type="submit">Bắt đầu thanh toán</button>
+                </form>
+            }
+            else { <p>Đơn đã hết thời gian thanh toán. Vui lòng tạo đơn mới.</p> }
         }
 
+        @if (Model.Status == "Paid")
+        {
+            <p>Đã ghi nhận thanh toán. <a asp-controller="Plans" asp-action="Mine">Xem gói và quyền đọc đã cấp</a>.</p>
+        }
         <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:18px;">
             @if (Model.StoryId.HasValue)
             {

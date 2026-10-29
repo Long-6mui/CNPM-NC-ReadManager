@@ -12,7 +12,7 @@ namespace ReadManager.Web.Controllers;
 //   GET  /Orders/Details/12          → xem đơn: món hàng, số tiền, trạng thái
 // Hủy đơn / xác nhận thanh toán: phần Thanh toán (BE4 — feature/s2-payments) làm.
 [Authorize]
-public class OrdersController(StoriesApiClient api) : Controller
+public class OrdersController(StoriesApiClient api, PaymentsApiClient payments, IWebHostEnvironment environment) : Controller
 {
     private const string ApiDown = "Không kết nối được API. Hãy chạy ReadManager.Api rồi thử lại.";
     private Task<string?> Token() => HttpContext.GetTokenAsync("access_token");
@@ -66,6 +66,33 @@ public class OrdersController(StoriesApiClient api) : Controller
             TempData["Toast"] = ApiDown;
         }
         return RedirectToAction(nameof(Checkout), new { storyId });
+    }
+
+    [HttpPost, ValidateAntiForgeryToken]
+    public async Task<IActionResult> StartPayment(int id)
+    {
+        try
+        {
+            var result = await payments.StartAsync(id, await Token());
+            if (result.Ok && result.Data is not null) return View("Payment", result.Data);
+            TempData["Toast"] = result.Message;
+        }
+        catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException) { TempData["Toast"] = ApiDown; }
+        return RedirectToAction(nameof(Details), new { id });
+    }
+
+    [HttpPost, ValidateAntiForgeryToken]
+    public async Task<IActionResult> SimulatePayment(int id, string status)
+    {
+        if (!environment.IsDevelopment()) return NotFound();
+        if (status is not ("Success" or "Failed" or "Cancelled" or "Pending")) return BadRequest();
+        try
+        {
+            var result = await payments.SimulateAsync(id, status, await Token());
+            TempData["Toast"] = result.Ok ? result.Data!.Message : result.Message;
+        }
+        catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException) { TempData["Toast"] = ApiDown; }
+        return RedirectToAction(nameof(Details), new { id });
     }
 
     public async Task<IActionResult> Details(int id)

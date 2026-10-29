@@ -1,8 +1,28 @@
 @model ReadManager.Web.Services.PagedApi<ReadManager.Web.Services.OrderApi>
-@{ ViewData["Title"] = "Đơn hàng của tôi"; }
+@{ ViewData["Title"] = "Gói và thanh toán của tôi"; }
 <div class="container section">
-    <h1>Đơn hàng của tôi</h1>
+    <h1>Gói và thanh toán của tôi</h1>
     <p>Đơn đang chờ thanh toán chưa cấp quyền đọc. Giao dịch đã thanh toán cần được cấp quyền trước khi mở khóa nội dung.</p>
+    @if (ViewBag.LibraryError is string error) { <p role="alert">@error</p> }
+    @if (ViewBag.Library is ReadManager.Web.Services.UserLibraryApi library)
+    {
+        <h2>Gói đọc của tôi</h2>
+        @if (library.Subscriptions.History.Count == 0) { <p>Chưa có quyền dùng gói được cấp.</p> }
+        @foreach (var sub in library.Subscriptions.History)
+        {
+            <div class="panel">
+                <strong>@sub.PlanName</strong> — @sub.StatusBadge
+                <p>@sub.StartsAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm") đến @sub.EndsAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</p>
+                <p>Phạm vi: @(sub.ScopeType == "All" ? "Toàn bộ truyện" : "Các truyện được chọn trong phiên bản đã mua")</p>
+                @if (sub.CanRenew) { <a asp-action="Index">Xem gói để gia hạn</a> }
+            </div>
+        }
+        <h2>Truyện đã mua</h2>
+        @if (library.PurchasedStories.Count == 0) { <p>Chưa có truyện đã mua còn quyền đọc.</p> }
+        @foreach (var story in library.PurchasedStories)
+        { <p><a asp-controller="Stories" asp-action="Details" asp-route-id="@story.StoryId">@story.Title</a></p> }
+    }
+    <h2>Lịch sử đơn hàng</h2>
     @if (Model.Items.Count == 0) { <p>Chưa có đơn hàng.</p> }
     <table class="data">
         <thead><tr><th>Mã đơn</th><th>Nội dung</th><th>Số tiền</th><th>Trạng thái</th><th></th></tr></thead>

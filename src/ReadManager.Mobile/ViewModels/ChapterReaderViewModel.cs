@@ -35,8 +35,9 @@ public partial class ChapterReaderViewModel : BaseViewModel
     {
         _ = RunSafeAsync(async () =>
         {
+            ProgressReady = false;
             Chapter = await _chapterService.GetChapterContentAsync(value);
-            if (!Chapter.IsLocked) await SaveProgressAsync(); // "Đang đọc / Đọc tiếp": nhớ chương đang đọc
+            if (!Chapter.IsLocked) await RestoreProgressAsync(); // "Đang đọc / Đọc tiếp": nhớ chương đang đọc
         });
     }
 
@@ -45,12 +46,50 @@ public partial class ChapterReaderViewModel : BaseViewModel
 
     private Task ReloadAsync() => RunSafeAsync(async () =>
     {
+        ProgressReady = false;
         Chapter = await _chapterService.GetChapterContentAsync(ChapterId);
-        if (!Chapter.IsLocked) await SaveProgressAsync();
+        if (!Chapter.IsLocked) await RestoreProgressAsync();
     });
 
-    private Task SaveProgressAsync()
-        => _progress.SaveAsync(Chapter!.StoryId, Chapter.ChapterId, Chapter.ChapterNumber, Chapter.Title);
+    [ObservableProperty] private decimal scrollPercent;
+    [ObservableProperty] private bool progressReady;
+    [ObservableProperty] private string progressMessage = string.Empty;
+    private readonly SemaphoreSlim _saveGate = new(1, 1);
+
+    private async Task RestoreProgressAsync()
+    {
+        ProgressReady = false;
+        ScrollPercent = 0;
+        try
+        {
+            var saved = await _progress.GetProgressAsync(Chapter!.StoryId);
+            if (saved?.ChapterId == Chapter.ChapterId) ScrollPercent = saved.ScrollPercent;
+            ProgressMessage = string.Empty;
+        }
+        catch (Exception ex) when (ex is ApiException or HttpRequestException or TaskCanceledException or System.Text.Json.JsonException)
+        {
+            ProgressMessage = "Chưa tải được tiến độ từ máy chủ. Bạn vẫn có thể đọc chương.";
+        }
+        ProgressReady = true;
+    }
+
+    public async Task SaveScrollAsync(decimal percent)
+    {
+        if (!IsReadable || !ProgressReady) return;
+        var current = Chapter!;
+        ScrollPercent = Math.Clamp(percent, 0, 100);
+        await _saveGate.WaitAsync();
+        try
+        {
+            await _progress.SaveAsync(current.StoryId, current.ChapterId, current.ChapterNumber, current.Title, percent);
+            ProgressMessage = string.Empty;
+        }
+        catch (Exception ex) when (ex is ApiException or HttpRequestException or TaskCanceledException or System.Text.Json.JsonException)
+        {
+            ProgressMessage = "Đã nhớ trên máy; chưa đồng bộ tiến độ. Kiểm tra kết nối hoặc đăng nhập lại.";
+        }
+        finally { _saveGate.Release(); }
+    }
 
     // Chương trả phí: mở màn "Mua trọn bộ" (PB21)
     [RelayCommand]

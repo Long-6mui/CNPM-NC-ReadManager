@@ -1,21 +1,27 @@
 namespace ReadManager.Mobile.Models;
-
-// DỰ ĐOÁN hình dạng JSON của API quyền đọc (Backend 2). SỬA cho khớp DTO thật khi API xong.
-// (Chỉ dùng trong ApiReadingAccessService.)
-
-// 1 gói đọc đang có (DTOs/Subscriptions)
 public class SubscriptionDto
 {
-    public int PlanId { get; set; }
+    public int SubscriptionId { get; set; }
+    public int? PlanId { get; set; }
     public string PlanName { get; set; } = string.Empty;
-    public DateTime ExpiresAt { get; set; }
+    public DateTime StartsAt { get; set; }
+    public DateTime EndsAt { get; set; }
+    public bool IsActive { get; set; }
+    public DateTime? RevokedAt { get; set; }
 }
-
-// 1 truyện đã mua trong thư viện (DTOs/Library)
+public class SubscriptionSummaryDto
+{
+    public List<SubscriptionDto> History { get; set; } = new();
+}
 public class LibraryItemDto
 {
     public int StoryId { get; set; }
     public string Title { get; set; } = string.Empty;
-    public decimal? Amount { get; set; }
-    public DateTime PurchasedAt { get; set; }
+    public DateTime GrantedAt { get; set; }
+    public DateTime? ExpiresAt { get; set; }
+}
+public class UserLibraryDto
+{
+    public List<LibraryItemDto> PurchasedStories { get; set; } = new();
+    public SubscriptionSummaryDto Subscriptions { get; set; } = new();
 }
