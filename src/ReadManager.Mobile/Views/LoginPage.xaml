@@ -53,6 +53,9 @@
                 </VerticalStackLayout>
             </Border>
 
+            <Button Text="⚙ Địa chỉ máy chủ" Style="{StaticResource BtnLink}"
+                    Command="{Binding OpenServerSettingsCommand}" HorizontalOptions="Center" />
+
             <Button Text="← Về trang chủ" Style="{StaticResource BtnLink}"
                     Command="{Binding GoHomeCommand}" HorizontalOptions="Center" />
 

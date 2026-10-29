@@ -198,6 +198,9 @@ public partial class AccountViewModel : BaseViewModel
     private async Task GoToFollowedAsync() => await Shell.Current.GoToAsync(nameof(Views.FollowedStoriesPage));
 
     [RelayCommand]
+    private Task OpenServerSettingsAsync() => ServerSettings.PromptAsync();
+
+    [RelayCommand]
     private async Task GoToLoginAsync() => await Shell.Current.GoToAsync("//LoginPage");
 
     [RelayCommand]

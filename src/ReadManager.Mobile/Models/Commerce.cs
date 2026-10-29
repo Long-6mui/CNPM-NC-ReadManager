@@ -135,6 +135,8 @@ public class PlanEntitlement
     public DateTime ExpiresAt { get; set; }   // giờ máy
 
     public string ExpiresText => $"Còn hạn đến {ExpiresAt:dd/MM/yyyy}";
+    public int DaysLeft => Math.Max(0, (int)Math.Ceiling((ExpiresAt - DateTime.Now).TotalDays));
+    public bool IsExpiringSoon => DaysLeft <= 7;
     public string RemainingText
     {
         get

@@ -61,6 +61,9 @@ public partial class LoginViewModel : BaseViewModel
         await Shell.Current.GoToAsync(nameof(Views.RegisterPage));
     }
 
+    [RelayCommand]
+    private Task OpenServerSettingsAsync() => ServerSettings.PromptAsync();
+
     // Quay về Trang chủ (đăng nhập là tuỳ chọn, giống web)
     [RelayCommand]
     private async Task GoHomeAsync()

@@ -23,6 +23,14 @@
             <Label Text="{Binding ErrorMessage}" TextColor="{StaticResource WebCrimson}"
                    IsVisible="{Binding ErrorMessage, Converter={StaticResource StringToBoolConverter}}" />
 
+            <!-- Nhắc gia hạn khi gói sắp hết hạn -->
+            <Border Padding="14" StrokeThickness="0" BackgroundColor="#FFF4DC" IsVisible="{Binding HasAlert}">
+                <Border.StrokeShape>
+                    <RoundRectangle CornerRadius="8" />
+                </Border.StrokeShape>
+                <Label Text="{Binding AlertMessage}" TextColor="#8A5A00" FontSize="13.5" FontAttributes="Bold" />
+            </Border>
+
             <!-- Gói đang dùng -->
             <Border Style="{StaticResource Panel}" IsVisible="{Binding HasMyPlans}">
                 <VerticalStackLayout Spacing="8">
