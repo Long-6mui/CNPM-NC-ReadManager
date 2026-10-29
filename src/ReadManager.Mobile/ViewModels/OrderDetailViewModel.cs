@@ -66,7 +66,11 @@ public partial class OrderDetailViewModel : BaseViewModel
             if (status is not null)
             {
                 var outcome = await _payment.SimulateAsync(Order.OrderId, status);
-                InfoMessage = outcome.Message;
+                InfoMessage = outcome.EntitlementGranted
+                    ? "Thanh toán thành công — quyền đọc đã được mở."
+                    : outcome.Result == "PaidGrantFailed"
+                        ? "Đã thu tiền nhưng chưa mở được quyền đọc. Vui lòng liên hệ quản trị viên."
+                        : outcome.Message;
             }
 #else
             InfoMessage += " Cổng thanh toán trực tuyến chưa được tích hợp.";
