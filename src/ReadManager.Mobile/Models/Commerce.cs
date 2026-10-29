@@ -126,7 +126,7 @@ public class Order
     };
 }
 
-// ===================== THƯ VIỆN ĐÃ MUA (suy ra từ các đơn đã thanh toán) =====================
+// ===================== THƯ VIỆN ĐÃ MUA (quyền thực tế do API cung cấp) =====================
 
 public class PlanEntitlement
 {
@@ -150,11 +150,9 @@ public class OwnedStory
     public int StoryId { get; set; }
     public string Title { get; set; } = string.Empty;
     public DateTime PurchasedAt { get; set; }   // giờ máy
-    public decimal Amount { get; set; }
+    public decimal? Amount { get; set; }
 
-    public string PurchasedText => Amount > 0
-        ? $"Mua ngày {PurchasedAt:dd/MM/yyyy} · {Fmt.Money(Amount)}"
-        : $"Mua ngày {PurchasedAt:dd/MM/yyyy}";
+    public string PurchasedText => $"Được cấp quyền ngày {PurchasedAt:dd/MM/yyyy}" + (Amount.HasValue ? $" · {Fmt.Money(Amount.Value)}" : "");
 }
 
 public class PurchaseSummary

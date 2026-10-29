@@ -41,7 +41,7 @@ public partial class OrderDetailViewModel : BaseViewModel
         });
     }
 
-    // "Thanh toán": gọi API của Backend 4 (xem IPaymentService).
+    // "Thanh toán": chờ API của Backend 4 (xem IPaymentService). IsAvailable = true thì gọi API thật.
     [RelayCommand]
     private async Task PayAsync()
     {
@@ -57,45 +57,25 @@ public partial class OrderDetailViewModel : BaseViewModel
         {
             var start = await _payment.StartAsync(Order.OrderId);
 
-            // Cổng thanh toán dạng trang web: mở trình duyệt, trả tiền xong quay lại app (trang tự tải lại)
-            if (start.HasPayUrl)
+            InfoMessage = $"Đã tạo giao dịch #{start.PaymentId}, số tiền {start.Amount:N0} {start.Currency}. Đơn chưa được thanh toán.";
+#if DEBUG
+            // API cũng kiểm tra môi trường Development; bản Release không có nút mô phỏng.
+            var choice = await Shell.Current.DisplayActionSheet("Thanh toán thử — không thu tiền thật", "Để sau", null,
+                "Thử thành công", "Thử thất bại", "Thử hủy");
+            var status = choice switch { "Thử thành công" => "Success", "Thử thất bại" => "Failed", "Thử hủy" => "Cancelled", _ => null };
+            if (status is not null)
             {
-                await Browser.Default.OpenAsync(new Uri(start.PayUrl!), BrowserLaunchMode.SystemPreferred);
-                InfoMessage = "Sau khi thanh toán xong, hãy quay lại ứng dụng. Trạng thái đơn sẽ tự cập nhật.";
-                return;
+                var outcome = await _payment.SimulateAsync(Order.OrderId, status);
+                InfoMessage = outcome.EntitlementGranted
+                    ? "Thanh toán thành công — quyền đọc đã được mở."
+                    : outcome.Result == "PaidGrantFailed"
+                        ? "Đã thu tiền nhưng chưa mở được quyền đọc. Vui lòng liên hệ quản trị viên."
+                        : outcome.Message;
             }
-
-            // Chưa có cổng thật: khi API chạy Development cho "thanh toán thử" bằng cổng giả lập của server
-            if (_payment.CanSimulate)
-            {
-                var pick = await Shell.Current.DisplayActionSheet(
-                    "Thanh toán thử (cổng giả lập)", "Hủy", null,
-                    "✔ Thanh toán thành công", "✖ Thanh toán thất bại", "⏹ Hủy thanh toán");
-
-                var status = pick switch
-                {
-                    "✔ Thanh toán thành công" => "Success",
-                    "✖ Thanh toán thất bại" => "Failed",
-                    "⏹ Hủy thanh toán" => "Cancelled",
-                    _ => null
-                };
-
-                if (status is not null)
-                {
-                    var result = await _payment.SimulateAsync(Order.OrderId, status);
-                    Order = await _orders.GetOrderAsync(Order.OrderId);   // server quyết định kết quả; app chỉ tải lại để hiển thị
-                    InfoMessage = result.EntitlementGranted
-                        ? "Thanh toán thành công — quyền đọc đã được mở."
-                        : result.Result == "PaidGrantFailed"
-                            ? "Đã thu tiền nhưng chưa mở được quyền đọc. Quản trị viên sẽ xử lý, vui lòng liên hệ hỗ trợ."
-                            : (string.IsNullOrWhiteSpace(result.Message) ? $"Kết quả: {result.Result}" : result.Message);
-                    return;
-                }
-            }
-
-            // Server quyết định kết quả; app chỉ tải lại đơn để hiển thị
+#else
+            InfoMessage += " Cổng thanh toán trực tuyến chưa được tích hợp.";
+#endif
             Order = await _orders.GetOrderAsync(Order.OrderId);
-            if (!string.IsNullOrWhiteSpace(start.Message)) InfoMessage = start.Message!;
         });
     }
 

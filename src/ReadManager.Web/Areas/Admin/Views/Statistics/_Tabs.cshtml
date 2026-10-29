@@ -1,0 +1,7 @@
+@model ReadManager.Web.ViewModels.StatsFilter
+@{ var tab = ViewBag.Tab as string ?? ""; }
+<nav class="st-tabs" aria-label="Loại thống kê">
+    <a class="@(tab == "activity" ? "active" : "")" asp-action="Activity" asp-route-from="@Model.FromText" asp-route-to="@Model.ToText" aria-current="@(tab == "activity" ? "page" : null)">Hoạt động</a>
+    <a class="@(tab == "revenue" ? "active" : "")" asp-action="Revenue" asp-route-from="@Model.FromText" asp-route-to="@Model.ToText" aria-current="@(tab == "revenue" ? "page" : null)">Doanh thu</a>
+    <a class="@(tab == "content" ? "active" : "")" asp-action="Content" asp-route-from="@Model.FromText" asp-route-to="@Model.ToText" aria-current="@(tab == "content" ? "page" : null)">Nội dung</a>
+</nav>

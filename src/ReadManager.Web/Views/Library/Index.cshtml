@@ -19,7 +19,11 @@
 
     @if (Model.Tab == "reading")
     {
-        @if (Model.Reading.Count == 0)
+        @if (Model.ReadingError is not null)
+        {
+            <div class="banner banner-warn" role="alert">@Model.ReadingError</div>
+        }
+        else if (Model.Reading.Count == 0)
         {
             <div class="empty-state"><h3>Bạn chưa đọc truyện nào</h3><p>Mở một chương bất kỳ, hệ thống sẽ nhớ chương bạn đọc gần nhất để đọc tiếp.</p>
                 <a class="btn btn-brass" asp-controller="Stories" asp-action="Browse">Khám phá truyện</a></div>
@@ -30,13 +34,13 @@
             @foreach (var p in Model.Reading)
             {
                 <li class="lib-row">
-                    <div class="lib-cover"><span>@p.StoryTitle.Trim()[0]</span></div>
+                    <div class="lib-cover"><span>@(string.IsNullOrWhiteSpace(p.Title) ? "?" : p.Title.Trim()[0].ToString())</span></div>
                     <div class="lib-info">
-                        <a class="lib-title" asp-controller="Stories" asp-action="Details" asp-route-id="@p.StoryId">@p.StoryTitle</a>
-                        <div class="lib-sub">Đọc đến Chương @p.ChapterNo@(string.IsNullOrWhiteSpace(p.ChapterTitle) ? "" : $" — {p.ChapterTitle}") · @Ago(p.UpdatedAt)</div>
+                        <a class="lib-title" asp-controller="Stories" asp-action="Details" asp-route-id="@p.StoryId">@p.Title</a>
+                        <div class="lib-sub">Đọc đến Chương @p.ChapterNumber@(string.IsNullOrWhiteSpace(p.ChapterTitle) ? "" : $" — {p.ChapterTitle}") · @p.ScrollPercent.ToString("0")% chương · @Ago(p.LastReadAt)</div>
                     </div>
                     <div class="lib-actions">
-                        <a class="btn btn-brass btn-sm" asp-controller="Stories" asp-action="Read" asp-route-storyId="@p.StoryId" asp-route-no="@p.ChapterNo">Đọc tiếp</a>
+                        <a class="btn btn-brass btn-sm" asp-controller="Stories" asp-action="Read" asp-route-storyId="@p.StoryId" asp-route-no="@p.ChapterNumber">Đọc tiếp</a>
                         <form asp-action="RemoveProgress" method="post" onsubmit="return confirm('Xóa truyện này khỏi danh sách đang đọc?');">
                             <input type="hidden" name="storyId" value="@p.StoryId" />
                             <button class="btn btn-outline btn-sm" type="submit">Xóa</button>
@@ -46,7 +50,7 @@
             }
             </ul>
         }
-        <p class="lib-note"><span class="pl-demo">Dữ liệu mẫu</span> Tiến độ đọc đang lưu tạm trong bộ nhớ Web, sẽ nối API tiến độ (Backend 2) sau.</p>
+        <p class="lib-note">Tiến độ được đồng bộ với ứng dụng Mobile khi dùng cùng tài khoản.</p>
     }
     else
     {

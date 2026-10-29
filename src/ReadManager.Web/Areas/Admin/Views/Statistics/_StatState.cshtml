@@ -1,0 +1,9 @@
+@model ReadManager.Web.Services.StatNotice
+@{
+    var title = Model.Kind switch { "error" => "Không tải được dữ liệu", "unavailable" => "Chưa có API cho mục này", _ => "Chưa có dữ liệu" };
+}
+<div class="st-state st-state-@Model.Kind" role="@(Model.Kind == "error" ? "alert" : "status")">
+    <strong>@title</strong>
+    <p>@Model.Message</p>
+    @if (Model.RetryUrl is not null && Model.Kind != "empty") { <a class="btn btn-outline btn-sm" href="@Model.RetryUrl">Thử lại</a> }
+</div>

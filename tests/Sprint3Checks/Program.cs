@@ -105,7 +105,7 @@ try
     Assert(chapterRead != null && !chapterRead.IsLocked && chapterRead.Content == "Nội dung chương 1 trả phí", "ChapterService: Trả nội dung thật khi người dùng đã có quyền.");
 
     // TEST CA 6: Gói thuê bao (UserSubscription) All -> Đọc được truyện thuộc gói
-    var plan = new ReadingPlan { Name = "Gói VIP", IsAvailable = true, CreatedBy = admin.UserId };
+    var plan = new ReadingPlan { Name = "Gói VIP", IsAvailable = true };
     db.ReadingPlans.Add(plan);
     await db.SaveChangesAsync();
 
