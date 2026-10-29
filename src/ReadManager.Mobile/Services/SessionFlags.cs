@@ -1,4 +1,4 @@
-﻿namespace ReadManager.Mobile.Services;
+namespace ReadManager.Mobile.Services;
 
 // Trạng thái tạm của phiên đăng nhập.
 // API (Backend 2) chặn tài khoản "Restricted" bình luận / báo cáo / theo dõi bằng HTTP 403 nhưng chưa trả trạng thái
