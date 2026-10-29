@@ -6,7 +6,7 @@ using ReadManager.Web.ViewModels;
 
 namespace ReadManager.Web.Controllers;
 
-public class StoriesController(StoriesApiClient api, DemoReadingProgressStore progress, DemoMemberStore members) : Controller
+public class StoriesController(StoriesApiClient api, ReadingProgressApiClient progress, DemoMemberStore members) : Controller
 {
     public async Task<IActionResult> Browse(string? q, int? genre, AccessPolicy? access,
         StoryStatus? status, string sort = "updated", int page = 1)
@@ -51,6 +51,14 @@ public class StoriesController(StoriesApiClient api, DemoReadingProgressStore pr
             var follow = await api.FollowStatusAsync(id, token);
             var uid = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "";
 
+            ReadingPositionApi? savedProgress = null;
+            if (uid != "")
+            {
+                try { savedProgress = await progress.GetAsync(id, token); }
+                catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException or System.Text.Json.JsonException)
+                { TempData["Toast"] = ReadingProgressApiClient.ErrorMessage(ex); }
+            }
+
             // PB21 — báo giá mua truyện: đã sở hữu chưa / có đơn đang chờ không
             var quote = await api.QuoteStoryAsync(id, token);
 
@@ -85,7 +93,7 @@ public class StoriesController(StoriesApiClient api, DemoReadingProgressStore pr
                 CanBuy = quote?.CanBuy ?? false,
                 BuyPrice = quote?.Amount ?? 0,
                 // PB28 — nút "Đọc tiếp" trỏ đến chương đọc gần nhất
-                ContinueChapterNo = uid != "" ? progress.Get(uid, id)?.ChapterNo : null,
+                ContinueChapterNo = savedProgress?.ChapterNumber,
                 FollowerCount = follow?.FollowerCount ?? 0
             });
         }
@@ -131,8 +139,18 @@ public class StoriesController(StoriesApiClient api, DemoReadingProgressStore pr
 
             // PB28 — nhớ chương đọc gần nhất (chỉ khi người đọc đã đăng nhập và thật sự xem được nội dung)
             var readerId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "";
-            if (readerId != "" && !c.IsLocked && !c.IsUpcoming && c.PublicationStatus == "Published")
-                progress.Save(readerId, storyId, c.StoryTitle, c.ChapterNumber, c.Title);
+            vm.SyncProgress = readerId != "" && !c.IsLocked && !c.IsUpcoming && c.PublicationStatus == "Published";
+            if (vm.SyncProgress)
+            {
+                try
+                {
+                    var saved = await progress.GetAsync(storyId, token);
+                    vm.ScrollPercent = saved?.ChapterId == c.ChapterId ? saved.ScrollPercent : 0;
+                    vm.ProgressLoaded = true;
+                }
+                catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException or System.Text.Json.JsonException)
+                { vm.ProgressError = ReadingProgressApiClient.ErrorMessage(ex); }
+            }
 
             // PB36 — tài khoản đang bị hạn chế thì ẩn ô bình luận và báo lý do
             if (readerId != "" && members.StateOf(readerId) is (MemberState.Restricted, { } restr))

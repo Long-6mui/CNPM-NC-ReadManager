@@ -1,0 +1,91 @@
+@model ReadManager.Web.ViewModels.ContentStatsVm
+@using ReadManager.Web.Services
+@using ReadManager.Web.ViewModels
+@{
+    ViewData["Title"] = "Thống kê nội dung";
+    ViewBag.Tab = "content";
+    ViewBag.Sort = Model.Sort;
+    var retry = Context.Request.Path + Context.Request.QueryString;
+    string W(int v, int max) => (max <= 0 ? 0 : Math.Min(100, v * 100.0 / max)).ToString("0.#", System.Globalization.CultureInfo.InvariantCulture);
+}
+<link rel="stylesheet" href="~/css/plans.css" asp-append-version="true" />
+<link rel="stylesheet" href="~/css/statistics.css" asp-append-version="true" />
+<div class="container section">
+    <div class="section-head"><h2>Trang quản trị</h2></div>
+    <div class="admin-shell">
+        <partial name="_AdminNav" />
+        <div class="st-main">
+            <h3>Thống kê</h3>
+            <partial name="_Tabs" model="Model.Filter" />
+            <partial name="_Filter" model="Model.Filter" />
+
+            @if (!Model.Overview.Ok) { <partial name="_StatState" model="Model.Overview.Notice(retry)" /> }
+            else
+            {
+                var o = Model.Overview.Data!;
+                if (o.Reads + o.NewFollows + o.Purchases + o.Comments == 0)
+                {
+                    <partial name="_StatState" model='new StatNotice("empty", "Chưa có lượt đọc, theo dõi, mua hay bình luận nào trong khoảng thời gian này.", null)' />
+                }
+                <div class="st-kpis">
+                    <partial name="_Kpi" model='new KpiVm("Lượt đọc chương", o.Reads.ToString("N0"), $"{o.UniqueReaders:N0} độc giả khác nhau")' />
+                    <partial name="_Kpi" model='new KpiVm("Theo dõi mới", o.NewFollows.ToString("N0"))' />
+                    <partial name="_Kpi" model='new KpiVm("Lượt mua truyện", o.Purchases.ToString("N0"))' />
+                    <partial name="_Kpi" model='new KpiVm("Bình luận", o.Comments.ToString("N0"))' />
+                </div>
+            }
+
+            @if (Model.Daily.Ok && Model.Daily.Data!.Count > 0)
+            {
+                var d = Model.Daily.Data!; var labels = d.Select(x => x.Date.ToString("dd/MM")).ToList();
+                <section class="st-card"><h4>Lượt đọc theo ngày</h4>
+                    @SvgCharts.Columns("Lượt đọc chương theo ngày", labels, new ChartSeries("Lượt đọc", d.Select(x => (double)x.Reads).ToList()))</section>
+                <section class="st-card"><h4>Theo dõi, mua và bình luận theo ngày</h4>
+                    @SvgCharts.Line("Theo dõi, mua và bình luận theo ngày", labels, [new ChartSeries("Theo dõi mới", d.Select(x => (double)x.NewFollows).ToList()), new ChartSeries("Lượt mua", d.Select(x => (double)x.Purchases).ToList()), new ChartSeries("Bình luận", d.Select(x => (double)x.Comments).ToList())])</section>
+            }
+            else if (!Model.Daily.Ok) { <partial name="_StatState" model="Model.Daily.Notice(retry)" /> }
+
+            <section class="st-card"><h4>Xếp hạng truyện được quan tâm</h4>
+                <div class="pillbar" role="group" aria-label="Sắp xếp theo">
+                    @foreach (var (key, label) in new[] { ("interest", "Điểm quan tâm"), ("reads", "Lượt đọc"), ("follows", "Theo dõi"), ("purchases", "Lượt mua"), ("comments", "Bình luận") })
+                    {
+                        <a class="pill @(Model.Sort == key ? "active" : "")" asp-action="Content" asp-route-from="@Model.Filter.FromText" asp-route-to="@Model.Filter.ToText" asp-route-sort="@key">@label</a>
+                    }
+                </div>
+                @if (!Model.Stories.Ok) { <partial name="_StatState" model="Model.Stories.Notice(retry)" /> }
+                else if (Model.Stories.Data!.Count == 0) { <partial name="_StatState" model='new StatNotice("empty", "Chưa có truyện nào có số liệu trong khoảng này.", null)' /> }
+                else
+                {
+                    var list = Model.Stories.Data!; var maxScore = list.Max(x => x.InterestScore);
+                    <div class="st-scroll"><table class="pl-table"><thead><tr><th>#</th><th>Truyện</th><th>Đọc</th><th>Độc giả</th><th>Theo dõi mới</th><th>Mua</th><th>Bình luận</th><th>Điểm</th><th></th></tr></thead><tbody>
+                    @for (var i = 0; i < list.Count; i++)
+                    {
+                        var s = list[i];
+                        <tr><td>@(i + 1)</td><td>@s.Title @if (s.Visibility != "Public") { <span class="mem-tag">@s.Visibility</span> }</td>
+                            <td>@s.Reads.ToString("N0")</td><td>@s.UniqueReaders.ToString("N0")</td><td>@s.NewFollows</td><td>@s.Purchases</td><td>@s.Comments</td>
+                            <td><span class="st-bar" aria-hidden="true"><i style="width:@W(s.InterestScore, maxScore)%"></i></span>@s.InterestScore.ToString("N0")</td>
+                            <td><a class="btn btn-outline btn-sm" asp-action="Chapters" asp-route-storyId="@s.StoryId" asp-route-title="@s.Title" asp-route-from="@Model.Filter.FromText" asp-route-to="@Model.Filter.ToText">Xem chương</a></td></tr>
+                    }
+                    </tbody></table></div>
+                    <p class="st-note">Điểm quan tâm = đọc × 1 + theo dõi mới × 5 + bình luận × 3 + lượt mua × 10.</p>
+                }
+            </section>
+
+            <section class="st-card"><h4>Theo thể loại</h4>
+                @if (!Model.Genres.Ok) { <partial name="_StatState" model="Model.Genres.Notice(retry)" /> }
+                else if (Model.Genres.Data!.Count == 0) { <partial name="_StatState" model='new StatNotice("empty", "Chưa có thể loại nào có số liệu.", null)' /> }
+                else
+                {
+                    var g = Model.Genres.Data!.OrderByDescending(x => x.InterestScore).ToList(); var maxG = g.Max(x => x.InterestScore);
+                    <div class="st-scroll"><table class="pl-table"><thead><tr><th>Thể loại</th><th>Số truyện</th><th>Đọc</th><th>Theo dõi mới</th><th>Mua</th><th>Bình luận</th><th>Điểm</th></tr></thead><tbody>
+                    @foreach (var x in g)
+                    {
+                        <tr><td>@x.Name</td><td>@x.StoryCount</td><td>@x.Reads.ToString("N0")</td><td>@x.NewFollows</td><td>@x.Purchases</td><td>@x.Comments</td>
+                            <td><span class="st-bar" aria-hidden="true"><i style="width:@W(x.InterestScore, maxG)%"></i></span>@x.InterestScore.ToString("N0")</td></tr>
+                    }
+                    </tbody></table></div>
+                }
+            </section>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,26 @@
+@model ReadManager.Web.Services.PaymentStartApi
+@inject Microsoft.AspNetCore.Hosting.IWebHostEnvironment Environment
+@{ ViewData["Title"] = "Thanh toán"; }
+<div class="container section" style="max-width:720px;">
+    <h1>Thanh toán đơn #@Model.OrderId</h1>
+    <p>Số tiền: <strong>@Model.Amount.ToString("N0") @Model.Currency</strong></p>
+    <p>Mã lượt thanh toán: @Model.PaymentId</p>
+    @if (Environment.IsDevelopment())
+    {
+        <div class="panel">
+            <h2>Thanh toán thử nghiệm</h2>
+            <p>Không thu tiền thật. Kết quả thử đi qua API và có thể cấp quyền đọc vào cơ sở dữ liệu đang chạy.</p>
+            <form asp-action="SimulatePayment" method="post">
+                <input type="hidden" name="id" value="@Model.OrderId" />
+                <button name="status" value="Success" class="btn btn-brass">Thử thành công</button>
+                <button name="status" value="Failed" class="btn btn-outline">Thử thất bại</button>
+                <button name="status" value="Cancelled" class="btn btn-outline">Thử hủy</button>
+            </form>
+        </div>
+    }
+    else
+    {
+        <p>Đã tạo yêu cầu thanh toán. Hiện chưa có cổng thanh toán trực tuyến khả dụng. Đơn chưa được thanh toán.</p>
+    }
+    <a asp-action="Details" asp-route-id="@Model.OrderId">Quay lại đơn / cập nhật trạng thái</a>
+</div>
