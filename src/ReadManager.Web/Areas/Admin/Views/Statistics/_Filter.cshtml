@@ -1,0 +1,26 @@
+@model ReadManager.Web.ViewModels.StatsFilter
+@{
+    var action = (string)ViewContext.RouteData.Values["action"]!;
+    var sort = ViewBag.Sort as string;
+    var storyId = ViewBag.StoryId as int?;
+    var title = ViewBag.StoryTitle as string;
+    var today = ReadManager.Web.ViewModels.StatsFilter.TodayVn.ToString("yyyy-MM-dd");
+}
+<div class="st-filter">
+    <div class="pillbar" role="group" aria-label="Khoảng thời gian nhanh">
+        @foreach (var (key, label) in new[] { ("7", "7 ngày"), ("30", "30 ngày"), ("90", "90 ngày"), ("month", "Tháng này") })
+        {
+            <a class="pill @(Model.Preset == key ? "active" : "")" asp-action="@action" asp-route-preset="@key" asp-route-sort="@sort" asp-route-storyId="@storyId" asp-route-title="@title">@label</a>
+        }
+    </div>
+    <form method="get" asp-action="@action" class="st-range">
+        <label>Từ ngày<input type="date" name="from" value="@Model.FromText" max="@today" required /></label>
+        <label>Đến ngày<input type="date" name="to" value="@Model.ToText" max="@today" required /></label>
+        @if (sort is not null) { <input type="hidden" name="sort" value="@sort" /> }
+        @if (storyId is not null) { <input type="hidden" name="storyId" value="@storyId" /><input type="hidden" name="title" value="@title" /> }
+        <button class="btn btn-brass btn-sm" type="submit">Áp dụng</button>
+    </form>
+    @if (Model.Error is not null) { <div class="banner banner-warn" role="alert">@Model.Error Đang hiển thị 30 ngày gần nhất.</div> }
+    @if (Model.Note is not null) { <div class="banner banner-info" role="status">@Model.Note</div> }
+    <p class="st-period">Đang xem: <b>@Model.Label</b> (giờ Việt Nam)</p>
+</div>

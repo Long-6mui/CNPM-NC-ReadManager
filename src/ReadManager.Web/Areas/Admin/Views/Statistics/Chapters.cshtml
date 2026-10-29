@@ -1,0 +1,36 @@
+@model ReadManager.Web.ViewModels.ChapterStatsVm
+@using ReadManager.Web.Services
+@{
+    ViewData["Title"] = "Thống kê chương";
+    ViewBag.Tab = "content";
+    ViewBag.StoryId = Model.StoryId;
+    ViewBag.StoryTitle = Model.StoryTitle;
+    var retry = Context.Request.Path + Context.Request.QueryString;
+    string W(int v, int max) => (max <= 0 ? 0 : Math.Min(100, v * 100.0 / max)).ToString("0.#", System.Globalization.CultureInfo.InvariantCulture);
+}
+<link rel="stylesheet" href="~/css/plans.css" asp-append-version="true" />
+<link rel="stylesheet" href="~/css/statistics.css" asp-append-version="true" />
+<div class="container section">
+    <div class="section-head"><h2>Trang quản trị</h2></div>
+    <div class="admin-shell">
+        <partial name="_AdminNav" />
+        <div class="st-main">
+            <p><a asp-action="Content" asp-route-from="@Model.Filter.FromText" asp-route-to="@Model.Filter.ToText">← Thống kê nội dung</a></p>
+            <h3>Chương của “@(Model.StoryTitle ?? $"truyện #{Model.StoryId}")”</h3>
+            <partial name="_Filter" model="Model.Filter" />
+            @if (!Model.Chapters.Ok) { <partial name="_StatState" model="Model.Chapters.Notice(retry)" /> }
+            else if (Model.Chapters.Data!.Count == 0) { <partial name="_StatState" model='new StatNotice("empty", "Truyện này chưa có chương nào.", null)' /> }
+            else
+            {
+                var list = Model.Chapters.Data!; var max = list.Max(x => x.Reads);
+                <div class="st-scroll"><table class="pl-table"><thead><tr><th>Chương</th><th>Quyền đọc</th><th>Lượt đọc</th><th>Độc giả</th><th>Bình luận</th></tr></thead><tbody>
+                @foreach (var c in list)
+                {
+                    <tr><td>Chương @c.ChapterNumber@(string.IsNullOrWhiteSpace(c.Title) ? "" : " — " + c.Title)</td><td>@(c.AccessLevel == "Paid" ? "Trả phí" : "Miễn phí")</td>
+                        <td><span class="st-bar" aria-hidden="true"><i style="width:@W(c.Reads, max)%"></i></span>@c.Reads.ToString("N0")</td><td>@c.UniqueReaders.ToString("N0")</td><td>@c.Comments</td></tr>
+                }
+                </tbody></table></div>
+            }
+        </div>
+    </div>
+</div>

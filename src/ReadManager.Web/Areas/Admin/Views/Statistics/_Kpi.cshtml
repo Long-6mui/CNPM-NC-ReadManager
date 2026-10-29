@@ -1,0 +1,6 @@
+@model ReadManager.Web.ViewModels.KpiVm
+<div class="st-kpi">
+    <span class="st-kpi-label">@Model.Label</span>
+    <b class="st-kpi-value">@Model.Value</b>
+    @if (Model.Sub is not null) { <span class="st-kpi-sub @Model.Tone">@Model.Sub</span> }
+</div>
