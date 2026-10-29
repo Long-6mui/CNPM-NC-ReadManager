@@ -9,7 +9,7 @@ public interface ILibraryService
     IReadOnlyList<LibraryEntry> GetFavorites();
 
     void AddToHistory(StoryDetail story);                                            // mở chi tiết truyện -> ghi lịch sử
-    void RecordChapter(int storyId, int chapterId, int chapterNumber, string title); // đọc chương -> nhớ chương đang đọc
+    void RecordChapter(int storyId, int chapterId, int chapterNumber, string title, decimal scrollPercent = 0); // đọc chương -> nhớ chương đang đọc
     void RemoveFromHistory(int storyId);
     void ClearHistory();
 

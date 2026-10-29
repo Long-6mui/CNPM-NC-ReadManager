@@ -1,0 +1,98 @@
+@model ReadManager.Web.ViewModels.ActivityStatsVm
+@using ReadManager.Web.Services
+@using ReadManager.Web.ViewModels
+@{
+    ViewData["Title"] = "Thống kê hoạt động";
+    ViewBag.Tab = "activity";
+    var retry = Context.Request.Path + Context.Request.QueryString;
+    string Pct(double v) => v.ToString("0.#");
+    (string, string) Growth(double p) => p > 0 ? ($"▲ {Pct(p)}% so với kỳ trước", "up") : p < 0 ? ($"▼ {Pct(Math.Abs(p))}% so với kỳ trước", "down") : ("— không đổi so với kỳ trước", "");
+    string StatusName(string s) => s switch { "Paid" => "Đã thanh toán", "Pending" => "Chờ thanh toán", "Failed" => "Thất bại", "Cancelled" => "Đã hủy", "Expired" => "Hết hạn", _ => s };
+}
+<link rel="stylesheet" href="~/css/plans.css" asp-append-version="true" />
+<link rel="stylesheet" href="~/css/statistics.css" asp-append-version="true" />
+<div class="container section">
+    <div class="section-head"><h2>Trang quản trị</h2></div>
+    <div class="admin-shell">
+        <partial name="_AdminNav" />
+        <div class="st-main">
+            <h3>Thống kê</h3>
+            <partial name="_Tabs" model="Model.Filter" />
+            <partial name="_Filter" model="Model.Filter" />
+
+            @if (!Model.Overview.Ok) { <partial name="_StatState" model="Model.Overview.Notice(retry)" /> }
+            else
+            {
+                var o = Model.Overview.Data!;
+                if (o.NewMembers + o.ActiveReaders + o.NewSubscriptions + o.Renewals + o.StoryPurchases + o.TotalOrders == 0)
+                {
+                    <partial name="_StatState" model='new StatNotice("empty", "Chưa có hoạt động nào trong khoảng thời gian này. Hãy chọn khoảng dài hơn.", null)' />
+                }
+                var (gm, tm) = Growth(o.NewMembersGrowthPercent); var (gr, tr) = Growth(o.ActiveReadersGrowthPercent);
+                var (gs, ts) = Growth(o.SubscriptionsGrowthPercent); var (gp, tp) = Growth(o.StoryPurchasesGrowthPercent);
+                <div class="st-kpis">
+                    <partial name="_Kpi" model='new KpiVm("Thành viên mới", o.NewMembers.ToString("N0"), gm, tm)' />
+                    <partial name="_Kpi" model='new KpiVm("Độc giả hoạt động", o.ActiveReaders.ToString("N0"), gr, tr)' />
+                    <partial name="_Kpi" model='new KpiVm("Đăng ký gói mới", o.NewSubscriptions.ToString("N0"), gs, ts)' />
+                    <partial name="_Kpi" model='new KpiVm("Gia hạn gói", o.Renewals.ToString("N0"), $"Tỷ lệ gia hạn {Pct(o.RenewalRate)}%")' />
+                    <partial name="_Kpi" model='new KpiVm("Lượt mua truyện", o.StoryPurchases.ToString("N0"), gp, tp)' />
+                    <partial name="_Kpi" model='new KpiVm("Giao dịch thành công", Pct(o.SuccessRate) + "%", $"{o.PaidOrders:N0}/{o.TotalOrders:N0} đơn")' />
+                    <partial name="_Kpi" model='new KpiVm("Tổng thành viên", o.TotalMembers.ToString("N0"), $"{o.LockedAccounts:N0} tài khoản bị khóa")' />
+                    <partial name="_Kpi" model='new KpiVm("Thuê bao đang dùng", o.ActiveSubscribers.ToString("N0"), $"{o.ExpiringSoonSubscriptions:N0} sắp hết hạn trong 7 ngày")' />
+                </div>
+
+                @if (Model.Daily.Ok && Model.Daily.Data!.Count > 0)
+                {
+                    var d = Model.Daily.Data!; var labels = d.Select(x => x.Date.ToString("dd/MM")).ToList();
+                    <section class="st-card"><h4>Thành viên mới và độc giả hoạt động theo ngày</h4>
+                        @SvgCharts.Line("Thành viên mới và độc giả hoạt động theo ngày", labels, [new ChartSeries("Thành viên mới", d.Select(x => (double)x.NewMembers).ToList()), new ChartSeries("Độc giả hoạt động", d.Select(x => (double)x.ActiveReaders).ToList())])</section>
+                    <section class="st-card"><h4>Đăng ký gói, gia hạn và mua truyện theo ngày</h4>
+                        @SvgCharts.Line("Đăng ký gói, gia hạn và mua truyện theo ngày", labels, [new ChartSeries("Đăng ký mới", d.Select(x => (double)x.NewSubscriptions).ToList()), new ChartSeries("Gia hạn", d.Select(x => (double)x.Renewals).ToList()), new ChartSeries("Mua truyện", d.Select(x => (double)x.StoryPurchases).ToList())])</section>
+                    <section class="st-card"><h4>Trạng thái giao dịch theo ngày</h4>
+                        @SvgCharts.Line("Trạng thái giao dịch theo ngày", labels, [new ChartSeries("Thành công", d.Select(x => (double)x.PaidOrders).ToList()), new ChartSeries("Chờ thanh toán", d.Select(x => (double)x.PendingOrders).ToList()), new ChartSeries("Thất bại", d.Select(x => (double)x.FailedOrders).ToList())])</section>
+                }
+                else if (!Model.Daily.Ok) { <partial name="_StatState" model="Model.Daily.Notice(retry)" /> }
+
+                <section class="st-card"><h4>Trạng thái giao dịch</h4>
+                    @if (o.TransactionsByStatus.Count == 0) { <partial name="_StatState" model='new StatNotice("empty", "Chưa có giao dịch trong khoảng này.", null)' /> }
+                    else
+                    {
+                        <div class="st-scroll"><table class="pl-table"><thead><tr><th>Trạng thái</th><th>Số đơn</th><th>Tỷ lệ</th><th>Giá trị</th></tr></thead><tbody>
+                        @foreach (var t in o.TransactionsByStatus)
+                        {
+                            <tr><td>@StatusName(t.Status)</td><td>@t.OrderCount.ToString("N0")</td>
+                                <td><span class="st-bar" aria-hidden="true"><i style="width:@(Math.Min(100, t.Percentage).ToString("0.#", System.Globalization.CultureInfo.InvariantCulture))%"></i></span>@Pct(t.Percentage)%</td>
+                                <td>@t.TotalAmount.ToString("N0")đ</td></tr>
+                        }
+                        </tbody></table></div>
+                    }
+                </section>
+
+                <section class="st-card"><h4>Đăng ký và gia hạn theo từng gói</h4>
+                    @if (o.Plans.Count == 0) { <partial name="_StatState" model='new StatNotice("empty", "Chưa có dữ liệu gói đọc.", null)' /> }
+                    else
+                    {
+                        <div class="st-scroll"><table class="pl-table"><thead><tr><th>Gói</th><th>Đăng ký mới</th><th>Gia hạn</th><th>Đang dùng</th><th>Sắp hết hạn</th><th>Đã hết hạn</th><th>Tỷ lệ gia hạn</th></tr></thead><tbody>
+                        @foreach (var p in o.Plans)
+                        {
+                            <tr><td>@p.PlanName @if (!p.IsAvailable) { <span class="mem-tag">ngừng bán</span> }</td><td>@p.NewSubscriptions</td><td>@p.Renewals</td><td>@p.ActiveSubscribers</td><td>@p.ExpiringSoonCount</td><td>@p.ExpiredCount</td><td>@Pct(p.RenewalRate)%</td></tr>
+                        }
+                        </tbody></table></div>
+                    }
+                </section>
+
+                @if (o.TopReaders.Count > 0)
+                {
+                    <section class="st-card"><h4>Độc giả tích cực nhất</h4>
+                        <div class="st-scroll"><table class="pl-table"><thead><tr><th>#</th><th>Độc giả</th><th>Hạng</th><th>Chương đã đọc</th><th>Bình luận</th><th>Đơn đã mua</th><th>Điểm</th></tr></thead><tbody>
+                        @foreach (var r in o.TopReaders.Take(5))
+                        {
+                            <tr><td>@r.Rank</td><td>@r.DisplayName</td><td>@r.MemberTier</td><td>@r.ChaptersRead</td><td>@r.CommentsPosted</td><td>@r.PaidOrdersCount</td><td>@r.ActivityScore</td></tr>
+                        }
+                        </tbody></table></div>
+                    </section>
+                }
+            }
+        </div>
+    </div>
+</div>

@@ -103,12 +103,12 @@ public partial class LibraryViewModel : BaseViewModel
     private async Task RemoveAsync(LibraryEntry? entry)
     {
         if (entry is null) return;
-        if (IsTab3)
+        await RunSafeAsync(async () =>
         {
-            await RunSafeAsync(() => _progress.RemoveAsync(entry.StoryId));   // xóa cả trên server (Backend 2)
-        }
-        else if (IsTab0) _library.RemoveFromHistory(entry.StoryId);
-        else _library.RemoveFavorite(entry.StoryId);
+            if (IsTab3) await _progress.RemoveAsync(entry.StoryId);
+            else if (IsTab0) _library.RemoveFromHistory(entry.StoryId);
+            else _library.RemoveFavorite(entry.StoryId);
+        });
         await ShowAsync();
     }
 
