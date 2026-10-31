@@ -7,7 +7,7 @@ public class StatsFilter
 {
     public DateOnly From { get; set; }
     public DateOnly To { get; set; }
-    public string? Preset { get; set; }          // 7 | 30 | 90 | month
+    public string? Preset { get; set; }          // today | 7 | 30 | 90 | month
     public string? Error { get; set; }           // nhập sai khoảng ngày → đã quay về mặc định
     public string? Note { get; set; }            // ví dụ: ngày kết thúc bị đưa về hôm nay
     public string FromText => From.ToString("yyyy-MM-dd");
@@ -27,6 +27,7 @@ public class StatsFilter
 
         switch (preset)
         {
+            case "today": return Make(today, today, "today");
             case "7": return Make(today.AddDays(-6), today, "7");
             case "30": return def;
             case "90": return Make(today.AddDays(-89), today, "90");
@@ -53,10 +54,49 @@ public class ActivityStatsVm
     public StatResult<List<ActivityDailyApi>> Daily { get; set; } = null!;
 }
 
+// PB38 + PB39 — bộ lọc riêng của tab Doanh thu (loại / gói / truyện / cách gom biểu đồ), đi kèm StatsFilter (khoảng ngày)
+public class RevenueFilter
+{
+    public string Type { get; set; } = "all";          // all | plan | story
+    public int? PlanVersionId { get; set; }
+    public int? StoryId { get; set; }
+    public string GroupBy { get; set; } = "day";       // day | week | month
+    public string? Note { get; set; }
+
+    public RevenueQuery ToQuery(StatsFilter f) => new(f.From, f.To, Type, PlanVersionId, StoryId, GroupBy);
+
+    // Đọc tham số từ query string, giá trị sai thì về mặc định. Chọn cụ thể 1 gói / 1 truyện thì loại tự khớp theo.
+    public static RevenueFilter Resolve(string? type, int? planVersionId, int? storyId, string? groupBy)
+    {
+        var r = new RevenueFilter
+        {
+            Type = (type is "plan" or "story") ? type : "all",
+            GroupBy = (groupBy is "week" or "month") ? groupBy : "day",
+            PlanVersionId = planVersionId > 0 ? planVersionId : null,
+            StoryId = storyId > 0 ? storyId : null
+        };
+        if (r.PlanVersionId is not null && r.StoryId is not null)
+        {
+            r.StoryId = null;
+            r.Note = "Chỉ lọc được một gói hoặc một truyện mỗi lần. Đang lọc theo gói đã chọn.";
+        }
+        if (r.PlanVersionId is not null) r.Type = "plan";
+        else if (r.StoryId is not null) r.Type = "story";
+        if (r.Type == "plan") r.StoryId = null;
+        if (r.Type == "story") r.PlanVersionId = null;
+        return r;
+    }
+}
+
 public class RevenueStatsVm
 {
     public StatsFilter Filter { get; set; } = null!;
-    public StatResult<RevenueReport> Report { get; set; } = null!;
+    public RevenueFilter Rev { get; set; } = null!;
+    public StatResult<RevenueFilterOptionsApi> Options { get; set; } = null!;
+    public StatResult<RevenueOverviewApi> Overview { get; set; } = null!;
+    public StatResult<List<RevenueBucketApi>> Series { get; set; } = null!;
+    public StatResult<List<PlanRevenueApi>> Plans { get; set; } = null!;
+    public StatResult<List<StoryRevenueApi>> Stories { get; set; } = null!;
 }
 
 public class ContentStatsVm

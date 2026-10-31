@@ -291,6 +291,7 @@ public class AppDbContext : DbContext
             entity.Property(x => x.PaidAt).HasColumnType("datetime(6)");
             entity.HasIndex(x => new { x.UserId, x.CreatedAt });   // lịch sử thanh toán của 1 người
             entity.HasIndex(x => new { x.Status, x.CreatedAt });   // Admin lọc theo trạng thái / quét đơn hết hạn
+            entity.HasIndex(x => new { x.Status, x.PaidAt });      // thống kê doanh thu theo ngày thanh toán (PB38/PB39)
             entity.HasOne(x => x.User).WithMany().HasForeignKey(x => x.UserId).OnDelete(DeleteBehavior.Restrict);
             entity.HasOne(x => x.PlanVersion).WithMany().HasForeignKey(x => x.PlanVersionId).OnDelete(DeleteBehavior.Restrict);
             entity.HasOne(x => x.Story).WithMany().HasForeignKey(x => x.StoryId).OnDelete(DeleteBehavior.Restrict);
