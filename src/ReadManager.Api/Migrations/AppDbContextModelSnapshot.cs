@@ -287,6 +287,8 @@ namespace ReadManager.Api.Migrations
 
                     b.HasIndex("Status", "CreatedAt");
 
+                    b.HasIndex("Status", "PaidAt");
+
                     b.HasIndex("UserId", "CreatedAt");
 
                     b.ToTable("Orders", null, t =>

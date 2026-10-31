@@ -1,5 +1,3 @@
-using System.Globalization;
-using System.Text;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Mvc;
 using ReadManager.Web.Services;
@@ -28,10 +26,26 @@ public class StatisticsController(IWebHostEnvironment environment, StatisticsApi
         return View(new ActivityStatsVm { Filter = f, Overview = overview.Result, Daily = daily.Result });
     }
 
-    public async Task<IActionResult> Revenue(string? from, string? to, string? preset)
+    public async Task<IActionResult> Revenue(string? from, string? to, string? preset, string? type, int? planVersionId, int? storyId, string? groupBy)
     {
-        var f = StatsFilter.Resolve(from, to, preset);
-        return View(new RevenueStatsVm { Filter = f, Report = await api.RevenueAsync(f.From, f.To, await Token()) });
+        var f = StatsFilter.Resolve(from, to, preset); var rf = RevenueFilter.Resolve(type, planVersionId, storyId, groupBy);
+        var token = await Token(); var q = rf.ToQuery(f);
+        var overview = api.RevenueOverviewAsync(q, token);
+        var series = api.RevenueSeriesAsync(q, token);
+        var plans = api.RevenuePlansAsync(q, token);
+        var stories = api.RevenueStoriesAsync(q, 20, token);
+        var options = api.RevenueFiltersAsync(token);
+        await Task.WhenAll(overview, series, plans, stories, options);
+        return View(new RevenueStatsVm
+        {
+            Filter = f,
+            Rev = rf,
+            Options = options.Result,
+            Overview = overview.Result,
+            Series = series.Result,
+            Plans = plans.Result,
+            Stories = stories.Result
+        });
     }
 
     public async Task<IActionResult> Content(string? from, string? to, string? preset, string? sort)
@@ -50,26 +64,25 @@ public class StatisticsController(IWebHostEnvironment environment, StatisticsApi
     public async Task<IActionResult> Chapters(int storyId, string? title, string? from, string? to, string? preset)
     {
         var f = StatsFilter.Resolve(from, to, preset);
-        return View(new ChapterStatsVm { Filter = f, StoryId = storyId, StoryTitle = title,
-            Chapters = await api.ContentChaptersAsync(storyId, f.From, f.To, await Token()) });
+        return View(new ChapterStatsVm
+        {
+            Filter = f,
+            StoryId = storyId,
+            StoryTitle = title,
+            Chapters = await api.ContentChaptersAsync(storyId, f.From, f.To, await Token())
+        });
     }
 
-    // PB38 — xuất báo cáo doanh thu CSV (UTF-8 có BOM để Excel đọc đúng tiếng Việt)
-    public async Task<IActionResult> ExportRevenue(string? from, string? to, string? preset)
+    // PB38 — xuất báo cáo doanh thu CSV: API dựng file (UTF-8 có BOM để Excel đọc đúng tiếng Việt), Web chuyển tiếp cho trình duyệt
+    public async Task<IActionResult> ExportRevenue(string? from, string? to, string? preset, string? type, int? planVersionId, int? storyId, string? groupBy)
     {
-        var f = StatsFilter.Resolve(from, to, preset);
-        var r = await api.RevenueAsync(f.From, f.To, await Token());
-        if (!r.Ok) { TempData["Toast"] = r.Error; return RedirectToAction(nameof(Revenue), new { from = f.FromText, to = f.ToText }); }
-
-        static string Q(string s) => "\"" + s.Replace("\"", "\"\"") + "\"";
-        var sb = new StringBuilder("Mã đơn,Thời gian thanh toán (giờ VN),Loại,Nội dung,Thành viên,Số tiền (đ)\r\n");
-        foreach (var o in r.Data!.Orders)
-            sb.Append(o.OrderId).Append(',')
-              .Append(DateTime.SpecifyKind(o.PaidAt!.Value, DateTimeKind.Utc).AddHours(7).ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture)).Append(',')
-              .Append(o.OrderType == "Plan" ? "Gói đọc" : "Mua truyện").Append(',')
-              .Append(Q(o.ItemName)).Append(',').Append(Q(o.UserName ?? "")).Append(',')
-              .Append(o.Amount.ToString("0", CultureInfo.InvariantCulture)).Append("\r\n");
-        var bytes = Encoding.UTF8.GetPreamble().Concat(Encoding.UTF8.GetBytes(sb.ToString())).ToArray();
-        return File(bytes, "text/csv; charset=utf-8", $"doanh-thu_{f.FromText}_{f.ToText}.csv");
+        var f = StatsFilter.Resolve(from, to, preset); var rf = RevenueFilter.Resolve(type, planVersionId, storyId, groupBy);
+        var r = await api.RevenueCsvAsync(rf.ToQuery(f), await Token());
+        if (!r.Ok)
+        {
+            TempData["Toast"] = r.Error;
+            return RedirectToAction(nameof(Revenue), new { from = f.FromText, to = f.ToText, type = rf.Type, planVersionId = rf.PlanVersionId, storyId = rf.StoryId, groupBy = rf.GroupBy });
+        }
+        return File(r.Data!.Content, "text/csv; charset=utf-8", r.Data.FileName);
     }
 }
