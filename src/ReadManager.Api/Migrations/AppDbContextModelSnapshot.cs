@@ -116,6 +116,21 @@ namespace ReadManager.Api.Migrations
                     b.ToTable("ChapterReads", (string)null);
                 });
 
+            modelBuilder.Entity("ReadManager.Api.Entities.ChapterReward", b =>
+                {
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("ChapterId")
+                        .HasColumnType("int");
+
+                    b.HasKey("UserId", "ChapterId");
+
+                    b.HasIndex("ChapterId");
+
+                    b.ToTable("ChapterRewards");
+                });
+
             modelBuilder.Entity("ReadManager.Api.Entities.Comment", b =>
                 {
                     b.Property<int>("CommentId")
@@ -430,6 +445,36 @@ namespace ReadManager.Api.Migrations
                     b.HasIndex("StoryId");
 
                     b.ToTable("PlanVersionStories", (string)null);
+                });
+
+            modelBuilder.Entity("ReadManager.Api.Entities.ReaderFavorite", b =>
+                {
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("StoryId")
+                        .HasColumnType("int");
+
+                    b.HasKey("UserId", "StoryId");
+
+                    b.HasIndex("StoryId");
+
+                    b.ToTable("ReaderFavorites");
+                });
+
+            modelBuilder.Entity("ReadManager.Api.Entities.ReaderGenre", b =>
+                {
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("GenreId")
+                        .HasColumnType("int");
+
+                    b.HasKey("UserId", "GenreId");
+
+                    b.HasIndex("GenreId");
+
+                    b.ToTable("ReaderGenres");
                 });
 
             modelBuilder.Entity("ReadManager.Api.Entities.ReadingPlan", b =>
@@ -767,6 +812,9 @@ namespace ReadManager.Api.Migrations
                         .HasMaxLength(254)
                         .HasColumnType("varchar(254)");
 
+                    b.Property<bool>("GenrePromptCompleted")
+                        .HasColumnType("tinyint(1)");
+
                     b.Property<string>("PasswordHash")
                         .IsRequired()
                         .HasMaxLength(512)
@@ -874,6 +922,25 @@ namespace ReadManager.Api.Migrations
                     b.Navigation("Chapter");
 
                     b.Navigation("Story");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("ReadManager.Api.Entities.ChapterReward", b =>
+                {
+                    b.HasOne("ReadManager.Api.Entities.Chapter", "Chapter")
+                        .WithMany()
+                        .HasForeignKey("ChapterId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("ReadManager.Api.Entities.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Chapter");
 
                     b.Navigation("User");
                 });
@@ -994,6 +1061,44 @@ namespace ReadManager.Api.Migrations
                     b.Navigation("PlanVersion");
 
                     b.Navigation("Story");
+                });
+
+            modelBuilder.Entity("ReadManager.Api.Entities.ReaderFavorite", b =>
+                {
+                    b.HasOne("ReadManager.Api.Entities.Story", "Story")
+                        .WithMany()
+                        .HasForeignKey("StoryId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("ReadManager.Api.Entities.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Story");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("ReadManager.Api.Entities.ReaderGenre", b =>
+                {
+                    b.HasOne("ReadManager.Api.Entities.Genre", "Genre")
+                        .WithMany()
+                        .HasForeignKey("GenreId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("ReadManager.Api.Entities.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Genre");
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("ReadManager.Api.Entities.ReadingPlanVersion", b =>

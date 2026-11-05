@@ -8,6 +8,9 @@ public class AppDbContext : DbContext
     public AppDbContext(DbContextOptions<AppDbContext> options)
         : base(options) { }
 
+    public DbSet<ReaderFavorite> ReaderFavorites => Set<ReaderFavorite>();
+    public DbSet<ReaderGenre> ReaderGenres => Set<ReaderGenre>();
+    public DbSet<ChapterReward> ChapterRewards => Set<ChapterReward>();
     public DbSet<User> Users => Set<User>();
     public DbSet<Story> Stories => Set<Story>();
     public DbSet<Chapter> Chapters => Set<Chapter>();

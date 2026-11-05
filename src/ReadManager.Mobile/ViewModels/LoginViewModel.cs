@@ -16,9 +16,14 @@ public partial class LoginViewModel : BaseViewModel
     [ObservableProperty]
     private string password = string.Empty;
 
-    public LoginViewModel(IAuthService authService)
+    private readonly ReaderActivityService _reader;
+    private readonly ILibraryService _library;
+
+    public LoginViewModel(IAuthService authService, ReaderActivityService reader, ILibraryService library)
     {
         _authService = authService;
+        _library = library;
+        _reader = reader;
     }
 
     [RelayCommand]
@@ -52,6 +57,9 @@ public partial class LoginViewModel : BaseViewModel
 
             // "//" thay toàn bộ stack để không back lại màn Login.
             await Shell.Current.GoToAsync("//StoryListPage");
+            if (_library.GetFavorites().Count > 0) await _reader.Favorites();
+            if (await _reader.Profile() is { Prompted: false })
+                await Shell.Current.GoToAsync(nameof(Views.ReaderGenresPage));
         });
     }
 

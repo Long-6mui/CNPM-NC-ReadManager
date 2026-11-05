@@ -139,6 +139,7 @@
 
                 <!-- ============ TRANG CHỦ (Home/Index) ============ -->
                 <VerticalStackLayout IsVisible="{Binding IsHome}" Spacing="0">
+                    <VerticalStackLayout x:Name="Recommendations" Padding="16,8" IsVisible="False" />
 
                     <!-- Không có truyện -->
                     <VerticalStackLayout IsVisible="{Binding ShowEmpty}" Padding="20,60" Spacing="6">

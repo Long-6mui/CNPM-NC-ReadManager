@@ -13,6 +13,7 @@ public partial class LibraryViewModel : BaseViewModel
     private readonly ILibraryService _library;
     private readonly IAuthService _auth;
     private readonly IReadingAccessService _access;
+    private readonly ReaderActivityService _reader;
     private readonly IReadingProgressService _progress;
 
     public ObservableCollection<LibraryEntry> Items { get; } = new();
@@ -54,8 +55,9 @@ public partial class LibraryViewModel : BaseViewModel
     public bool ShowClear => IsTab0 && HasItems;
 
     public LibraryViewModel(ILibraryService library, IAuthService auth, IReadingAccessService access,
-        IReadingProgressService progress)
+        IReadingProgressService progress, ReaderActivityService reader)
     {
+        _reader = reader;
         _progress = progress;
         _library = library;
         _auth = auth;
@@ -107,6 +109,7 @@ public partial class LibraryViewModel : BaseViewModel
         {
             if (IsTab3) await _progress.RemoveAsync(entry.StoryId);
             else if (IsTab0) _library.RemoveFromHistory(entry.StoryId);
+            else if (_auth.CurrentUser is not null) await _reader.SetFavorite(entry.StoryId, false);
             else _library.RemoveFavorite(entry.StoryId);
         });
         await ShowAsync();
@@ -145,6 +148,7 @@ public partial class LibraryViewModel : BaseViewModel
     {
         if (SelectedTab == 2) await LoadPurchasesAsync();
         else if (SelectedTab == 3) await LoadReadingAsync();
+        else if (IsTab1) await RunSafeAsync(async () => Show(await _reader.Favorites()));
         else Show();
     }
 
@@ -196,9 +200,9 @@ public partial class LibraryViewModel : BaseViewModel
         EmptyHint = "Đọc một chương bất kỳ, truyện sẽ hiện ở đây để bạn bấm “Đọc tiếp”.";
     }
 
-    private void Show()
+    private void Show(IReadOnlyList<LibraryEntry>? favorites = null)
     {
-        var source = IsTab0 ? _library.GetHistory() : _library.GetFavorites();
+        var source = IsTab0 ? _library.GetHistory() : favorites ?? _library.GetFavorites();
 
         Items.Clear();
         foreach (var entry in source) Items.Add(entry);

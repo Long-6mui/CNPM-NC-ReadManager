@@ -84,6 +84,9 @@ namespace ReadManager.Mobile
 
             // ---- Pages ----
             builder.Services.AddTransient<LoginPage>();
+            builder.Services.AddTransient<ReaderActivityService>();
+            builder.Services.AddTransient<ReaderGenresPage>();
+            builder.Services.AddTransient<HeartRankingPage>();
             builder.Services.AddTransient<RegisterPage>();
             builder.Services.AddTransient<StoryListPage>();
             builder.Services.AddTransient<StoryDetailPage>();

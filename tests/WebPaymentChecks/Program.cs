@@ -68,6 +68,7 @@ try
     Check(before!.IsLocked && before.Content=="","pending payment does not unlock chapter");
     var paid=await mobilePayments.SimulateAsync(orderId,"Success");
     Check(paid.EntitlementGranted,"simulation uses signed callback and grants entitlement");
+    await ReaderActivityChecks.RunAsync(http.BaseAddress!, alice, bob, db, story, chapter);
     var after=await webOrders.GetChapterAsync(story.StoryId,1,alice);
     Check(!after!.IsLocked && after.Content=="Protected text","paid member reads chapter via Web API client");
     Check((await webOrders.GetChapterAsync(other.StoryId,1,alice))!.IsLocked,"selected plan does not unlock outside story");

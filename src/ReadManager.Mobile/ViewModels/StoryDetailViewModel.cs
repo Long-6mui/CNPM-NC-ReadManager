@@ -46,9 +46,12 @@ public partial class StoryDetailViewModel : BaseViewModel
     public string FollowText => IsFollowing ? "🔔 Đang theo dõi" : "＋ Theo dõi";
     public string FollowerText => $"{FollowerCount} người theo dõi";
 
+    private readonly ReaderActivityService _reader;
+
     public StoryDetailViewModel(IStoryService storyService, ILibraryService library, IOrderService orders,
-        ICommunityService community, IAuthService auth, ReportFlow report)
+        ICommunityService community, IAuthService auth, ReportFlow report, ReaderActivityService reader)
     {
+        _reader = reader;
         _community = community;
         _auth = auth;
         _report = report;
@@ -67,7 +70,7 @@ public partial class StoryDetailViewModel : BaseViewModel
 
             // Ghi vào "Truyện đã xem gần đây" của Tủ sách
             _library.AddToHistory(Story);
-            IsFavorite = _library.IsFavorite(Story.StoryId);
+            IsFavorite = (await _reader.Favorites()).Any(f => f.StoryId == Story.StoryId);
         });
         _ = RefreshPurchaseAsync();
     }
@@ -172,9 +175,15 @@ public partial class StoryDetailViewModel : BaseViewModel
 
     // Nút "Yêu thích" -> thêm/bỏ khỏi Tủ sách
     [RelayCommand]
-    private void ToggleFavorite()
+    private async Task ToggleFavoriteAsync()
     {
         if (Story is null) return;
-        IsFavorite = _library.ToggleFavorite(Story);
+        if (_auth.CurrentUser is null) { IsFavorite = _library.ToggleFavorite(Story); return; }
+        await RunSafeAsync(async () =>
+        {
+            var liked = !IsFavorite;
+            await _reader.SetFavorite(Story.StoryId, liked);
+            IsFavorite = liked;
+        });
     }
 }
