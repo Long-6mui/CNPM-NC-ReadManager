@@ -47,8 +47,7 @@
 
             <!-- ============ ĐÃ ĐĂNG NHẬP ============ -->
             <VerticalStackLayout IsVisible="{Binding IsLoggedIn}" Spacing="14">
-                <Label Text="{Binding LevelText}" FontAttributes="Bold" />
-                <ProgressBar Progress="{Binding LevelProgress}" />
+                <Label Text="{Binding CoinText}" FontAttributes="Bold" />
                 <Button Text="Sở thích đọc" Command="{Binding EditGenresCommand}" />
 
                 <!-- Tài khoản bị hạn chế / khóa (Sprint 3 — dữ liệu từ Backend 2) -->

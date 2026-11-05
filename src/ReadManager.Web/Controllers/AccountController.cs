@@ -14,7 +14,13 @@ public class AccountController(AuthApiClient api, DemoMemberStore members) : Con
     [HttpGet] public IActionResult AccessDenied() => View();
 
     // Trang thông tin tài khoản (cần đăng nhập)
-    [Authorize] public IActionResult Profile() => View();
+    [Authorize] public async Task<IActionResult> Profile([FromServices] ReadingProgressApiClient reader)
+    {
+        try { ViewBag.Coins = (await reader.Balance(await HttpContext.GetTokenAsync("access_token"))).Coins; }
+        catch (HttpRequestException) { ViewBag.Coins = null; }
+        catch (TaskCanceledException) { ViewBag.Coins = null; }
+        return View();
+    }
 
     // Đổi mật khẩu: chờ API của Backend 2 nên hiện chỉ kiểm tra form
     [Authorize, HttpPost, ValidateAntiForgeryToken]

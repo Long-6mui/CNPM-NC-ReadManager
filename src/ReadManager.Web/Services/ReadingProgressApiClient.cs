@@ -16,6 +16,23 @@ public class ReadingProgressApiClient(HttpClient http)
         if (body is not null) request.Content = JsonContent.Create(body);
         return await http.SendAsync(request);
     }
+    public record CoinBalance(int Coins);
+    public record ChapterTicket(string Ticket);
+    public record CoinReward(bool Granted);
+
+    private async Task<T> ReaderRequest<T>(HttpMethod method, string route, string? token, object? body = null)
+    {
+        using var response = await SendAsync(method, "api/reader/" + route, token, body);
+        response.EnsureSuccessStatusCode();
+        return await response.Content.ReadFromJsonAsync<T>() ?? throw new HttpRequestException("Thiếu phản hồi từ API xu.");
+    }
+
+    public Task<CoinBalance> Balance(string? token) => ReaderRequest<CoinBalance>(HttpMethod.Get, "profile", token);
+    public Task<ChapterTicket> StartReward(int id, string? token) =>
+        ReaderRequest<ChapterTicket>(HttpMethod.Post, $"chapters/{id}/start", token);
+    public Task<CoinReward> FinishReward(int id, string ticket, decimal percent, string? token) =>
+        ReaderRequest<CoinReward>(HttpMethod.Post, $"chapters/{id}/finish", token, new { ticket, percent });
+
     public async Task<ReadingPositionApi?> GetAsync(int storyId, string? token)
     {
         using var response = await SendAsync(HttpMethod.Get, $"api/stories/{storyId}/progress", token);

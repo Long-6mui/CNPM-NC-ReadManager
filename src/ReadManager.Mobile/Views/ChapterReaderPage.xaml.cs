@@ -75,10 +75,10 @@ public partial class ChapterReaderPage : ContentPage
             var percent = ReaderScroll.ContentSize.Height <= ReaderScroll.Height + 1 ? 100 : Position();
             var outcome = await _reader.Finish(chapterId, ticket.Ticket, percent);
             if (outcome?.Granted == true && !session.IsCancellationRequested)
-                _viewModel.ProgressMessage = "+10 EXP";
+                _viewModel.ProgressMessage = "+10 xu";
         }
         catch (OperationCanceledException) when (session.IsCancellationRequested) { }
-        catch (Exception ex) { if (_active && !session.IsCancellationRequested) _viewModel.ProgressMessage = $"Chưa ghi nhận EXP: {ex.Message}"; }
+        catch (Exception ex) { if (_active && !session.IsCancellationRequested) _viewModel.ProgressMessage = $"Chưa ghi nhận xu: {ex.Message}"; }
         finally { if (ReferenceEquals(_reward, session)) _reward = null; session.Dispose(); }
     }
 

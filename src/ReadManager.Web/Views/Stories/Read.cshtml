@@ -74,6 +74,7 @@
               data-loaded="@(Model.ProgressLoaded ? "true" : "false")">
             <input type="hidden" name="storyId" value="@Model.Story.Id" />
             <input type="hidden" name="chapterId" value="@Model.Chapter.Id" />
+            <p id="coinReward" role="status" data-start="@Url.Action("StartReward", "Library")" data-finish="@Url.Action("FinishReward", "Library")"></p>
             <p id="progressStatus" role="status" aria-live="polite">@Model.ProgressError</p>
         </form>
     }
@@ -334,6 +335,7 @@
 @section Scripts {
     @if (Model.SyncProgress)
     {
+        <script src="~/js/reader-coins.js" asp-append-version="true"></script>
         <script src="~/js/reading-progress.js" asp-append-version="true"></script>
     }
 }

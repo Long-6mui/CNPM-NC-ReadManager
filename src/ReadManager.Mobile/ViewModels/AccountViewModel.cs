@@ -56,8 +56,7 @@ public partial class AccountViewModel : BaseViewModel
     public ObservableCollection<LibraryEntry> HistoryPreview { get; } = new();
     public ObservableCollection<LibraryEntry> FavoritePreview { get; } = new();
 
-    [ObservableProperty] private double levelProgress;
-    [ObservableProperty] private string levelText = string.Empty;
+    [ObservableProperty] private string coinText = string.Empty;
     private readonly ReaderActivityService _reader;
     [RelayCommand] private Task EditGenresAsync() => Shell.Current.GoToAsync(nameof(Views.ReaderGenresPage));
     public AccountViewModel(ReaderActivityService reader, IAuthService authService, ILibraryService library, ICommunityService community)
@@ -100,19 +99,17 @@ public partial class AccountViewModel : BaseViewModel
 
         Fill(HistoryPreview, _library.GetHistory());
         FavoritePreview.Clear();
-        LevelText = string.Empty;
-        LevelProgress = 0;
+        CoinText = string.Empty;
         try
         {
             var profile = await _reader.Profile();
             if (profile is not null)
             {
-                LevelText = $"Cấp {profile.Level} · {profile.Exp % 100}/100 EXP";
-                LevelProgress = profile.Exp % 100 / 100.0;
+                CoinText = $"Số dư: {profile.Coins:N0} xu";
             }
             Fill(FavoritePreview, await _reader.Favorites());
         }
-        catch (Exception ex) { LevelText = ex.Message; }
+        catch (Exception ex) { CoinText = ex.Message; }
         HasHistory = HistoryPreview.Count > 0;
         HasFavorites = FavoritePreview.Count > 0;
 

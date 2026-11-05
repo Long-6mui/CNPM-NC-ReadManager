@@ -53,10 +53,10 @@ public class ReaderActivityController(AppDbContext db, IEntitlementService right
     [HttpGet("profile")]
     public async Task<IActionResult> Profile()
     {
-        var exp = 10 * await db.ChapterRewards.CountAsync(r => r.UserId == UserId);
+        var coins = 10 * await db.ChapterRewards.CountAsync(r => r.UserId == UserId);
         var prompted = await db.Users.Where(u => u.UserId == UserId).Select(u => u.GenrePromptCompleted).SingleAsync();
         var genres = await db.ReaderGenres.Where(g => g.UserId == UserId).Select(g => g.GenreId).ToListAsync();
-        return Ok(new { exp, level = 1 + exp / 100, prompted, genres });
+        return Ok(new { coins, prompted, genres });
     }
 
     [HttpPut("genres")]

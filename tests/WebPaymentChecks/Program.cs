@@ -68,7 +68,7 @@ try
     Check(before!.IsLocked && before.Content=="","pending payment does not unlock chapter");
     var paid=await mobilePayments.SimulateAsync(orderId,"Success");
     Check(paid.EntitlementGranted,"simulation uses signed callback and grants entitlement");
-    await ReaderActivityChecks.RunAsync(http.BaseAddress!, alice, bob, db, story, chapter);
+    var claimedTicket = await ReaderActivityChecks.RunAsync(http.BaseAddress!, alice, bob, db, story, chapter);
     var after=await webOrders.GetChapterAsync(story.StoryId,1,alice);
     Check(!after!.IsLocked && after.Content=="Protected text","paid member reads chapter via Web API client");
     Check((await webOrders.GetChapterAsync(other.StoryId,1,alice))!.IsLocked,"selected plan does not unlock outside story");
@@ -115,6 +115,16 @@ try
         "Web reader renders saved scroll percent from API");
     Check((await browser.GetStringAsync("Library")).Contains("42%"),"Web library renders actual API progress");
     var saveForm=new Dictionary<string,string> { ["storyId"]=story.StoryId.ToString(), ["chapterId"]=chapter.ChapterId.ToString(), ["scrollPercent"]="71.5", ["__RequestVerificationToken"]=Csrf(readHtml) };
+    Check((await browser.GetStringAsync("Account/Profile")).Contains("10 xu"), "Web displays balance already earned through reader API");
+    var rewardForm = new Dictionary<string, string>(saveForm) { ["ticket"] = claimedTicket, ["percent"] = "100" };
+    var sessionStart = await browser.PostAsync("Library/StartReward", new FormUrlEncodedContent(rewardForm));
+    sessionStart.EnsureSuccessStatusCode();
+    Check((await sessionStart.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("ticket").GetString()?.Length > 0,
+        "Signed-in Web reader can start a timed reward session");
+    var repeatedClaim = await browser.PostAsync("Library/FinishReward", new FormUrlEncodedContent(rewardForm));
+    repeatedClaim.EnsureSuccessStatusCode();
+    Check(!(await repeatedClaim.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("granted").GetBoolean(),
+        "Web cannot earn a second reward for a chapter claimed via the shared API");
     var savedHttp=await browser.PostAsync("Library/SaveProgress",new FormUrlEncodedContent(saveForm));
     Check(savedHttp.IsSuccessStatusCode && (await mobileProgress.GetProgressAsync(story.StoryId))?.ScrollPercent==71.5m,
         "Web MVC save updates Mobile through shared database");

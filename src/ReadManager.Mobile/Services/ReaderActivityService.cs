@@ -3,7 +3,7 @@ using ReadManager.Mobile.Services.Auth;
 
 namespace ReadManager.Mobile.Services;
 
-public record ReaderProfile(int Exp, int Level, bool Prompted, int[] Genres);
+public record ReaderProfile(int Coins, bool Prompted, int[] Genres);
 public record RankedStory(int StoryId, string Title, int Hearts);
 public record RewardResult(bool Granted);
 public record ReadingTicket(string Ticket);

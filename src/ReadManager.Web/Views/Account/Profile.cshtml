@@ -1,4 +1,4 @@
-﻿@using System.Security.Claims
+@using System.Security.Claims
 @{
     ViewData["Title"] = "Tài khoản";
     var name = User.Identity?.Name ?? "";
@@ -15,6 +15,7 @@
         <h1>@name</h1>
         <span class="pf-badge">@(isAdmin ? "Quản trị viên" : "Thành viên")</span>
         <div class="pf-info">
+            <div><span>Số dư xu</span><b>@(ViewBag.Coins is int coins ? $"{coins:N0} xu" : "Chưa tải được số dư")</b></div>
             <div><span>Tên thành viên</span><b>@name</b></div>
             <div><span>Email</span><b>@email</b></div>
             <div><span>ID thành viên</span><b>@id</b></div>
