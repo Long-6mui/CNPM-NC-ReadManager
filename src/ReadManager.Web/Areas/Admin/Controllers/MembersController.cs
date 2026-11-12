@@ -1,4 +1,6 @@
 using System.Security.Claims;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ReadManager.Web.Services;
 
@@ -48,6 +50,25 @@ public class MembersController(IWebHostEnvironment environment, DemoMemberStore 
             Items = items, Q = q, State = state, Role = role, Page = Math.Max(1, page), PageCount = pageCount, Total = total,
             States = items.ToDictionary(m => m.Id, m => members.StateOf(m.Id))
         });
+    }
+
+    [Authorize(Roles = "Admin"), HttpPost, ValidateAntiForgeryToken]
+    public async Task<IActionResult> Grant(Guid requestId, string email, string kind, int amount,
+        [FromServices] ReadingProgressApiClient reader)
+    {
+        if (!ModelState.IsValid || amount < 1 || kind is not ("coins" or "days"))
+            TempData["GrantMessage"] = "Nhập email và số nguyên dương.";
+        else
+        {
+            try
+            {
+                TempData["GrantMessage"] = await reader.GrantAsync(requestId, email, kind == "coins" ? amount : 0,
+                    kind == "days" ? amount : 0, await HttpContext.GetTokenAsync("access_token"));
+            }
+            catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException)
+            { TempData["GrantMessage"] = "Chưa xác nhận được kết quả. Hãy kiểm tra tài khoản trước khi thử lại."; }
+        }
+        return RedirectToAction(nameof(Index));
     }
 
     public IActionResult Detail(string id)

@@ -10,6 +10,7 @@ public interface IStreakService
 {
     // ChapterService gọi mỗi khi người dùng mở đọc 1 chương → cập nhật chuỗi, trao thưởng.
     Task RecordReadAsync(int userId);
+    Task<bool> GrantAsync(int adminId, Guid requestId, string email, int coins, int days);
 
     Task<StreakDto> GetAsync(int userId);
     // Khôi phục chuỗi vừa mất. Ném InvalidOperationException (→ 409) kèm lý do nếu không được.
@@ -37,6 +38,36 @@ public class StreakService : IStreakService
     private readonly AppDbContext _db;
 
     public StreakService(AppDbContext db) => _db = db;
+
+    public async Task<bool> GrantAsync(int adminId, Guid requestId, string email, int coins, int days)
+    {
+        await using var tx = await _db.Database.BeginTransactionAsync();
+        var users = await _db.Users.FromSqlInterpolated($"SELECT * FROM Users WHERE Email = {email} FOR UPDATE")
+            .AsNoTracking().ToListAsync();
+        if (users.Count == 0) return false;
+        var userId = users.Single().UserId;
+        if (await _db.AdminReaderGrants.AnyAsync(g => g.RequestId == requestId)) return true;
+        var now = DateTime.UtcNow;
+        var st = await GetOrCreateAsync(userId);
+        st.EarnedStreakCoins = checked(st.EarnedStreakCoins + coins);
+        if (days > 0)
+        {
+            var today = TodayVn(now);
+            Evaluate(st, today);
+            st.CurrentStreak = checked(st.CurrentStreak + days);
+            st.LongestStreak = Math.Max(st.LongestStreak, st.CurrentStreak);
+            if (st.LastReadDate != today) st.LastReadDate = today.AddDays(-1);
+            st.BrokenAt = null;
+            st.BrokenStreak = 0;
+            await GrantMilestonesAsync(st);
+        }
+        st.UpdatedAt = now;
+        _db.AdminReaderGrants.Add(new AdminReaderGrant { RequestId = requestId, AdminId = adminId,
+            UserId = userId, Coins = coins, Days = days, GrantedAt = now });
+        await _db.SaveChangesAsync();
+        await tx.CommitAsync();
+        return true;
+    }
 
     // ================= GIỜ VIỆT NAM =================
     public static DateOnly TodayVn(DateTime utcNow)

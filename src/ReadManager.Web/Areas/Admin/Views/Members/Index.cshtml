@@ -12,6 +12,15 @@
     <div class="admin-shell">
         <partial name="_AdminNav" />
         <div>
+            <h3>Cộng thưởng cho thành viên</h3>
+            <form asp-action="Grant" method="post" class="mem-filter">
+                <input type="hidden" name="requestId" value="@Guid.NewGuid()" />
+                <label>Email tài khoản <input type="email" name="email" required /></label>
+                <label>Số lượng <input type="number" name="amount" min="1" step="1" required /></label>
+                <button class="btn btn-brass btn-sm" name="kind" value="coins">Cộng xu</button>
+                <button class="btn btn-outline btn-sm" name="kind" value="days">Cộng ngày chuỗi</button>
+            </form>
+            @if (TempData["GrantMessage"] is string message) { <p role="status">@message</p> }
             <span class="pl-demo">Dữ liệu mẫu: chưa nối API quản lý thành viên (Backend 2)</span>
             <form method="get" asp-action="Index" class="mem-filter">
                 <input type="search" name="q" value="@Model.Q" placeholder="Tìm theo tên hoặc email…" aria-label="Tìm thành viên" />

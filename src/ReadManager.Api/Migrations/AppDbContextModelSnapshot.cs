@@ -24,6 +24,32 @@ namespace ReadManager.Api.Migrations
             MySqlModelBuilderExtensions.HasCharSet(modelBuilder, "utf8mb4");
             MySqlModelBuilderExtensions.AutoIncrementColumns(modelBuilder);
 
+            modelBuilder.Entity("ReadManager.Api.Entities.AdminReaderGrant", b =>
+                {
+                    b.Property<Guid>("RequestId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("char(36)");
+
+                    b.Property<int>("AdminId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Coins")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Days")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("GrantedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.HasKey("RequestId");
+
+                    b.ToTable("AdminReaderGrants");
+                });
+
             modelBuilder.Entity("ReadManager.Api.Entities.Chapter", b =>
                 {
                     b.Property<int>("ChapterId")

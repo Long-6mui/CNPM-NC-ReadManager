@@ -29,6 +29,22 @@ public class UsersController : ControllerBase
 
     private int CurrentUserId => int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
 
+    public record ReaderGrant(Guid RequestId, string Email, int Coins, int Days);
+
+    [HttpPost("api/admin/users/reader-grants")]
+    public async Task<IActionResult> Grant(ReaderGrant request, [FromServices] IStreakService service)
+    {
+        if (request.RequestId == Guid.Empty || string.IsNullOrWhiteSpace(request.Email) ||
+            request.Coins < 0 || request.Days < 0 || (request.Coins == 0) == (request.Days == 0))
+            return BadRequest(new { message = "Chọn một khoản xu hoặc số ngày chuỗi lớn hơn 0." });
+        try
+        {
+            var found = await service.GrantAsync(CurrentUserId, request.RequestId, request.Email.Trim(), request.Coins, request.Days);
+            return found ? NoContent() : NotFound(new { message = "Không tìm thấy tài khoản có email này." });
+        }
+        catch (OverflowException) { return Conflict(new { message = "Giá trị vượt giới hạn lưu trữ." }); }
+    }
+
     [HttpGet("api/admin/users")]
     public async Task<ActionResult<PagedResultDto<MemberListItemDto>>> GetList(
         [FromQuery] string? keyword, [FromQuery] string? status, [FromQuery] string? role,
