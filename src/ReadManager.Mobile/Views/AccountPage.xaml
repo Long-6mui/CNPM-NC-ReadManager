@@ -65,6 +65,8 @@
                                 Command="{Binding GoToNotificationsCommand}" />
                         <Button Text="Truyện đang theo dõi" Style="{StaticResource BtnOutlineSm}" HeightRequest="44"
                                 Command="{Binding GoToFollowedCommand}" />
+                        <Button Text="🔥 Chuỗi đọc sách &amp; phần thưởng" Style="{StaticResource BtnOutlineSm}" HeightRequest="44"
+                                Command="{Binding GoToStreakCommand}" />
                     </VerticalStackLayout>
                 </Border>
 

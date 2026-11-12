@@ -31,6 +31,9 @@ namespace ReadManager.Mobile
             Routing.RegisterRoute(nameof(FollowedStoriesPage), typeof(FollowedStoriesPage));
             Routing.RegisterRoute(nameof(CommentsPage), typeof(CommentsPage));
 
+            // Sprint 5: chuỗi đọc sách
+            Routing.RegisterRoute(nameof(StreakPage), typeof(StreakPage));
+
         }
 
         // Bấm menu dưới để sang mục khác: mục vừa rời đi được đưa về TRANG ĐẦU của nó

@@ -39,6 +39,8 @@
                             <Label Grid.Column="1" Text="{Binding Order.AmountText}" FontSize="22" FontAttributes="Bold"
                                    TextColor="{StaticResource WebText}" HorizontalTextAlignment="End" />
                         </Grid>
+                        <Label Text="{Binding Order.DiscountText}" FontSize="12.5" TextColor="{StaticResource WebSage}"
+                               HorizontalTextAlignment="End" IsVisible="{Binding Order.HasDiscount}" />
                         <Grid ColumnDefinitions="Auto,*" ColumnSpacing="12">
                             <Label Text="Trạng thái" FontSize="13" TextColor="{StaticResource WebMuted}" VerticalOptions="Center" />
                             <Border Grid.Column="1" HorizontalOptions="End" Padding="10,4" StrokeThickness="0"

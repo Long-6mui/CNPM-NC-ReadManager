@@ -42,6 +42,12 @@ public class AppDbContext : DbContext
     public DbSet<UserSubscription> UserSubscriptions => Set<UserSubscription>();
     public DbSet<StoryPurchase> StoryPurchases => Set<StoryPurchase>();
     public DbSet<ReadingProgress> ReadingProgresses => Set<ReadingProgress>();
+
+    // Sprint 5 — chuỗi đọc sách
+    public DbSet<UserStreak> UserStreaks => Set<UserStreak>();
+    public DbSet<StreakReward> StreakRewards => Set<StreakReward>();
+    public DbSet<Coupon> Coupons => Set<Coupon>();
+    public DbSet<StreakNotice> StreakNotices => Set<StreakNotice>();
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
@@ -297,6 +303,59 @@ public class AppDbContext : DbContext
             entity.HasOne(x => x.User).WithMany().HasForeignKey(x => x.UserId).OnDelete(DeleteBehavior.Restrict);
             entity.HasOne(x => x.PlanVersion).WithMany().HasForeignKey(x => x.PlanVersionId).OnDelete(DeleteBehavior.Restrict);
             entity.HasOne(x => x.Story).WithMany().HasForeignKey(x => x.StoryId).OnDelete(DeleteBehavior.Restrict);
+            entity.Property(x => x.OriginalAmount).HasPrecision(12, 2);
+            entity.Property(x => x.DiscountAmount).HasPrecision(12, 2).HasDefaultValue(0m);
+            entity.HasOne<Coupon>().WithMany().HasForeignKey(x => x.CouponId).OnDelete(DeleteBehavior.Restrict);
+        });
+
+        // ===== SPRINT 5: CHUỖI ĐỌC =====
+        modelBuilder.Entity<UserStreak>(entity =>
+        {
+            entity.ToTable("UserStreaks");
+            entity.HasKey(x => x.UserId);
+            entity.Property(x => x.LastReadDate).HasColumnType("date");
+            entity.Property(x => x.LastWarnDate).HasColumnType("date");
+            entity.Property(x => x.BrokenAt).HasColumnType("datetime(6)");
+            entity.Property(x => x.UpdatedAt).HasColumnType("datetime(6)");
+            entity.Property(x => x.SelectedTitle).HasMaxLength(60);
+            entity.Property(x => x.SelectedFrame).HasMaxLength(40);
+            entity.HasIndex(x => x.LongestStreak);
+            entity.HasOne(x => x.User).WithMany().HasForeignKey(x => x.UserId).OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<StreakReward>(entity =>
+        {
+            entity.ToTable("StreakRewards");
+            entity.HasKey(x => x.StreakRewardId);
+            entity.Property(x => x.Kind).HasMaxLength(20).IsRequired();
+            entity.Property(x => x.Code).HasMaxLength(40).IsRequired();
+            entity.Property(x => x.Name).HasMaxLength(100).IsRequired();
+            entity.Property(x => x.GrantedAt).HasColumnType("datetime(6)");
+            entity.HasIndex(x => new { x.UserId, x.Kind, x.Code });
+            entity.HasOne(x => x.User).WithMany().HasForeignKey(x => x.UserId).OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<Coupon>(entity =>
+        {
+            entity.ToTable("Coupons");
+            entity.HasKey(x => x.CouponId);
+            entity.Property(x => x.DurationMonthsCsv).HasMaxLength(20).IsRequired();
+            entity.Property(x => x.Name).HasMaxLength(100).IsRequired();
+            entity.Property(x => x.CreatedAt).HasColumnType("datetime(6)");
+            entity.Property(x => x.ExpiresAt).HasColumnType("datetime(6)");
+            entity.HasIndex(x => x.UserId);
+            entity.HasOne(x => x.User).WithMany().HasForeignKey(x => x.UserId).OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<StreakNotice>(entity =>
+        {
+            entity.ToTable("StreakNotices");
+            entity.HasKey(x => x.StreakNoticeId);
+            entity.Property(x => x.Kind).HasMaxLength(20).IsRequired();
+            entity.Property(x => x.Message).HasMaxLength(500).IsRequired();
+            entity.Property(x => x.CreatedAt).HasColumnType("datetime(6)");
+            entity.HasIndex(x => new { x.UserId, x.CreatedAt });
+            entity.HasOne(x => x.User).WithMany().HasForeignKey(x => x.UserId).OnDelete(DeleteBehavior.Cascade);
         });
 
         // ===== BE2: TIẾN ĐỘ ĐỌC (PB28–29) =====

@@ -11,7 +11,7 @@ public interface IOrderService
 
     // Giá luôn do server lấy từ database; client chỉ gửi "mua cái gì"
     Task<Order> CreateStoryOrderAsync(int storyId);
-    Task<Order> CreatePlanOrderAsync(int planId, int? planVersionId);
+    Task<Order> CreatePlanOrderAsync(int planId, int? planVersionId, int? couponId = null);
 
     Task<Order> GetOrderAsync(int orderId);
     Task<PagedResult<Order>> GetMyOrdersAsync(string? status, int page, int pageSize);

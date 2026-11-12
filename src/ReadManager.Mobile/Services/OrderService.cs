@@ -25,9 +25,9 @@ public class OrderService : IOrderService
                new CreateOrderRequest { OrderType = "Story", StoryId = storyId })
            ?? throw new ApiException(500, "Không tạo được đơn hàng.");
 
-    public async Task<Order> CreatePlanOrderAsync(int planId, int? planVersionId)
+    public async Task<Order> CreatePlanOrderAsync(int planId, int? planVersionId, int? couponId = null)
         => await _api.PostAsync<CreateOrderRequest, Order>("orders",
-               new CreateOrderRequest { OrderType = "Plan", PlanId = planId, PlanVersionId = planVersionId })
+               new CreateOrderRequest { OrderType = "Plan", PlanId = planId, PlanVersionId = planVersionId, CouponId = couponId })
            ?? throw new ApiException(500, "Không tạo được đơn hàng.");
 
     public async Task<Order> GetOrderAsync(int orderId)

@@ -71,6 +71,7 @@ public class CreateOrderRequest
     public int? StoryId { get; set; }
     public int? PlanId { get; set; }
     public int? PlanVersionId { get; set; }
+    public int? CouponId { get; set; }      // Sprint 5 — mã giảm giá từ chuỗi đọc
 }
 
 public class Order
@@ -83,6 +84,8 @@ public class Order
     public int? StoryId { get; set; }
     public string ItemName { get; set; } = string.Empty;
     public decimal Amount { get; set; }
+    public decimal? OriginalAmount { get; set; }   // Sprint 5
+    public decimal DiscountAmount { get; set; }    // Sprint 5
     public int? DurationMonths { get; set; }
     public string Status { get; set; } = string.Empty;      // Pending | Paid | Failed | Cancelled | Expired
     public DateTime CreatedAt { get; set; }
@@ -99,6 +102,8 @@ public class Order
     public bool HasStory => StoryId.HasValue;
     public string TypeLabel => IsStory ? "📖 Mua trọn bộ" : "🎟 Gói đọc";
     public string AmountText => Fmt.Money(Amount);
+    public bool HasDiscount => DiscountAmount > 0;
+    public string DiscountText => HasDiscount ? $"Giá gốc {Fmt.Money(OriginalAmount ?? Amount + DiscountAmount)} − giảm {Fmt.Money(DiscountAmount)}" : string.Empty;
     public string DurationText => DurationMonths.HasValue ? $"{DurationMonths} tháng" : "Vĩnh viễn, tất cả chương";
     public string CreatedText => Fmt.Local(CreatedAt).ToString("HH:mm dd/MM/yyyy");
     public string PaidText => PaidAt.HasValue ? Fmt.Local(PaidAt.Value).ToString("HH:mm dd/MM/yyyy") : "—";

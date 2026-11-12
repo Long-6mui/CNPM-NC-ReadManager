@@ -11,6 +11,8 @@ public class CommentDto
     public int UserId { get; set; }
     public string DisplayName { get; set; } = string.Empty;   // tên người viết
     public string? AvatarUrl { get; set; }
+    public string? Title { get; set; }          // Sprint 5 — danh hiệu chuỗi đọc (vd: "Mọt Sách Tập Sự")
+    public string? AvatarFrame { get; set; }    // Sprint 5 — khung avatar: frame_dong | frame_bac | frame_kim_cuong
 
     public string Content { get; set; } = string.Empty;
     public DateTime CreatedAt { get; set; }     // giờ UTC

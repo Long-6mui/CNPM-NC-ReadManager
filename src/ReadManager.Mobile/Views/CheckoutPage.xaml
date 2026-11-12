@@ -49,6 +49,18 @@
                             </BindableLayout.ItemTemplate>
                         </VerticalStackLayout>
 
+                        <!-- Mã giảm giá từ chuỗi đọc (Sprint 5) -->
+                        <VerticalStackLayout IsVisible="{Binding HasCoupons}" Spacing="4">
+                            <Label Text="🎟 Bạn có mã giảm giá từ chuỗi đọc" FontAttributes="Bold" FontSize="13.5" TextColor="{StaticResource WebText}" />
+                            <Border Style="{StaticResource FieldBorder}">
+                                <Picker Title="Chọn mã giảm giá (không bắt buộc)" ItemsSource="{Binding Coupons}"
+                                        ItemDisplayBinding="{Binding Display, x:DataType=models:StreakCoupon}"
+                                        SelectedItem="{Binding SelectedCoupon}" TextColor="{StaticResource WebText}" />
+                            </Border>
+                            <Label Text="{Binding DiscountText}" Style="{StaticResource LblMuted}" TextColor="{StaticResource WebSage}"
+                                   IsVisible="{Binding DiscountText, Converter={StaticResource StringToBoolConverter}}" />
+                        </VerticalStackLayout>
+
                         <Label Text="{Binding Notice}" Style="{StaticResource LblMuted}" TextColor="#B7791F"
                                IsVisible="{Binding Notice, Converter={StaticResource StringToBoolConverter}}" />
                         <Label Text="{Binding CannotBuyMessage}" TextColor="{StaticResource WebCrimson}" FontAttributes="Bold"
