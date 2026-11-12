@@ -9,6 +9,7 @@
              BackgroundColor="{StaticResource WebBg}">
 
     <ContentPage.ToolbarItems>
+        <ToolbarItem x:Name="FlameItem" Text="🔥" Clicked="OnFlameClicked" />
         <ToolbarItem x:Name="BellItem" Text="🔔" Clicked="OnBellClicked" />
     </ContentPage.ToolbarItems>
 

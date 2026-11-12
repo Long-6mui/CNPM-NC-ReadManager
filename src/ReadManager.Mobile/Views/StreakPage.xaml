@@ -1,0 +1,227 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:ReadManager.Mobile.ViewModels"
+             xmlns:models="clr-namespace:ReadManager.Mobile.Models"
+             x:DataType="vm:StreakViewModel"
+             x:Class="ReadManager.Mobile.Views.StreakPage"
+             Title="Chuỗi đọc sách"
+             BackgroundColor="{StaticResource WebBg}">
+
+    <Shell.BackButtonBehavior>
+        <BackButtonBehavior IconOverride="ic_back.png" />
+    </Shell.BackButtonBehavior>
+
+    <RefreshView Command="{Binding RefreshCommand}" IsRefreshing="{Binding IsBusy, Mode=OneWay}">
+        <ScrollView>
+            <VerticalStackLayout Padding="16,16,16,32" Spacing="14">
+
+                <Label Text="{Binding ErrorMessage}" TextColor="{StaticResource WebCrimson}"
+                       IsVisible="{Binding ErrorMessage, Converter={StaticResource StringToBoolConverter}}" />
+                <Label Text="{Binding Message}" TextColor="{StaticResource WebSage}" FontAttributes="Bold"
+                       IsVisible="{Binding Message, Converter={StaticResource StringToBoolConverter}}" />
+
+                <!-- ============ CHƯA ĐĂNG NHẬP ============ -->
+                <Border Style="{StaticResource Panel}" IsVisible="{Binding IsGuest}">
+                    <VerticalStackLayout Spacing="10">
+                        <Label Text="🔥 Chuỗi đọc sách" Style="{StaticResource LblH2}" FontSize="22" />
+                        <Label Text="Đăng nhập, đọc mỗi ngày ít nhất 1 chương để giữ chuỗi và nhận phần thưởng thật: mã giảm giá gói đọc, huy hiệu, danh hiệu, khung avatar..."
+                               Style="{StaticResource LblMuted}" />
+                        <Button Text="Đăng nhập" Style="{StaticResource BtnBrass}" Command="{Binding GoToLoginCommand}" />
+                    </VerticalStackLayout>
+                </Border>
+
+                <VerticalStackLayout IsVisible="{Binding IsLoggedIn}" Spacing="14">
+
+                    <!-- ============ HERO: CHUỖI HIỆN TẠI ============ -->
+                    <Border StrokeThickness="0">
+                        <Border.StrokeShape>
+                            <RoundRectangle CornerRadius="8" />
+                        </Border.StrokeShape>
+                        <Border.Background>
+                            <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                <GradientStop Color="#0B1F4B" Offset="0.0" />
+                                <GradientStop Color="#12347D" Offset="1.0" />
+                            </LinearGradientBrush>
+                        </Border.Background>
+                        <Grid Padding="20" ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                            <VerticalStackLayout Grid.Column="0" Spacing="4">
+                                <HorizontalStackLayout Spacing="8">
+                                    <Label Text="🔥" FontSize="44" TextColor="{Binding Info.FlameColor}" VerticalOptions="Center" />
+                                    <Label Text="{Binding Info.CurrentStreak}" FontSize="46" FontAttributes="Bold"
+                                           TextColor="White" FontFamily="{StaticResource SerifFont}" VerticalOptions="Center" />
+                                    <Label Text="ngày" FontSize="16" TextColor="#C3D2F5" VerticalOptions="End" Margin="0,0,0,10" />
+                                </HorizontalStackLayout>
+                                <Label Text="{Binding Info.StatusText}" TextColor="#C3D2F5" FontSize="13.5" />
+                                <Label TextColor="{StaticResource WebAmber}" FontSize="13" FontAttributes="Bold">
+                                    <Label.FormattedText>
+                                        <FormattedString>
+                                            <Span Text="Dài nhất: " />
+                                            <Span Text="{Binding Info.LongestStreak}" />
+                                            <Span Text=" ngày   ·   🧊 " />
+                                            <Span Text="{Binding Info.FreezeCards}" />
+                                            <Span Text=" thẻ bảo vệ" />
+                                        </FormattedString>
+                                    </Label.FormattedText>
+                                </Label>
+                            </VerticalStackLayout>
+
+                            <!-- Avatar xem trước với khung đang đeo -->
+                            <Border x:Name="AvatarPreview" Grid.Column="1" WidthRequest="64" HeightRequest="64"
+                                    StrokeThickness="{Binding Info.SelectedFrameThickness}"
+                                    Stroke="{Binding Info.SelectedFrameColor}"
+                                    BackgroundColor="#22FFFFFF" VerticalOptions="Center">
+                                <Border.StrokeShape>
+                                    <RoundRectangle CornerRadius="32" />
+                                </Border.StrokeShape>
+                                <Label Text="📖" FontSize="28" HorizontalOptions="Center" VerticalOptions="Center" />
+                            </Border>
+                        </Grid>
+                    </Border>
+
+                    <!-- ============ 7 NGÀY GẦN NHẤT ============ -->
+                    <Border Style="{StaticResource Panel}">
+                        <VerticalStackLayout Spacing="10">
+                            <Label Text="7 ngày gần nhất" Style="{StaticResource LblCardTitle}" />
+                            <HorizontalStackLayout Spacing="6" HorizontalOptions="Center"
+                                  BindableLayout.ItemsSource="{Binding Info.Last7Days}">
+                                <BindableLayout.ItemTemplate>
+                                    <DataTemplate x:DataType="models:StreakDay">
+                                        <Border StrokeThickness="1.5" Stroke="{Binding BorderColor}" BackgroundColor="{Binding BgColor}"
+                                                Padding="0,8" WidthRequest="40">
+                                            <Border.StrokeShape>
+                                                <RoundRectangle CornerRadius="8" />
+                                            </Border.StrokeShape>
+                                            <VerticalStackLayout Spacing="2">
+                                                <Label Text="{Binding Label}" FontSize="11" TextColor="{StaticResource WebMuted}"
+                                                       HorizontalTextAlignment="Center" />
+                                                <Label Text="{Binding Mark}" FontSize="18" HorizontalTextAlignment="Center" />
+                                            </VerticalStackLayout>
+                                        </Border>
+                                    </DataTemplate>
+                                </BindableLayout.ItemTemplate>
+                            </HorizontalStackLayout>
+                            <Label Text="{Binding Info.NextText}" Style="{StaticResource LblMuted}" />
+                        </VerticalStackLayout>
+                    </Border>
+
+                    <!-- ============ KHÔI PHỤC CHUỖI ============ -->
+                    <Border Style="{StaticResource Panel}" IsVisible="{Binding Info.CanRestore}" BackgroundColor="#FFF5E5">
+                        <VerticalStackLayout Spacing="8">
+                            <Label Text="💔 Bạn vừa mất chuỗi" Style="{StaticResource LblCardTitle}" TextColor="{StaticResource WebCrimson}" />
+                            <Label Text="{Binding Info.RestoreText}" Style="{StaticResource LblMuted}" />
+                            <Button Text="🔄 Khôi phục chuỗi" Style="{StaticResource BtnBrass}" Command="{Binding RestoreCommand}" />
+                        </VerticalStackLayout>
+                    </Border>
+                    <Label Text="{Binding Info.RestoreText}" Style="{StaticResource LblMuted}" HorizontalTextAlignment="Center"
+                           IsVisible="{Binding Info.CanRestore, Converter={StaticResource InvertedBoolConverter}}" />
+
+                    <Button Text="Đọc truyện ngay" Style="{StaticResource BtnBrass}" Command="{Binding GoToBrowseCommand}" />
+
+                    <!-- ============ MỐC & PHẦN THƯỞNG ============ -->
+                    <Label Text="Các mốc thưởng" Style="{StaticResource LblH2}" FontSize="19" />
+                    <VerticalStackLayout Spacing="10" BindableLayout.ItemsSource="{Binding Info.Milestones}">
+                        <BindableLayout.ItemTemplate>
+                            <DataTemplate x:DataType="models:StreakMilestone">
+                                <Border Style="{StaticResource Panel}" Opacity="{Binding ItemOpacity}">
+                                    <VerticalStackLayout Spacing="6">
+                                        <Label FontAttributes="Bold" FontSize="15" TextColor="{StaticResource WebText}">
+                                            <Label.FormattedText>
+                                                <FormattedString>
+                                                    <Span Text="{Binding Mark}" />
+                                                    <Span Text="  " />
+                                                    <Span Text="{Binding Header}" />
+                                                </FormattedString>
+                                            </Label.FormattedText>
+                                        </Label>
+                                        <VerticalStackLayout Spacing="3" BindableLayout.ItemsSource="{Binding Rewards}">
+                                            <BindableLayout.ItemTemplate>
+                                                <DataTemplate x:DataType="models:StreakRewardItem">
+                                                    <Label Text="{Binding Display}" FontSize="13.5" TextColor="{StaticResource WebText}" />
+                                                </DataTemplate>
+                                            </BindableLayout.ItemTemplate>
+                                        </VerticalStackLayout>
+                                    </VerticalStackLayout>
+                                </Border>
+                            </DataTemplate>
+                        </BindableLayout.ItemTemplate>
+                    </VerticalStackLayout>
+
+                    <!-- ============ BỘ SƯU TẬP ============ -->
+                    <Label Text="Bộ sưu tập" Style="{StaticResource LblH2}" FontSize="19" />
+                    <Border Style="{StaticResource Panel}">
+                        <VerticalStackLayout Spacing="8">
+                            <Label Text="{Binding Info.TitleText}" FontSize="13.5" TextColor="{StaticResource WebText}" FontAttributes="Bold" />
+                            <Label Text="{Binding Info.FrameText}" FontSize="13.5" TextColor="{StaticResource WebText}" FontAttributes="Bold" />
+                            <Grid ColumnDefinitions="*,*" ColumnSpacing="8">
+                                <Button Grid.Column="0" Text="Bỏ danh hiệu" Style="{StaticResource BtnOutlineSm}"
+                                        Command="{Binding UnequipTitleCommand}" />
+                                <Button Grid.Column="1" Text="Bỏ khung" Style="{StaticResource BtnOutlineSm}"
+                                        Command="{Binding UnequipFrameCommand}" />
+                            </Grid>
+                            <BoxView HeightRequest="1" Color="{StaticResource WebBorder}" />
+                            <VerticalStackLayout Spacing="8" BindableLayout.ItemsSource="{Binding Collection}">
+                                <BindableLayout.ItemTemplate>
+                                    <DataTemplate x:DataType="models:StreakRewardItem">
+                                        <Grid ColumnDefinitions="*,Auto" Opacity="{Binding ItemOpacity}">
+                                            <VerticalStackLayout Grid.Column="0" Spacing="1" VerticalOptions="Center">
+                                                <Label Text="{Binding Display}" FontSize="14" TextColor="{StaticResource WebText}" />
+                                                <Label Text="{Binding StateText}" Style="{StaticResource LblCardMeta}" />
+                                            </VerticalStackLayout>
+                                            <Button Grid.Column="1" Text="Đeo" Style="{StaticResource BtnBrassSm}"
+                                                    IsVisible="{Binding CanEquip}"
+                                                    Command="{Binding Source={RelativeSource AncestorType={x:Type vm:StreakViewModel}}, Path=EquipCommand}"
+                                                    CommandParameter="{Binding .}" />
+                                        </Grid>
+                                    </DataTemplate>
+                                </BindableLayout.ItemTemplate>
+                            </VerticalStackLayout>
+                        </VerticalStackLayout>
+                    </Border>
+
+                    <Button Text="🎟 Dùng mã giảm giá — xem các gói đọc" Style="{StaticResource BtnOutlineSm}" HeightRequest="44"
+                            Command="{Binding GoToPlansCommand}" />
+
+                    <!-- ============ THÔNG BÁO VỀ CHUỖI ============ -->
+                    <Grid ColumnDefinitions="*,Auto">
+                        <Label Grid.Column="0" Text="Thông báo chuỗi" Style="{StaticResource LblH2}" FontSize="19" VerticalOptions="Center" />
+                        <Button Grid.Column="1" Text="Đọc hết" Style="{StaticResource BtnLink}"
+                                Command="{Binding MarkAllReadCommand}" IsVisible="{Binding HasNotices}" />
+                    </Grid>
+                    <Label Text="Chưa có thông báo nào." Style="{StaticResource LblMuted}"
+                           IsVisible="{Binding HasNotices, Converter={StaticResource InvertedBoolConverter}}" />
+                    <VerticalStackLayout Spacing="8" BindableLayout.ItemsSource="{Binding Notices}">
+                        <BindableLayout.ItemTemplate>
+                            <DataTemplate x:DataType="models:StreakNotice">
+                                <Border Style="{StaticResource Panel}" Padding="12" Opacity="{Binding ItemOpacity}">
+                                    <Grid ColumnDefinitions="30,*" ColumnSpacing="8">
+                                        <Label Text="{Binding Icon}" FontSize="22" VerticalOptions="Start" />
+                                        <VerticalStackLayout Grid.Column="1" Spacing="2">
+                                            <Label Text="{Binding Message}" FontSize="13.5" TextColor="{StaticResource WebText}" />
+                                            <Label Text="{Binding TimeText}" Style="{StaticResource LblCardMeta}" />
+                                        </VerticalStackLayout>
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </BindableLayout.ItemTemplate>
+                    </VerticalStackLayout>
+
+                    <!-- ============ BẢNG XẾP HẠNG ============ -->
+                    <Label Text="Bảng xếp hạng chuỗi" Style="{StaticResource LblH2}" FontSize="19" IsVisible="{Binding HasBoard}" />
+                    <VerticalStackLayout Spacing="6" IsVisible="{Binding HasBoard}" BindableLayout.ItemsSource="{Binding Board}">
+                        <BindableLayout.ItemTemplate>
+                            <DataTemplate x:DataType="models:StreakRankItem">
+                                <Border Style="{StaticResource Panel}" Padding="12">
+                                    <VerticalStackLayout Spacing="2">
+                                        <Label Text="{Binding Line1}" FontSize="14" FontAttributes="Bold" TextColor="{StaticResource WebText}" />
+                                        <Label Text="{Binding Line2}" Style="{StaticResource LblCardMeta}" />
+                                    </VerticalStackLayout>
+                                </Border>
+                            </DataTemplate>
+                        </BindableLayout.ItemTemplate>
+                    </VerticalStackLayout>
+                </VerticalStackLayout>
+            </VerticalStackLayout>
+        </ScrollView>
+    </RefreshView>
+</ContentPage>
