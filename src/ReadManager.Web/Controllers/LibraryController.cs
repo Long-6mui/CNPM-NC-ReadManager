@@ -47,6 +47,21 @@ public class LibraryController(StoriesApiClient api, ReadingProgressApiClient pr
 
     // Browser gửi form cùng antiforgery token; API xác định user từ access token của phiên Web.
     [HttpPost, ValidateAntiForgeryToken]
+    public async Task<IActionResult> StartReward(int chapterId) =>
+        await RewardResponse(async () => (object)await progress.StartReward(chapterId, await HttpContext.GetTokenAsync("access_token")));
+
+    [HttpPost, ValidateAntiForgeryToken]
+    public async Task<IActionResult> FinishReward(int chapterId, string ticket, decimal percent) =>
+        await RewardResponse(async () => (object)await progress.FinishReward(chapterId, ticket, percent, await HttpContext.GetTokenAsync("access_token")));
+
+    private async Task<IActionResult> RewardResponse(Func<Task<object>> request)
+    {
+        try { return Json(await request()); }
+        catch (HttpRequestException ex) { return StatusCode((int?)ex.StatusCode ?? 503); }
+        catch (TaskCanceledException) { return StatusCode(503); }
+    }
+
+    [HttpPost, ValidateAntiForgeryToken]
     public async Task<IActionResult> SaveProgress(int storyId, int chapterId, decimal scrollPercent)
     {
         if (!ModelState.IsValid || storyId <= 0 || chapterId <= 0 || scrollPercent < 0 || scrollPercent > 100)

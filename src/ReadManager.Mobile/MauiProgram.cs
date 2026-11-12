@@ -58,6 +58,7 @@ namespace ReadManager.Mobile
             // ---- ViewModels ----
             // Sprint 3: cộng đồng (Backend 3) + tiến độ đọc qua API; khách lưu trên máy
             builder.Services.AddTransient<ICommunityService, CommunityService>();
+            builder.Services.AddTransient<IStreakService, StreakService>();   // Sprint 5
             builder.Services.AddTransient<ReportFlow>();
             builder.Services.AddTransient<LocalReadingProgressService>();
             if (ApiSettings.UseReadingProgressApi)
@@ -81,9 +82,13 @@ namespace ReadManager.Mobile
             builder.Services.AddTransient<NotificationsViewModel>();
             builder.Services.AddTransient<FollowedStoriesViewModel>();
             builder.Services.AddTransient<CommentsViewModel>();
+            builder.Services.AddTransient<StreakViewModel>();
 
             // ---- Pages ----
             builder.Services.AddTransient<LoginPage>();
+            builder.Services.AddTransient<ReaderActivityService>();
+            builder.Services.AddTransient<ReaderGenresPage>();
+            builder.Services.AddTransient<HeartRankingPage>();
             builder.Services.AddTransient<RegisterPage>();
             builder.Services.AddTransient<StoryListPage>();
             builder.Services.AddTransient<StoryDetailPage>();
@@ -99,6 +104,7 @@ namespace ReadManager.Mobile
             builder.Services.AddTransient<NotificationsPage>();
             builder.Services.AddTransient<FollowedStoriesPage>();
             builder.Services.AddTransient<CommentsPage>();
+            builder.Services.AddTransient<StreakPage>();
 
             return builder.Build();
         }

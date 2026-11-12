@@ -14,6 +14,7 @@ namespace ReadManager.Mobile
             // Route "LoginPage" đã đăng ký qua ShellContent ở AppShell.xaml.
             // Các route dưới đây không nằm trong flyout, chỉ dùng để điều hướng
             // bằng Shell.Current.GoToAsync(...) (push hoặc "//" thay toàn bộ stack).
+            Routing.RegisterRoute(nameof(ReaderGenresPage), typeof(ReaderGenresPage));
             Routing.RegisterRoute(nameof(RegisterPage), typeof(RegisterPage));
             Routing.RegisterRoute(nameof(StoryDetailPage), typeof(StoryDetailPage));
             Routing.RegisterRoute(nameof(ChapterListPage), typeof(ChapterListPage));
@@ -29,6 +30,9 @@ namespace ReadManager.Mobile
             Routing.RegisterRoute(nameof(NotificationsPage), typeof(NotificationsPage));
             Routing.RegisterRoute(nameof(FollowedStoriesPage), typeof(FollowedStoriesPage));
             Routing.RegisterRoute(nameof(CommentsPage), typeof(CommentsPage));
+
+            // Sprint 5: chuỗi đọc sách
+            Routing.RegisterRoute(nameof(StreakPage), typeof(StreakPage));
 
         }
 

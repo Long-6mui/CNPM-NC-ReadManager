@@ -29,6 +29,21 @@ try
     }
     await db.SaveChangesAsync();
     var admin=await db.Users.SingleAsync(x=>x.Role=="Admin");
+    var streakService = new ReadManager.Api.Services.StreakService(db);
+    await streakService.RecordReadAsync(admin.UserId);
+    var streak = await db.UserStreaks.SingleAsync(row => row.UserId == admin.UserId);
+    Check(streak.EarnedStreakCoins == 0, "First reading day starts a streak");
+    var today = ReadManager.Api.Services.StreakService.TodayVn(DateTime.UtcNow);
+    streak.LastReadDate = today.AddDays(-1);
+    await db.SaveChangesAsync();
+    await streakService.RecordReadAsync(admin.UserId);
+    await streakService.RecordReadAsync(admin.UserId);
+    await db.Entry(streak).ReloadAsync();
+    Check(streak.CurrentStreak == 2 && streak.EarnedStreakCoins == 5, "Continuing a streak earns five coins once per day");
+    streak.LastReadDate = today.AddDays(-3);
+    await db.SaveChangesAsync();
+    await streakService.RecordReadAsync(admin.UserId);
+    Check(streak.CurrentStreak == 1 && streak.EarnedStreakCoins == 5, "Restarting a streak preserves previously earned coins");
     var story=new Story {Title="Paid",Slug="paid",AuthorName="Test",CreatedBy=admin.UserId,Visibility="Public",AccessPolicy="Paid",CurrentPrice=50000};
     var other=new Story {Title="Outside",Slug="outside",AuthorName="Test",CreatedBy=admin.UserId,Visibility="Public",AccessPolicy="Paid",CurrentPrice=50000};
     db.Stories.AddRange(story,other);await db.SaveChangesAsync();
@@ -51,6 +66,18 @@ try
     for(int i=0;i<60;i++){try{await http.GetAsync("api/reading-plans");break;}catch(HttpRequestException){await Task.Delay(200);}}
     async Task<string> Token(string name) {var response=await http.PostAsJsonAsync("api/auth/login",new {email=name+"@example.test",password});response.EnsureSuccessStatusCode();return (await response.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("accessToken").GetString()!;}
     var alice=await Token("alice");var bob=await Token("bob");var adminToken=await Token("admin");
+    var wallet = new ReadingProgressApiClient(http);
+    var purchaseKey = Guid.NewGuid();
+    Check((await wallet.BuyFreezeCardAsync(purchaseKey, adminToken)).Contains("cần 50"), "Insufficient coins keep inventory unchanged");
+    streak.EarnedStreakCoins = 50;
+    await db.SaveChangesAsync();
+    await Task.WhenAll(wallet.BuyFreezeCardAsync(purchaseKey, adminToken), wallet.BuyFreezeCardAsync(purchaseKey, adminToken));
+    await db.Entry(streak).ReloadAsync();
+    Check(streak.FreezeCards == 1 && (await wallet.Balance(adminToken)).Coins == 0, "Concurrent retry spends 50 coins and grants one card exactly once");
+    streak.EarnedStreakCoins = 100;
+    streak.FreezeCards = 5;
+    await db.SaveChangesAsync();
+    Check((await wallet.BuyFreezeCardAsync(Guid.NewGuid(), adminToken)).Contains("đủ 5") && (await wallet.Balance(adminToken)).Coins == 50, "Full inventory preserves balance");
     var webOrders=new StoriesApiClient(http);var payments=new PaymentsApiClient(http);
     var created=await webOrders.CreatePlanOrderAsync(plan.PlanId,version.PlanVersionId,alice);
     Check(created.Ok && created.Id.HasValue,"Web client creates plan order via API");var orderId=created.Id!.Value;
@@ -68,6 +95,7 @@ try
     Check(before!.IsLocked && before.Content=="","pending payment does not unlock chapter");
     var paid=await mobilePayments.SimulateAsync(orderId,"Success");
     Check(paid.EntitlementGranted,"simulation uses signed callback and grants entitlement");
+    var claimedTicket = await ReaderActivityChecks.RunAsync(http.BaseAddress!, alice, bob, db, story, chapter);
     var after=await webOrders.GetChapterAsync(story.StoryId,1,alice);
     Check(!after!.IsLocked && after.Content=="Protected text","paid member reads chapter via Web API client");
     Check((await webOrders.GetChapterAsync(other.StoryId,1,alice))!.IsLocked,"selected plan does not unlock outside story");
@@ -114,6 +142,16 @@ try
         "Web reader renders saved scroll percent from API");
     Check((await browser.GetStringAsync("Library")).Contains("42%"),"Web library renders actual API progress");
     var saveForm=new Dictionary<string,string> { ["storyId"]=story.StoryId.ToString(), ["chapterId"]=chapter.ChapterId.ToString(), ["scrollPercent"]="71.5", ["__RequestVerificationToken"]=Csrf(readHtml) };
+    Check((await browser.GetStringAsync("Account/Profile")).Contains("10 xu"), "Web displays balance already earned through reader API");
+    var rewardForm = new Dictionary<string, string>(saveForm) { ["ticket"] = claimedTicket, ["percent"] = "100" };
+    var sessionStart = await browser.PostAsync("Library/StartReward", new FormUrlEncodedContent(rewardForm));
+    sessionStart.EnsureSuccessStatusCode();
+    Check((await sessionStart.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("ticket").GetString()?.Length > 0,
+        "Signed-in Web reader can start a timed reward session");
+    var repeatedClaim = await browser.PostAsync("Library/FinishReward", new FormUrlEncodedContent(rewardForm));
+    repeatedClaim.EnsureSuccessStatusCode();
+    Check(!(await repeatedClaim.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("granted").GetBoolean(),
+        "Web cannot earn a second reward for a chapter claimed via the shared API");
     var savedHttp=await browser.PostAsync("Library/SaveProgress",new FormUrlEncodedContent(saveForm));
     Check(savedHttp.IsSuccessStatusCode && (await mobileProgress.GetProgressAsync(story.StoryId))?.ScrollPercent==71.5m,
         "Web MVC save updates Mobile through shared database");

@@ -56,8 +56,12 @@ public partial class AccountViewModel : BaseViewModel
     public ObservableCollection<LibraryEntry> HistoryPreview { get; } = new();
     public ObservableCollection<LibraryEntry> FavoritePreview { get; } = new();
 
-    public AccountViewModel(IAuthService authService, ILibraryService library, ICommunityService community)
+    [ObservableProperty] private string coinText = string.Empty;
+    private readonly ReaderActivityService _reader;
+    [RelayCommand] private Task EditGenresAsync() => Shell.Current.GoToAsync(nameof(Views.ReaderGenresPage));
+    public AccountViewModel(ReaderActivityService reader, IAuthService authService, ILibraryService library, ICommunityService community)
     {
+        _reader = reader;
         _authService = authService;
         _library = library;
         _community = community;
@@ -94,7 +98,18 @@ public partial class AccountViewModel : BaseViewModel
         LoadAvatar(user.UserId);
 
         Fill(HistoryPreview, _library.GetHistory());
-        Fill(FavoritePreview, _library.GetFavorites());
+        FavoritePreview.Clear();
+        CoinText = string.Empty;
+        try
+        {
+            var profile = await _reader.Profile();
+            if (profile is not null)
+            {
+                CoinText = $"Số dư: {profile.Coins:N0} xu";
+            }
+            Fill(FavoritePreview, await _reader.Favorites());
+        }
+        catch (Exception ex) { CoinText = ex.Message; }
         HasHistory = HistoryPreview.Count > 0;
         HasFavorites = FavoritePreview.Count > 0;
 
@@ -196,6 +211,9 @@ public partial class AccountViewModel : BaseViewModel
 
     [RelayCommand]
     private async Task GoToFollowedAsync() => await Shell.Current.GoToAsync(nameof(Views.FollowedStoriesPage));
+
+    [RelayCommand]
+    private async Task GoToStreakAsync() => await Shell.Current.GoToAsync(nameof(Views.StreakPage));
 
     [RelayCommand]
     private Task OpenServerSettingsAsync() => ServerSettings.PromptAsync();

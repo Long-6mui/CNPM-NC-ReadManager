@@ -16,4 +16,7 @@ public class CreateOrderDto
     public int? StoryId { get; set; }
     public int? PlanId { get; set; }
     public int? PlanVersionId { get; set; }
+
+    // Sprint 5 — dùng mã giảm giá từ chuỗi đọc (chỉ áp dụng khi mua GÓI). Xem api/me/coupons.
+    public int? CouponId { get; set; }
 }

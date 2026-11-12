@@ -35,6 +35,8 @@ builder.Services.AddScoped<ICommentService, CommentService>();             // BE
 builder.Services.AddScoped<IReportService, ReportService>();               // BE4 — PB33 báo cáo vi phạm
 builder.Services.AddScoped<IFollowService, FollowService>();               // BE4 — PB31 theo dõi truyện
 builder.Services.AddScoped<INotificationService, NotificationService>();   // BE4 — PB31 thông báo chương mới
+builder.Services.AddScoped<IStreakService, StreakService>();                      // Sprint 5 — chuỗi đọc sách
+builder.Services.AddHostedService<StreakReminderWorker>();                         // Sprint 5 — nhắc nhở mất chuỗi
 builder.Services.AddScoped<IReadingProgressService, ReadingProgressService>();   // BE2 — PB28–29 tiến độ đọc
 builder.Services.AddScoped<IUserManagementService, UserManagementService>();      // BE2 — PB35 quản lý thành viên
 builder.Services.AddScoped<IUserRestrictionService, UserRestrictionService>();    // BE2 — PB36 hạn chế / tạm ngừng

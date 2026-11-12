@@ -1,4 +1,5 @@
 using CommunityToolkit.Mvvm.ComponentModel;
+using Microsoft.Maui.Graphics;
 
 namespace ReadManager.Mobile.Models;
 
@@ -30,9 +31,15 @@ public class CommentItem
     public int UserId { get; set; }
     public string DisplayName { get; set; } = string.Empty;
     public string? AvatarUrl { get; set; }
+    public string? Title { get; set; }          // Sprint 5 — danh hiệu chuỗi đọc
+    public string? AvatarFrame { get; set; }    // Sprint 5 — khung avatar
     public string Content { get; set; } = string.Empty;
     public DateTime CreatedAt { get; set; }
     public bool CanDelete { get; set; }
+
+    public bool HasTitle => !string.IsNullOrEmpty(Title);
+    public Color FrameColor => StreakLook.FrameColor(AvatarFrame);
+    public double FrameThickness => StreakLook.FrameThickness(AvatarFrame);
 
     public string Initial => string.IsNullOrWhiteSpace(DisplayName) ? "?" : DisplayName.Trim()[..1].ToUpperInvariant();
     public string ChapterText => ChapterNumber.HasValue ? $"Chương {ChapterNumber}" : "Bình luận chung";

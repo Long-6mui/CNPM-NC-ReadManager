@@ -116,6 +116,21 @@ namespace ReadManager.Api.Migrations
                     b.ToTable("ChapterReads", (string)null);
                 });
 
+            modelBuilder.Entity("ReadManager.Api.Entities.ChapterReward", b =>
+                {
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("ChapterId")
+                        .HasColumnType("int");
+
+                    b.HasKey("UserId", "ChapterId");
+
+                    b.HasIndex("ChapterId");
+
+                    b.ToTable("ChapterRewards");
+                });
+
             modelBuilder.Entity("ReadManager.Api.Entities.Comment", b =>
                 {
                     b.Property<int>("CommentId")
@@ -157,6 +172,62 @@ namespace ReadManager.Api.Migrations
                     b.HasIndex("StoryId", "ChapterId", "CreatedAt");
 
                     b.ToTable("Comments", (string)null);
+                });
+
+            modelBuilder.Entity("ReadManager.Api.Entities.Coupon", b =>
+                {
+                    b.Property<int>("CouponId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("CouponId"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("DurationMonthsCsv")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)");
+
+                    b.Property<DateTime>("ExpiresAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<int>("Milestone")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)");
+
+                    b.Property<int>("Percent")
+                        .HasColumnType("int");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.HasKey("CouponId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("Coupons", (string)null);
+                });
+
+            modelBuilder.Entity("ReadManager.Api.Entities.FreezeCardPurchase", b =>
+                {
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.Property<Guid>("RequestId")
+                        .HasColumnType("char(36)");
+
+                    b.Property<int>("Cost")
+                        .HasColumnType("int");
+
+                    b.HasKey("UserId", "RequestId");
+
+                    b.ToTable("FreezeCardPurchases");
                 });
 
             modelBuilder.Entity("ReadManager.Api.Entities.Genre", b =>
@@ -241,8 +312,17 @@ namespace ReadManager.Api.Migrations
                         .HasPrecision(12, 2)
                         .HasColumnType("decimal(12,2)");
 
+                    b.Property<int?>("CouponId")
+                        .HasColumnType("int");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime(6)");
+
+                    b.Property<decimal>("DiscountAmount")
+                        .ValueGeneratedOnAdd()
+                        .HasPrecision(12, 2)
+                        .HasColumnType("decimal(12,2)")
+                        .HasDefaultValue(0m);
 
                     b.Property<int?>("DurationMonths")
                         .HasColumnType("int");
@@ -256,6 +336,10 @@ namespace ReadManager.Api.Migrations
                         .IsRequired()
                         .HasMaxLength(10)
                         .HasColumnType("varchar(10)");
+
+                    b.Property<decimal?>("OriginalAmount")
+                        .HasPrecision(12, 2)
+                        .HasColumnType("decimal(12,2)");
 
                     b.Property<DateTime?>("PaidAt")
                         .HasColumnType("datetime(6)");
@@ -280,6 +364,8 @@ namespace ReadManager.Api.Migrations
                         .HasColumnType("int");
 
                     b.HasKey("OrderId");
+
+                    b.HasIndex("CouponId");
 
                     b.HasIndex("PlanVersionId");
 
@@ -430,6 +516,36 @@ namespace ReadManager.Api.Migrations
                     b.HasIndex("StoryId");
 
                     b.ToTable("PlanVersionStories", (string)null);
+                });
+
+            modelBuilder.Entity("ReadManager.Api.Entities.ReaderFavorite", b =>
+                {
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("StoryId")
+                        .HasColumnType("int");
+
+                    b.HasKey("UserId", "StoryId");
+
+                    b.HasIndex("StoryId");
+
+                    b.ToTable("ReaderFavorites");
+                });
+
+            modelBuilder.Entity("ReadManager.Api.Entities.ReaderGenre", b =>
+                {
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("GenreId")
+                        .HasColumnType("int");
+
+                    b.HasKey("UserId", "GenreId");
+
+                    b.HasIndex("GenreId");
+
+                    b.ToTable("ReaderGenres");
                 });
 
             modelBuilder.Entity("ReadManager.Api.Entities.ReadingPlan", b =>
@@ -735,6 +851,79 @@ namespace ReadManager.Api.Migrations
                         });
                 });
 
+            modelBuilder.Entity("ReadManager.Api.Entities.StreakNotice", b =>
+                {
+                    b.Property<int>("StreakNoticeId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("StreakNoticeId"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<bool>("IsRead")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)");
+
+                    b.Property<string>("Message")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("varchar(500)");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.HasKey("StreakNoticeId");
+
+                    b.HasIndex("UserId", "CreatedAt");
+
+                    b.ToTable("StreakNotices", (string)null);
+                });
+
+            modelBuilder.Entity("ReadManager.Api.Entities.StreakReward", b =>
+                {
+                    b.Property<int>("StreakRewardId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("StreakRewardId"));
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("varchar(40)");
+
+                    b.Property<DateTime>("GrantedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)");
+
+                    b.Property<int>("Milestone")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.HasKey("StreakRewardId");
+
+                    b.HasIndex("UserId", "Kind", "Code");
+
+                    b.ToTable("StreakRewards", (string)null);
+                });
+
             modelBuilder.Entity("ReadManager.Api.Entities.User", b =>
                 {
                     b.Property<int>("UserId")
@@ -766,6 +955,9 @@ namespace ReadManager.Api.Migrations
                         .IsRequired()
                         .HasMaxLength(254)
                         .HasColumnType("varchar(254)");
+
+                    b.Property<bool>("GenrePromptCompleted")
+                        .HasColumnType("tinyint(1)");
 
                     b.Property<string>("PasswordHash")
                         .IsRequired()
@@ -808,6 +1000,56 @@ namespace ReadManager.Api.Migrations
                         .IsUnique();
 
                     b.ToTable("Users", (string)null);
+                });
+
+            modelBuilder.Entity("ReadManager.Api.Entities.UserStreak", b =>
+                {
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("BrokenAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<int>("BrokenStreak")
+                        .HasColumnType("int");
+
+                    b.Property<int>("CurrentStreak")
+                        .HasColumnType("int");
+
+                    b.Property<int>("EarnedStreakCoins")
+                        .HasColumnType("int");
+
+                    b.Property<int>("FreezeCards")
+                        .HasColumnType("int");
+
+                    b.Property<DateOnly?>("LastReadDate")
+                        .HasColumnType("date");
+
+                    b.Property<DateOnly?>("LastWarnDate")
+                        .HasColumnType("date");
+
+                    b.Property<int>("LongestStreak")
+                        .HasColumnType("int");
+
+                    b.Property<int>("RestoresUsed")
+                        .HasColumnType("int");
+
+                    b.Property<string>("SelectedFrame")
+                        .HasMaxLength(40)
+                        .HasColumnType("varchar(40)");
+
+                    b.Property<string>("SelectedTitle")
+                        .HasMaxLength(60)
+                        .HasColumnType("varchar(60)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.HasKey("UserId");
+
+                    b.HasIndex("LongestStreak");
+
+                    b.ToTable("UserStreaks", (string)null);
                 });
 
             modelBuilder.Entity("ReadManager.Api.Entities.UserSubscription", b =>
@@ -878,6 +1120,25 @@ namespace ReadManager.Api.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("ReadManager.Api.Entities.ChapterReward", b =>
+                {
+                    b.HasOne("ReadManager.Api.Entities.Chapter", "Chapter")
+                        .WithMany()
+                        .HasForeignKey("ChapterId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("ReadManager.Api.Entities.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Chapter");
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("ReadManager.Api.Entities.Comment", b =>
                 {
                     b.HasOne("ReadManager.Api.Entities.Chapter", "Chapter")
@@ -900,6 +1161,28 @@ namespace ReadManager.Api.Migrations
                     b.Navigation("Chapter");
 
                     b.Navigation("Story");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("ReadManager.Api.Entities.Coupon", b =>
+                {
+                    b.HasOne("ReadManager.Api.Entities.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("ReadManager.Api.Entities.FreezeCardPurchase", b =>
+                {
+                    b.HasOne("ReadManager.Api.Entities.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.Navigation("User");
                 });
@@ -932,6 +1215,11 @@ namespace ReadManager.Api.Migrations
 
             modelBuilder.Entity("ReadManager.Api.Entities.Order", b =>
                 {
+                    b.HasOne("ReadManager.Api.Entities.Coupon", null)
+                        .WithMany()
+                        .HasForeignKey("CouponId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("ReadManager.Api.Entities.ReadingPlanVersion", "PlanVersion")
                         .WithMany()
                         .HasForeignKey("PlanVersionId")
@@ -994,6 +1282,44 @@ namespace ReadManager.Api.Migrations
                     b.Navigation("PlanVersion");
 
                     b.Navigation("Story");
+                });
+
+            modelBuilder.Entity("ReadManager.Api.Entities.ReaderFavorite", b =>
+                {
+                    b.HasOne("ReadManager.Api.Entities.Story", "Story")
+                        .WithMany()
+                        .HasForeignKey("StoryId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("ReadManager.Api.Entities.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Story");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("ReadManager.Api.Entities.ReaderGenre", b =>
+                {
+                    b.HasOne("ReadManager.Api.Entities.Genre", "Genre")
+                        .WithMany()
+                        .HasForeignKey("GenreId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("ReadManager.Api.Entities.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Genre");
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("ReadManager.Api.Entities.ReadingPlanVersion", b =>
@@ -1103,6 +1429,39 @@ namespace ReadManager.Api.Migrations
                         .IsRequired();
 
                     b.Navigation("Order");
+                });
+
+            modelBuilder.Entity("ReadManager.Api.Entities.StreakNotice", b =>
+                {
+                    b.HasOne("ReadManager.Api.Entities.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("ReadManager.Api.Entities.StreakReward", b =>
+                {
+                    b.HasOne("ReadManager.Api.Entities.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("ReadManager.Api.Entities.UserStreak", b =>
+                {
+                    b.HasOne("ReadManager.Api.Entities.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("ReadManager.Api.Entities.UserSubscription", b =>

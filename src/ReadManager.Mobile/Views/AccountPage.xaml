@@ -47,6 +47,8 @@
 
             <!-- ============ ĐÃ ĐĂNG NHẬP ============ -->
             <VerticalStackLayout IsVisible="{Binding IsLoggedIn}" Spacing="14">
+                <Label Text="{Binding CoinText}" FontAttributes="Bold" />
+                <Button Text="Sở thích đọc" Command="{Binding EditGenresCommand}" />
 
                 <!-- Tài khoản bị hạn chế / khóa (Sprint 3 — dữ liệu từ Backend 2) -->
                 <Border Padding="14" StrokeThickness="0" BackgroundColor="#FDECEC" IsVisible="{Binding HasStatusBanner}">
@@ -63,6 +65,8 @@
                                 Command="{Binding GoToNotificationsCommand}" />
                         <Button Text="Truyện đang theo dõi" Style="{StaticResource BtnOutlineSm}" HeightRequest="44"
                                 Command="{Binding GoToFollowedCommand}" />
+                        <Button Text="🔥 Chuỗi đọc sách &amp; phần thưởng" Style="{StaticResource BtnOutlineSm}" HeightRequest="44"
+                                Command="{Binding GoToStreakCommand}" />
                     </VerticalStackLayout>
                 </Border>
 

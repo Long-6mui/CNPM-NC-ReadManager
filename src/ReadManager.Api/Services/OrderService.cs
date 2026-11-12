@@ -180,7 +180,43 @@ public class OrderService : IOrderService
 
         // 3. Đang có đơn chờ thanh toán cho đúng món này → dùng lại đơn đó (bấm "Mua" 2 lần không tạo 2 đơn)
         if (quote.PendingOrderId.HasValue)
-            return await GetByIdAsync(quote.PendingOrderId.Value, userId, isAdmin: false);
+        {
+            var pendingCoupon = await _db.Orders.Where(o => o.OrderId == quote.PendingOrderId.Value)
+                .Select(o => o.CouponId).FirstOrDefaultAsync();
+            // Sprint 5 — người dùng chọn mã giảm giá KHÁC với đơn đang chờ → hủy đơn chờ cũ, tạo đơn mới có giảm giá
+            if (dto.CouponId is null || pendingCoupon == dto.CouponId)
+                return await GetByIdAsync(quote.PendingOrderId.Value, userId, isAdmin: false);
+
+            await _db.Orders.Where(o => o.OrderId == quote.PendingOrderId.Value && o.Status == Pending)
+                .ExecuteUpdateAsync(s => s.SetProperty(o => o.Status, Cancelled).SetProperty(o => o.UpdatedAt, DateTime.UtcNow));
+        }
+
+        // Sprint 5 — áp mã giảm giá từ chuỗi đọc (giá vẫn do SERVER tính, client chỉ gửi couponId)
+        var finalAmount = quote.Amount;
+        decimal? originalAmount = null;
+        var discount = 0m;
+        int? couponId = null;
+        if (dto.CouponId.HasValue)
+        {
+            if (quote.OrderType != TypePlan)
+                throw new ArgumentException("Mã giảm giá chỉ áp dụng khi mua gói đọc.");
+            var coupon = await _db.Coupons.FirstOrDefaultAsync(c => c.CouponId == dto.CouponId.Value && c.UserId == userId);
+            if (coupon is null)
+                throw new ArgumentException("Mã giảm giá không tồn tại.");
+            if (coupon.ExpiresAt <= DateTime.UtcNow)
+                throw new ArgumentException("Mã giảm giá đã hết hạn.");
+            var months = coupon.DurationMonthsCsv.Split(',', StringSplitOptions.RemoveEmptyEntries).Select(int.Parse).ToList();
+            if (!months.Contains(quote.DurationMonths ?? 0))
+                throw new ArgumentException($"Mã này chỉ áp dụng cho gói {string.Join(" / ", months)} tháng.");
+            var inUse = await _db.Orders.AnyAsync(o => o.CouponId == coupon.CouponId && (o.Status == Pending || o.Status == Paid));
+            if (inUse)
+                throw new ArgumentException("Mã giảm giá đã được sử dụng.");
+
+            originalAmount = quote.Amount;
+            discount = Math.Round(quote.Amount * coupon.Percent / 100m, 0);
+            finalAmount = quote.Amount - discount;
+            couponId = coupon.CouponId;
+        }
 
         // 4. Tạo đơn mới, chụp lại giá + tên + số tháng
         var now = DateTime.UtcNow;
@@ -191,7 +227,10 @@ public class OrderService : IOrderService
             StoryId = quote.StoryId,
             PlanVersionId = quote.PlanVersionId,
             ItemName = quote.ItemName,
-            Amount = quote.Amount,
+            Amount = finalAmount,
+            OriginalAmount = originalAmount,
+            DiscountAmount = discount,
+            CouponId = couponId,
             DurationMonths = quote.DurationMonths,
             Status = Pending,
             CreatedAt = now,
@@ -346,6 +385,9 @@ public class OrderService : IOrderService
             StoryId = o.StoryId,
             ItemName = o.ItemName,
             Amount = o.Amount,
+            OriginalAmount = o.OriginalAmount,
+            DiscountAmount = o.DiscountAmount,
+            CouponId = o.CouponId,
             DurationMonths = o.DurationMonths,
             Status = o.Status,
             CreatedAt = o.CreatedAt,
