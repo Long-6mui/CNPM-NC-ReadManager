@@ -67,6 +67,19 @@ try
     async Task<string> Token(string name) {var response=await http.PostAsJsonAsync("api/auth/login",new {email=name+"@example.test",password});response.EnsureSuccessStatusCode();return (await response.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("accessToken").GetString()!;}
     var alice=await Token("alice");var bob=await Token("bob");var adminToken=await Token("admin");
     var wallet = new ReadingProgressApiClient(http);
+    var grantKey = Guid.NewGuid();
+    var recipient = "bob@example.test";
+    try
+    {
+        await wallet.GrantAsync(grantKey, recipient, 25, 0, alice);
+        throw new Exception("Member granted coins");
+    }
+    catch (HttpRequestException ex) when (ex.StatusCode == HttpStatusCode.Forbidden) { Check(true, "Only admin can grant rewards"); }
+    await wallet.GrantAsync(grantKey, recipient, 25, 0, adminToken);
+    await wallet.GrantAsync(grantKey, recipient, 25, 0, adminToken);
+    await wallet.GrantAsync(Guid.NewGuid(), recipient, 0, 3, adminToken);
+    Check((await wallet.Balance(bob)).Coins == 25 && await db.UserStreaks.AnyAsync(s => s.User.Email == recipient && s.CurrentStreak == 3),
+        "Admin credits wallet and streak separately, repeated request credits once");
     var purchaseKey = Guid.NewGuid();
     Check((await wallet.BuyFreezeCardAsync(purchaseKey, adminToken)).Contains("cần 50"), "Insufficient coins keep inventory unchanged");
     streak.EarnedStreakCoins = 50;

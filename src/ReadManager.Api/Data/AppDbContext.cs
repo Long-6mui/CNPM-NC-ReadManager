@@ -45,6 +45,7 @@ public class AppDbContext : DbContext
 
     // Sprint 5 — chuỗi đọc sách
     public DbSet<FreezeCardPurchase> FreezeCardPurchases => Set<FreezeCardPurchase>();
+    public DbSet<AdminReaderGrant> AdminReaderGrants => Set<AdminReaderGrant>();
     public DbSet<UserStreak> UserStreaks => Set<UserStreak>();
     public DbSet<StreakReward> StreakRewards => Set<StreakReward>();
     public DbSet<Coupon> Coupons => Set<Coupon>();

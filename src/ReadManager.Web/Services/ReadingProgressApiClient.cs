@@ -27,6 +27,15 @@ public class ReadingProgressApiClient(HttpClient http)
         response.EnsureSuccessStatusCode();
         return "Đã đổi 50 xu lấy một thẻ bảo vệ chuỗi.";
     }
+    public async Task<string> GrantAsync(Guid requestId, string email, int coins, int days, string? token)
+    {
+        using var response = await SendAsync(HttpMethod.Post, "api/admin/users/reader-grants", token,
+            new { requestId, email, coins, days });
+        if (response.StatusCode is HttpStatusCode.NotFound or HttpStatusCode.BadRequest or HttpStatusCode.Conflict)
+            return (await response.Content.ReadFromJsonAsync<PurchaseError>())?.Message ?? "Yêu cầu không hợp lệ.";
+        response.EnsureSuccessStatusCode();
+        return coins > 0 ? $"Đã cộng {coins} xu cho {email}." : $"Đã cộng {days} ngày chuỗi cho {email}.";
+    }
     private record PurchaseError(string Message);
     public record CoinBalance(int Coins, int FreezeCards = 0);
     public record ChapterTicket(string Ticket);

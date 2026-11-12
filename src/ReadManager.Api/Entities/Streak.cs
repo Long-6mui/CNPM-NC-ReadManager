@@ -13,6 +13,17 @@ public class FreezeCardPurchase
     public User User { get; set; } = null!;
 }
 
+public class AdminReaderGrant
+{
+    [System.ComponentModel.DataAnnotations.Key]
+    public Guid RequestId { get; set; }
+    public int AdminId { get; set; }
+    public int UserId { get; set; }
+    public int Coins { get; set; }
+    public int Days { get; set; }
+    public DateTime GrantedAt { get; set; }
+}
+
 public class UserStreak
 {
     public int UserId { get; set; }                 // khóa chính, cũng là khóa ngoại tới Users
