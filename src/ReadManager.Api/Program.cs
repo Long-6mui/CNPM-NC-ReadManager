@@ -30,6 +30,7 @@ builder.Services.Configure<PaymentOptions>(builder.Configuration.GetSection(Paym
 builder.Services.AddScoped<IEntitlementGrantService, EntitlementGrantService>();   // BE4 — cấp quyền đọc
 builder.Services.AddScoped<IPaymentService, PaymentService>();                      // BE4 — PB19/PB21/PB24/PB25 thanh toán
 builder.Services.AddScoped<IContentStatisticsService, ContentStatisticsService>();   // BE3 — PB40 thống kê nội dung
+builder.Services.AddScoped<IRevenueStatisticsService, RevenueStatisticsService>();   // BE4 — PB38/PB39 thống kê doanh thu
 builder.Services.AddScoped<IDiscoveryService, DiscoveryService>();                   // BE3 — Khám phá & Bảng xếp hạng
 builder.Services.AddScoped<ICommentService, CommentService>();             // BE4 — PB32 bình luận
 builder.Services.AddScoped<IReportService, ReportService>();               // BE4 — PB33 báo cáo vi phạm

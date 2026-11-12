@@ -37,3 +37,35 @@ details.st-card>summary{cursor:pointer;font-weight:600}
 .st-state-error{border-style:solid;border-color:rgba(140,47,57,.4);background:rgba(140,47,57,.08)}
 .st-state-unavailable{border-color:rgba(180,135,60,.5)}
 @media (max-width:560px){.st-kpis{grid-template-columns:1fr 1fr}.st-kpi-value{font-size:20px}}
+/* PB38/PB39 — bộ lọc & công cụ của tab Doanh thu */
+.st-range select {
+    padding: 8px 10px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--surface-2);
+    color: var(--text);
+    font: inherit;
+    max-width: 240px
+}
+
+.st-card-tools {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap
+}
+
+    .st-card-tools .pillbar {
+        margin: 0
+    }
+
+details.st-sub {
+    margin-top: 8px
+}
+
+    details.st-sub > summary {
+        cursor: pointer;
+        font-weight: 600;
+        font-size: 13px;
+        color: var(--muted)
+    }

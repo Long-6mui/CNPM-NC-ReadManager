@@ -30,29 +30,53 @@ public record ContentChapterStatApi(int ChapterId, int ChapterNumber, string Tit
 public class TransactionStatusApi { public string Status { get; set; } = ""; public int OrderCount { get; set; } public decimal TotalAmount { get; set; } public double Percentage { get; set; } }
 public class PlanActivityApi
 {
-    public int PlanId { get; set; } public string PlanName { get; set; } = ""; public bool IsAvailable { get; set; }
-    public int NewSubscriptions { get; set; } public int Renewals { get; set; } public int ActiveSubscribers { get; set; }
-    public int ExpiringSoonCount { get; set; } public int ExpiredCount { get; set; } public double RenewalRate { get; set; }
+    public int PlanId { get; set; }
+    public string PlanName { get; set; } = ""; public bool IsAvailable { get; set; }
+    public int NewSubscriptions { get; set; }
+    public int Renewals { get; set; }
+    public int ActiveSubscribers { get; set; }
+    public int ExpiringSoonCount { get; set; }
+    public int ExpiredCount { get; set; }
+    public double RenewalRate { get; set; }
 }
 public class TopReaderApi
 {
-    public int Rank { get; set; } public string DisplayName { get; set; } = ""; public string MemberTier { get; set; } = "";
-    public int ChaptersRead { get; set; } public int CommentsPosted { get; set; } public int PaidOrdersCount { get; set; }
-    public decimal TotalSpent { get; set; } public int ActivityScore { get; set; }
+    public int Rank { get; set; }
+    public string DisplayName { get; set; } = ""; public string MemberTier { get; set; } = "";
+    public int ChaptersRead { get; set; }
+    public int CommentsPosted { get; set; }
+    public int PaidOrdersCount { get; set; }
+    public decimal TotalSpent { get; set; }
+    public int ActivityScore { get; set; }
 }
 public class ActivityOverviewApi
 {
-    public DateOnly From { get; set; } public DateOnly To { get; set; }
-    public int TotalMembers { get; set; } public int ActiveAccounts { get; set; } public int LockedAccounts { get; set; }
-    public int NewMembers { get; set; } public int ActiveReaders { get; set; } public int ActiveSubscribers { get; set; }
-    public int ExpiringSoonSubscriptions { get; set; } public int ChurnedSubscriptions { get; set; }
-    public int NewSubscriptions { get; set; } public int Renewals { get; set; } public int StoryPurchases { get; set; }
-    public double NewMembersGrowthPercent { get; set; } public double ActiveReadersGrowthPercent { get; set; }
-    public double SubscriptionsGrowthPercent { get; set; } public double StoryPurchasesGrowthPercent { get; set; }
-    public double RenewalRate { get; set; } public double ConversionRate { get; set; }
+    public DateOnly From { get; set; }
+    public DateOnly To { get; set; }
+    public int TotalMembers { get; set; }
+    public int ActiveAccounts { get; set; }
+    public int LockedAccounts { get; set; }
+    public int NewMembers { get; set; }
+    public int ActiveReaders { get; set; }
+    public int ActiveSubscribers { get; set; }
+    public int ExpiringSoonSubscriptions { get; set; }
+    public int ChurnedSubscriptions { get; set; }
+    public int NewSubscriptions { get; set; }
+    public int Renewals { get; set; }
+    public int StoryPurchases { get; set; }
+    public double NewMembersGrowthPercent { get; set; }
+    public double ActiveReadersGrowthPercent { get; set; }
+    public double SubscriptionsGrowthPercent { get; set; }
+    public double StoryPurchasesGrowthPercent { get; set; }
+    public double RenewalRate { get; set; }
+    public double ConversionRate { get; set; }
     public int? PeakReadingHour { get; set; }
-    public int TotalOrders { get; set; } public int PaidOrders { get; set; } public int PendingOrders { get; set; }
-    public int FailedOrders { get; set; } public int CancelledOrders { get; set; } public int ExpiredOrders { get; set; }
+    public int TotalOrders { get; set; }
+    public int PaidOrders { get; set; }
+    public int PendingOrders { get; set; }
+    public int FailedOrders { get; set; }
+    public int CancelledOrders { get; set; }
+    public int ExpiredOrders { get; set; }
     public double SuccessRate { get; set; }
     public List<TransactionStatusApi> TransactionsByStatus { get; set; } = [];
     public List<PlanActivityApi> Plans { get; set; } = [];
@@ -60,9 +84,94 @@ public class ActivityOverviewApi
 }
 public class ActivityDailyApi
 {
-    public DateOnly Date { get; set; } public int NewMembers { get; set; } public int ActiveReaders { get; set; }
-    public int NewSubscriptions { get; set; } public int Renewals { get; set; } public int StoryPurchases { get; set; }
-    public int PaidOrders { get; set; } public int PendingOrders { get; set; } public int FailedOrders { get; set; }
+    public DateOnly Date { get; set; }
+    public int NewMembers { get; set; }
+    public int ActiveReaders { get; set; }
+    public int NewSubscriptions { get; set; }
+    public int Renewals { get; set; }
+    public int StoryPurchases { get; set; }
+    public int PaidOrders { get; set; }
+    public int PendingOrders { get; set; }
+    public int FailedOrders { get; set; }
+}
+
+// ===== PB38 + PB39 — DTO khớp api/admin/statistics/revenue =====
+public class RevenueOverviewApi
+{
+    public DateOnly From { get; set; }
+    public DateOnly To { get; set; }
+    public string Type { get; set; } = "all";
+    public decimal TotalRevenue { get; set; }
+    public int OrderCount { get; set; }
+    public decimal AverageOrderValue { get; set; }
+    public decimal PlanRevenue { get; set; }
+    public int PlanOrders { get; set; }
+    public decimal NewPlanRevenue { get; set; }
+    public int NewPlanOrders { get; set; }
+    public decimal RenewalRevenue { get; set; }
+    public int RenewalOrders { get; set; }
+    public decimal StoryRevenue { get; set; }
+    public int StoryOrders { get; set; }
+}
+public class RevenueBucketApi
+{
+    public DateOnly PeriodStart { get; set; }
+    public DateOnly PeriodEnd { get; set; }
+    public decimal PlanRevenue { get; set; }
+    public decimal StoryRevenue { get; set; }
+    public decimal TotalRevenue { get; set; }
+    public int Orders { get; set; }
+}
+public class PlanRevenueApi
+{
+    public int PlanVersionId { get; set; }
+    public int PlanId { get; set; }
+    public string PlanName { get; set; } = "";
+    public int VersionNumber { get; set; }
+    public int DurationMonths { get; set; }
+    public int Orders { get; set; }
+    public int NewOrders { get; set; }
+    public int RenewalOrders { get; set; }
+    public decimal Revenue { get; set; }
+    public decimal NewRevenue { get; set; }
+    public decimal RenewalRevenue { get; set; }
+    public double SharePercent { get; set; }
+    public string Label => $"{PlanName} · v{VersionNumber} ({DurationMonths} tháng)";
+}
+public class StoryRevenueApi
+{
+    public int StoryId { get; set; }
+    public string Title { get; set; } = "";
+    public int Purchases { get; set; }
+    public decimal Revenue { get; set; }
+    public double SharePercent { get; set; }
+}
+public class RevenuePlanOptionApi
+{
+    public int PlanVersionId { get; set; }
+    public int PlanId { get; set; }
+    public string PlanName { get; set; } = "";
+    public int VersionNumber { get; set; }
+    public int DurationMonths { get; set; }
+    public string Label => $"{PlanName} · v{VersionNumber} ({DurationMonths} tháng)";
+}
+public class RevenueStoryOptionApi { public int StoryId { get; set; } public string Title { get; set; } = ""; }
+public class RevenueFilterOptionsApi
+{
+    public List<RevenuePlanOptionApi> Plans { get; set; } = []; public List<RevenueStoryOptionApi> Stories { get; set; } = [];
+}
+public record RevenueCsvApi(byte[] Content, string FileName);
+
+// Bộ lọc doanh thu gửi lên API: khoảng ngày (giờ VN) + loại / gói / truyện + cách gom biểu đồ
+public record RevenueQuery(DateOnly From, DateOnly To, string Type, int? PlanVersionId, int? StoryId, string GroupBy)
+{
+    public string ToQueryString()
+    {
+        var q = $"from={From:yyyy-MM-dd}&to={To:yyyy-MM-dd}&type={Uri.EscapeDataString(Type)}&groupBy={Uri.EscapeDataString(GroupBy)}";
+        if (PlanVersionId is int p) q += $"&planVersionId={p}";
+        if (StoryId is int s) q += $"&storyId={s}";
+        return q;
+    }
 }
 
 // Gọi các API thống kê (chỉ Admin). Mọi hàm đều trả StatResult để View hiển thị đúng trạng thái: có dữ liệu / rỗng / lỗi / API chưa có.
@@ -71,6 +180,7 @@ public class StatisticsApiClient(HttpClient http)
     private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web);
     private const string ContentBase = "api/admin/statistics/content";
     private const string ActivityBase = "api/admin/statistics/activity";
+    private const string RevenueBase = "api/admin/statistics/revenue";
 
     private static string Range(DateOnly from, DateOnly to) => $"from={from:yyyy-MM-dd}&to={to:yyyy-MM-dd}";
 
@@ -92,25 +202,34 @@ public class StatisticsApiClient(HttpClient http)
     public Task<StatResult<List<ActivityDailyApi>>> ActivityDailyAsync(DateOnly from, DateOnly to, string? token)
         => GetAsync<List<ActivityDailyApi>>($"{ActivityBase}/daily?{Range(from, to)}", token, "thống kê hoạt động theo ngày");
 
-    // ----- PB38 + PB39: doanh thu — tính từ đơn hàng ĐÃ THANH TOÁN (api/admin/orders?status=Paid) -----
-    // Khi Backend 4 có RevenueStatisticsController thì thay hàm này bằng lời gọi API doanh thu.
-    public async Task<StatResult<RevenueReport>> RevenueAsync(DateOnly from, DateOnly to, string? token)
+    // ----- PB38 + PB39: doanh thu (backend tính, Web chỉ hiển thị) -----
+    public Task<StatResult<RevenueOverviewApi>> RevenueOverviewAsync(RevenueQuery q, string? token)
+        => GetAsync<RevenueOverviewApi>($"{RevenueBase}/overview?{q.ToQueryString()}", token, "thống kê doanh thu (PB38/39)");
+    public Task<StatResult<List<RevenueBucketApi>>> RevenueSeriesAsync(RevenueQuery q, string? token)
+        => GetAsync<List<RevenueBucketApi>>($"{RevenueBase}/series?{q.ToQueryString()}", token, "doanh thu theo thời gian");
+    public Task<StatResult<List<PlanRevenueApi>>> RevenuePlansAsync(RevenueQuery q, string? token)
+        => GetAsync<List<PlanRevenueApi>>($"{RevenueBase}/plans?{q.ToQueryString()}", token, "doanh thu theo gói đọc");
+    public Task<StatResult<List<StoryRevenueApi>>> RevenueStoriesAsync(RevenueQuery q, int top, string? token)
+        => GetAsync<List<StoryRevenueApi>>($"{RevenueBase}/stories?{q.ToQueryString()}&top={top}", token, "doanh thu theo truyện");
+    public Task<StatResult<RevenueFilterOptionsApi>> RevenueFiltersAsync(string? token)
+        => GetAsync<RevenueFilterOptionsApi>($"{RevenueBase}/filters", token, "danh sách gói / truyện để lọc");
+
+    // Tải file CSV do API dựng (UTF-8 có BOM)
+    public async Task<StatResult<RevenueCsvApi>> RevenueCsvAsync(RevenueQuery q, string? token)
     {
-        const int pageSize = 100, maxPages = 30;     // tối đa 3.000 đơn
-        var all = new List<OrderApi>();
-        var truncated = false;
-        for (var page = 1; page <= maxPages; page++)
+        const string what = "xuất doanh thu";
+        try
         {
-            var r = await GetAsync<PagedApi<OrderApi>>($"api/admin/orders?status=Paid&page={page}&pageSize={pageSize}", token, "đơn hàng (doanh thu)");
-            if (!r.Ok) return new StatResult<RevenueReport>(null, r.Error, r.Unavailable);
-            var items = r.Data!.Items;
-            all.AddRange(items);
-            if (items.Count < pageSize || all.Count >= r.Data.TotalCount) break;
-            // Danh sách mới nhất trước: cả trang đều tạo trước kỳ xem 2 ngày → các trang sau chắc chắn ngoài kỳ
-            if (items.All(o => o.CreatedAt < from.ToDateTime(TimeOnly.MinValue).AddDays(-2))) break;
-            if (page == maxPages) truncated = true;
+            using var req = new HttpRequestMessage(HttpMethod.Get, $"{RevenueBase}/export-csv?{q.ToQueryString()}");
+            if (!string.IsNullOrEmpty(token)) req.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+            using var res = await http.SendAsync(req);
+            var failure = await FailureAsync<RevenueCsvApi>(res, what);
+            if (failure is not null) return failure;
+            var name = res.Content.Headers.ContentDisposition?.FileNameStar ?? res.Content.Headers.ContentDisposition?.FileName?.Trim('"') ?? "doanh-thu.csv";
+            return StatResult<RevenueCsvApi>.Success(new RevenueCsvApi(await res.Content.ReadAsByteArrayAsync(), name));
         }
-        return StatResult<RevenueReport>.Success(RevenueReport.Build(all, from, to, truncated));
+        catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException)
+        { return StatResult<RevenueCsvApi>.Fail("Không kết nối được API. Hãy chạy ReadManager.Api rồi thử lại."); }
     }
 
     private async Task<StatResult<T>> GetAsync<T>(string url, string? token, string what)
@@ -120,14 +239,8 @@ public class StatisticsApiClient(HttpClient http)
             using var req = new HttpRequestMessage(HttpMethod.Get, url);
             if (!string.IsNullOrEmpty(token)) req.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
             using var res = await http.SendAsync(req);
-            if (res.StatusCode == HttpStatusCode.NotFound)
-                return StatResult<T>.Missing($"API {what} chưa có trên máy chủ API đang chạy. Cần merge nhánh Backend tương ứng rồi chạy lại API.");
-            if (res.StatusCode is HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden)
-                return StatResult<T>.Fail("Phiên đăng nhập Admin đã hết hạn hoặc không đủ quyền. Hãy đăng nhập lại.");
-            if (res.StatusCode == HttpStatusCode.BadRequest)
-                return StatResult<T>.Fail(await ReadMessageAsync(res) ?? "Khoảng thời gian không hợp lệ.");
-            if (!res.IsSuccessStatusCode)
-                return StatResult<T>.Fail($"API trả về lỗi {(int)res.StatusCode}. Vui lòng thử lại.");
+            var failure = await FailureAsync<T>(res, what);
+            if (failure is not null) return failure;
             var data = await res.Content.ReadFromJsonAsync<T>(Json);
             return data is null ? StatResult<T>.Fail("API không trả dữ liệu.") : StatResult<T>.Success(data);
         }
@@ -135,6 +248,25 @@ public class StatisticsApiClient(HttpClient http)
         { return StatResult<T>.Fail("Không kết nối được API. Hãy chạy ReadManager.Api rồi thử lại."); }
         catch (JsonException)
         { return StatResult<T>.Fail("Dữ liệu thống kê trả về không đọc được (sai định dạng)."); }
+    }
+
+    // Trả null nếu phản hồi thành công; ngược lại trả kết quả lỗi đã có thông báo tiếng Việt
+    private static async Task<StatResult<T>?> FailureAsync<T>(HttpResponseMessage res, string what)
+    {
+        if (res.IsSuccessStatusCode) return null;
+        if (res.StatusCode == HttpStatusCode.NotFound)
+        {
+            // 404 có message = API báo không tìm thấy gói / truyện; không có message = chưa có API này trên máy chủ
+            var msg = await ReadMessageAsync(res);
+            return msg is not null
+                ? StatResult<T>.Fail(msg)
+                : StatResult<T>.Missing($"API {what} chưa có trên máy chủ API đang chạy. Cần merge nhánh Backend tương ứng rồi chạy lại API.");
+        }
+        if (res.StatusCode is HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden)
+            return StatResult<T>.Fail("Phiên đăng nhập Admin đã hết hạn hoặc không đủ quyền. Hãy đăng nhập lại.");
+        if (res.StatusCode == HttpStatusCode.BadRequest)
+            return StatResult<T>.Fail(await ReadMessageAsync(res) ?? "Khoảng thời gian không hợp lệ.");
+        return StatResult<T>.Fail($"API trả về lỗi {(int)res.StatusCode}. Vui lòng thử lại.");
     }
 
     private static async Task<string?> ReadMessageAsync(HttpResponseMessage res)

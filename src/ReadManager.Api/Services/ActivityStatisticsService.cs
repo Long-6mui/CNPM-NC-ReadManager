@@ -784,6 +784,8 @@ public class ActivityStatisticsService : IActivityStatisticsService
         return fromSubscriptions.Concat(fromOrders).ToHashSet();
     }
 
+    // Phân loại "đăng ký mới" / "gia hạn" dùng chung luật với PB38 (PlanOrderClassifier):
+    // gia hạn = mua lại CÙNG MỘT GÓI khi quyền của đơn trước vẫn còn hạn.
     private async Task<List<ClassifiedPlanOrder>> LoadClassifiedPlanOrdersAsync()
     {
         var paidPlanOrders = await _db.Orders.AsNoTracking()
@@ -799,21 +801,16 @@ public class ActivityStatisticsService : IActivityStatisticsService
             .ThenBy(o => o.OrderId)
             .ToListAsync();
 
-        var seenUsers = new HashSet<int>();
-        var result = new List<ClassifiedPlanOrder>(paidPlanOrders.Count);
+        var grants = await PlanOrderClassifier.LoadGrantsAsync(_db);
+        var renewalIds = PlanOrderClassifier.FindRenewalOrderIds(
+            paidPlanOrders
+                .Where(o => o.PlanId.HasValue)
+                .Select(o => new PlanOrderClassifier.PlanOrder(o.OrderId, o.UserId, o.PlanId!.Value, o.EffectiveAtUtc)),
+            grants);
 
-        foreach (var order in paidPlanOrders)
-        {
-            var isRenewal = !seenUsers.Add(order.UserId);
-            result.Add(new ClassifiedPlanOrder(
-                order.OrderId,
-                order.UserId,
-                order.PlanId,
-                order.EffectiveAtUtc,
-                isRenewal));
-        }
-
-        return result;
+        return paidPlanOrders
+            .Select(o => new ClassifiedPlanOrder(o.OrderId, o.UserId, o.PlanId, o.EffectiveAtUtc, renewalIds.Contains(o.OrderId)))
+            .ToList();
     }
 
     private async Task<TransactionStatusSummaryDto> BuildTransactionSummaryAsync(DateRange range)
