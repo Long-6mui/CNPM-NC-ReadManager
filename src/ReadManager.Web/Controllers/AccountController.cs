@@ -13,10 +13,26 @@ public class AccountController(AuthApiClient api, DemoMemberStore members) : Con
     [HttpGet] public IActionResult Register() => View(new RegisterVm());
     [HttpGet] public IActionResult AccessDenied() => View();
 
+    [Authorize, HttpPost, ValidateAntiForgeryToken]
+    public async Task<IActionResult> BuyFreezeCard(Guid requestId, [FromServices] ReadingProgressApiClient reader)
+    {
+        try { TempData["CardMessage"] = await reader.BuyFreezeCardAsync(requestId, await HttpContext.GetTokenAsync("access_token")); }
+        catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException)
+        {
+            TempData["CardMessage"] = "Chưa xác nhận được giao dịch. Hãy kiểm tra số dư trước khi đổi tiếp.";
+        }
+        return RedirectToAction(nameof(Profile));
+    }
+
     // Trang thông tin tài khoản (cần đăng nhập)
     [Authorize] public async Task<IActionResult> Profile([FromServices] ReadingProgressApiClient reader)
     {
-        try { ViewBag.Coins = (await reader.Balance(await HttpContext.GetTokenAsync("access_token"))).Coins; }
+        try
+        {
+            var wallet = await reader.Balance(await HttpContext.GetTokenAsync("access_token"));
+            ViewBag.Coins = wallet.Coins;
+            ViewBag.FreezeCards = wallet.FreezeCards;
+        }
         catch (HttpRequestException) { ViewBag.Coins = null; }
         catch (TaskCanceledException) { ViewBag.Coins = null; }
         return View();

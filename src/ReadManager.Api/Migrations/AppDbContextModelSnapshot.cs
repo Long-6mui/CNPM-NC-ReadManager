@@ -214,6 +214,22 @@ namespace ReadManager.Api.Migrations
                     b.ToTable("Coupons", (string)null);
                 });
 
+            modelBuilder.Entity("ReadManager.Api.Entities.FreezeCardPurchase", b =>
+                {
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.Property<Guid>("RequestId")
+                        .HasColumnType("char(36)");
+
+                    b.Property<int>("Cost")
+                        .HasColumnType("int");
+
+                    b.HasKey("UserId", "RequestId");
+
+                    b.ToTable("FreezeCardPurchases");
+                });
+
             modelBuilder.Entity("ReadManager.Api.Entities.Genre", b =>
                 {
                     b.Property<int>("GenreId")
@@ -1150,6 +1166,17 @@ namespace ReadManager.Api.Migrations
                 });
 
             modelBuilder.Entity("ReadManager.Api.Entities.Coupon", b =>
+                {
+                    b.HasOne("ReadManager.Api.Entities.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("ReadManager.Api.Entities.FreezeCardPurchase", b =>
                 {
                     b.HasOne("ReadManager.Api.Entities.User", "User")
                         .WithMany()

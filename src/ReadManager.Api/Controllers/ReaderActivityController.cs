@@ -50,14 +50,52 @@ public class ReaderActivityController(AppDbContext db, IEntitlementService right
         catch (DbUpdateException e) when (e.InnerException is MySqlException { Number: 1062 }) { return false; }
     }
 
+    private const int FreezeCardPrice = 50;
+
+    private async Task<int> BalanceAsync()
+    {
+        var chapterCoins = 10 * await db.ChapterRewards.CountAsync(r => r.UserId == UserId);
+        var streakCoins = await db.UserStreaks.Where(s => s.UserId == UserId)
+            .Select(s => s.EarnedStreakCoins).SingleOrDefaultAsync();
+        var spent = await db.FreezeCardPurchases.Where(p => p.UserId == UserId).SumAsync(p => p.Cost);
+        return chapterCoins + streakCoins - spent;
+    }
+
+    [HttpPost("freeze-cards/{requestId:guid}")]
+    public async Task<IActionResult> BuyFreezeCard(Guid requestId)
+    {
+        if (requestId == Guid.Empty) return BadRequest();
+        await using var transaction = await db.Database.BeginTransactionAsync();
+        // Serialize checkouts for this account, including its first purchase.
+        await db.Users.FromSqlInterpolated($"SELECT * FROM Users WHERE UserId = {UserId} FOR UPDATE")
+            .AsNoTracking().ToListAsync();
+        if (await db.FreezeCardPurchases.AnyAsync(p => p.UserId == UserId && p.RequestId == requestId))
+            return NoContent();
+        if (await BalanceAsync() < FreezeCardPrice)
+            return Conflict(new { message = "Bạn cần 50 xu để đổi một thẻ bảo vệ chuỗi." });
+
+        if (!await db.UserStreaks.AnyAsync(s => s.UserId == UserId))
+        {
+            db.UserStreaks.Add(new UserStreak { UserId = UserId });
+            await db.SaveChangesAsync();
+        }
+        var added = await db.UserStreaks.Where(s => s.UserId == UserId && s.FreezeCards < StreakCatalog.MaxFreezeCards)
+            .ExecuteUpdateAsync(update => update.SetProperty(s => s.FreezeCards, s => s.FreezeCards + 1));
+        if (added == 0) return Conflict(new { message = "Bạn đã có đủ 5 thẻ bảo vệ chuỗi." });
+        db.FreezeCardPurchases.Add(new FreezeCardPurchase { UserId = UserId, RequestId = requestId, Cost = FreezeCardPrice });
+        await db.SaveChangesAsync();
+        await transaction.CommitAsync();
+        return NoContent();
+    }
+
     [HttpGet("profile")]
     public async Task<IActionResult> Profile()
     {
-        var coins = 10 * await db.ChapterRewards.CountAsync(r => r.UserId == UserId);
-        coins += await db.UserStreaks.Where(s => s.UserId == UserId).Select(s => s.EarnedStreakCoins).SingleOrDefaultAsync();
+        var coins = await BalanceAsync();
         var prompted = await db.Users.Where(u => u.UserId == UserId).Select(u => u.GenrePromptCompleted).SingleAsync();
         var genres = await db.ReaderGenres.Where(g => g.UserId == UserId).Select(g => g.GenreId).ToListAsync();
-        return Ok(new { coins, prompted, genres });
+        var freezeCards = await db.UserStreaks.Where(s => s.UserId == UserId).Select(s => s.FreezeCards).SingleOrDefaultAsync();
+        return Ok(new { coins, freezeCards, prompted, genres });
     }
 
     [HttpPut("genres")]

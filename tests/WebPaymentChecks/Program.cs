@@ -66,6 +66,18 @@ try
     for(int i=0;i<60;i++){try{await http.GetAsync("api/reading-plans");break;}catch(HttpRequestException){await Task.Delay(200);}}
     async Task<string> Token(string name) {var response=await http.PostAsJsonAsync("api/auth/login",new {email=name+"@example.test",password});response.EnsureSuccessStatusCode();return (await response.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("accessToken").GetString()!;}
     var alice=await Token("alice");var bob=await Token("bob");var adminToken=await Token("admin");
+    var wallet = new ReadingProgressApiClient(http);
+    var purchaseKey = Guid.NewGuid();
+    Check((await wallet.BuyFreezeCardAsync(purchaseKey, adminToken)).Contains("cần 50"), "Insufficient coins keep inventory unchanged");
+    streak.EarnedStreakCoins = 50;
+    await db.SaveChangesAsync();
+    await Task.WhenAll(wallet.BuyFreezeCardAsync(purchaseKey, adminToken), wallet.BuyFreezeCardAsync(purchaseKey, adminToken));
+    await db.Entry(streak).ReloadAsync();
+    Check(streak.FreezeCards == 1 && (await wallet.Balance(adminToken)).Coins == 0, "Concurrent retry spends 50 coins and grants one card exactly once");
+    streak.EarnedStreakCoins = 100;
+    streak.FreezeCards = 5;
+    await db.SaveChangesAsync();
+    Check((await wallet.BuyFreezeCardAsync(Guid.NewGuid(), adminToken)).Contains("đủ 5") && (await wallet.Balance(adminToken)).Coins == 50, "Full inventory preserves balance");
     var webOrders=new StoriesApiClient(http);var payments=new PaymentsApiClient(http);
     var created=await webOrders.CreatePlanOrderAsync(plan.PlanId,version.PlanVersionId,alice);
     Check(created.Ok && created.Id.HasValue,"Web client creates plan order via API");var orderId=created.Id!.Value;

@@ -4,6 +4,15 @@ namespace ReadManager.Api.Entities;
 // Ngày được tính theo GIỜ VIỆT NAM (UTC+7). Đọc >= 1 chương trong ngày = có đọc ngày đó.
 
 // Trạng thái chuỗi của 1 người dùng (1 dòng / người).
+[Microsoft.EntityFrameworkCore.PrimaryKey(nameof(UserId), nameof(RequestId))]
+public class FreezeCardPurchase
+{
+    public int UserId { get; set; }
+    public Guid RequestId { get; set; }
+    public int Cost { get; set; }
+    public User User { get; set; } = null!;
+}
+
 public class UserStreak
 {
     public int UserId { get; set; }                 // khóa chính, cũng là khóa ngoại tới Users

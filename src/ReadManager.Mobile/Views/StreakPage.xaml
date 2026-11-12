@@ -106,6 +106,7 @@
                     </Border>
 
                     <!-- ============ KHÔI PHỤC CHUỖI ============ -->
+                    <Button Text="Đổi 50 xu lấy 1 thẻ bảo vệ chuỗi" Command="{Binding BuyCardCommand}" Style="{StaticResource BtnBrass}" />
                     <Border Style="{StaticResource Panel}" IsVisible="{Binding Info.CanRestore}" BackgroundColor="#FFF5E5">
                         <VerticalStackLayout Spacing="8">
                             <Label Text="💔 Bạn vừa mất chuỗi" Style="{StaticResource LblCardTitle}" TextColor="{StaticResource WebCrimson}" />

@@ -16,10 +16,16 @@
         <span class="pf-badge">@(isAdmin ? "Quản trị viên" : "Thành viên")</span>
         <div class="pf-info">
             <div><span>Số dư xu</span><b>@(ViewBag.Coins is int coins ? $"{coins:N0} xu" : "Chưa tải được số dư")</b></div>
+            @if (ViewBag.FreezeCards is int cards) { <div><span>Thẻ bảo vệ chuỗi</span><b>@cards / 5</b></div> }
             <div><span>Tên thành viên</span><b>@name</b></div>
             <div><span>Email</span><b>@email</b></div>
             <div><span>ID thành viên</span><b>@id</b></div>
         </div>
+        <form asp-action="BuyFreezeCard" method="post">
+            <input type="hidden" name="requestId" value="@Guid.NewGuid()" />
+            <button class="btn btn-outline" type="submit">Đổi 50 xu lấy 1 thẻ bảo vệ chuỗi</button>
+        </form>
+        @if (TempData["CardMessage"] is string cardMessage) { <p role="status">@cardMessage</p> }
         @if (isAdmin)
         {
             <a class="btn btn-brass" style="margin-top:16px;width:100%" asp-area="Admin" asp-controller="Stories" asp-action="Index">Vào trang quản trị</a>

@@ -6,6 +6,7 @@ namespace ReadManager.Mobile.Services;
 public interface IStreakService
 {
     Task<StreakInfo> GetAsync();
+    Task BuyCardAsync(Guid requestId);
     Task<StreakInfo> RestoreAsync();
     Task<StreakInfo> EquipAsync(string? title, string? frame);
     Task<List<StreakCoupon>> GetCouponsAsync();

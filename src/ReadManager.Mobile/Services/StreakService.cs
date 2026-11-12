@@ -11,6 +11,8 @@ public class StreakService : IStreakService
     public async Task<StreakInfo> GetAsync()
         => await _api.GetAsync<StreakInfo>("me/streak") ?? new StreakInfo();
 
+    public Task BuyCardAsync(Guid requestId) => _api.PostAsync($"reader/freeze-cards/{requestId}", new { });
+
     public async Task<StreakInfo> RestoreAsync()
         => await _api.PostAsync<object, StreakInfo>("me/streak/restore", new { })
            ?? throw new ApiException(500, "Không nhận được phản hồi từ máy chủ.");

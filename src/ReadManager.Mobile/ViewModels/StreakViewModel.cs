@@ -65,6 +65,21 @@ public partial class StreakViewModel : BaseViewModel
     [RelayCommand]
     private async Task RefreshAsync() => await LoadAsync();
 
+    private Guid _purchaseId = Guid.NewGuid();
+
+    [RelayCommand]
+    private async Task BuyCardAsync()
+    {
+        if (!await Shell.Current.DisplayAlert("Đổi thẻ bảo vệ chuỗi", "Dùng 50 xu để nhận 1 thẻ?", "Đổi thẻ", "Để sau")) return;
+        await RunSafeAsync(async () =>
+        {
+            await _streak.BuyCardAsync(_purchaseId);
+            _purchaseId = Guid.NewGuid();
+            Message = "Đã đổi 50 xu lấy một thẻ bảo vệ chuỗi.";
+            await ReloadAsync();
+        });
+    }
+
     [RelayCommand]
     private async Task RestoreAsync()
     {

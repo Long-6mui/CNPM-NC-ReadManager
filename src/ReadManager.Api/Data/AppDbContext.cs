@@ -44,6 +44,7 @@ public class AppDbContext : DbContext
     public DbSet<ReadingProgress> ReadingProgresses => Set<ReadingProgress>();
 
     // Sprint 5 — chuỗi đọc sách
+    public DbSet<FreezeCardPurchase> FreezeCardPurchases => Set<FreezeCardPurchase>();
     public DbSet<UserStreak> UserStreaks => Set<UserStreak>();
     public DbSet<StreakReward> StreakRewards => Set<StreakReward>();
     public DbSet<Coupon> Coupons => Set<Coupon>();
