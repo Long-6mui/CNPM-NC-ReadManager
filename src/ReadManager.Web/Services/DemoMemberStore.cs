@@ -84,20 +84,16 @@ public class DemoMemberStore
 
     public MemberItem? Get(string id) { lock (_lock) return _members.FirstOrDefault(x => x.Id == id); }
 
-    public (List<MemberItem> Items, int Total) Search(string? q, string? state, string? role, int page, int size)
+    public MemberItem Remember(ReadingProgressApiClient.DirectoryMember row)
     {
         lock (_lock)
         {
-            IEnumerable<MemberItem> x = _members;
-            if (!string.IsNullOrWhiteSpace(q))
-            {
-                var k = q.Trim();
-                x = x.Where(m => m.Name.Contains(k, StringComparison.OrdinalIgnoreCase) || m.Email.Contains(k, StringComparison.OrdinalIgnoreCase));
-            }
-            if (!string.IsNullOrEmpty(role)) x = x.Where(m => m.Role == role);
-            if (Enum.TryParse<MemberState>(state, out var st)) x = x.Where(m => StateOfNoLock(m.Id).Item1 == st);
-            var all = x.OrderByDescending(m => m.JoinedAt).ToList();
-            return (all.Skip((page - 1) * size).Take(size).ToList(), all.Count);
+            var id = row.UserId.ToString();
+            var member = new MemberItem { Id = id, Name = row.DisplayName, Email = row.Email, Role = row.Role,
+                JoinedAt = row.CreatedAt, LastLoginAt = _members.Find(m => m.Id == id)?.LastLoginAt };
+            _members.RemoveAll(m => m.Id == id);
+            _members.Add(member);
+            return member;
         }
     }
 

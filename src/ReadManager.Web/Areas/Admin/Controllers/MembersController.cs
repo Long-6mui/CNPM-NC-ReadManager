@@ -40,16 +40,33 @@ public class MembersController(IWebHostEnvironment environment, DemoMemberStore 
     private string AdminId => User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "";
     private string AdminName => User.Identity?.Name ?? "Admin";
 
-    public IActionResult Index(string? q, string? state, string? role, int page = 1)
+    public async Task<IActionResult> Index([FromServices] ReadingProgressApiClient reader, string? q, string? state, string? role, int page = 1)
     {
-        var (items, total) = members.Search(q, state, role, Math.Max(1, page), PageSize);
-        var pageCount = Math.Max(1, (int)Math.Ceiling(total / (double)PageSize));
-        if (page > pageCount) (items, total) = members.Search(q, state, role, page = pageCount, PageSize);
-        return View(new MembersIndexVm
+        var vm = new MembersIndexVm { Q = q, State = state, Role = role };
+        try
         {
-            Items = items, Q = q, State = state, Role = role, Page = Math.Max(1, page), PageCount = pageCount, Total = total,
-            States = items.ToDictionary(m => m.Id, m => members.StateOf(m.Id))
-        });
+            var rows = await reader.FindMembersAsync(q, role, await HttpContext.GetTokenAsync("access_token"));
+            var filtered = new List<MemberItem>();
+            foreach (var row in rows)
+            {
+                var member = members.Remember(row);
+                var status = members.StateOf(member.Id);
+                if (status.State == MemberState.Active && Enum.TryParse<MemberState>(row.AccountStatus, true, out var persisted))
+                    status.State = persisted;
+                if (!string.IsNullOrEmpty(state) && status.State.ToString() != state) continue;
+                vm.States[member.Id] = status;
+                filtered.Add(member);
+            }
+            vm.Total = filtered.Count;
+            vm.PageCount = Math.Max(1, (vm.Total + PageSize - 1) / PageSize);
+            vm.Page = Math.Clamp(page, 1, vm.PageCount);
+            vm.Items = filtered.Skip((vm.Page - 1) * PageSize).Take(PageSize).ToList();
+        }
+        catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException)
+        {
+            ViewBag.DirectoryError = "Không tải được danh sách thành viên từ API. Hãy kiểm tra kết nối và phiên đăng nhập admin.";
+        }
+        return View(vm);
     }
 
     [Authorize(Roles = "Admin"), HttpPost, ValidateAntiForgeryToken]

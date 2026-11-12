@@ -21,7 +21,6 @@
                 <button class="btn btn-outline btn-sm" name="kind" value="days">Cộng ngày chuỗi</button>
             </form>
             @if (TempData["GrantMessage"] is string message) { <p role="status">@message</p> }
-            <span class="pl-demo">Dữ liệu mẫu: chưa nối API quản lý thành viên (Backend 2)</span>
             <form method="get" asp-action="Index" class="mem-filter">
                 <input type="search" name="q" value="@Model.Q" placeholder="Tìm theo tên hoặc email…" aria-label="Tìm thành viên" />
                 <select name="state" aria-label="Trạng thái">
@@ -40,7 +39,7 @@
             </form>
             <p class="pl-sub">@Model.Total tài khoản</p>
 
-            @if (Model.Items.Count == 0) { <div class="empty-state"><h3>Không có tài khoản phù hợp</h3></div> }
+            @if (ViewBag.DirectoryError is string error) { <p role="alert">@error</p> } else if (Model.Items.Count == 0) { <div class="empty-state"><h3>Không có tài khoản phù hợp</h3></div> }
             else
             {
                 <div style="overflow-x:auto">

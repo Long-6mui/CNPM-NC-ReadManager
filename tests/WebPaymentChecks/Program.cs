@@ -150,6 +150,17 @@ try
     var loginForm=new Dictionary<string,string> { ["Email"]="alice@example.test", ["Password"]=password, ["__RequestVerificationToken"]=Csrf(loginHtml) };
     var loginResponse=await browser.PostAsync("Account/Login",new FormUrlEncodedContent(loginForm));
     Check(loginResponse.StatusCode==HttpStatusCode.Redirect,"Web test user signs in with cookie");
+    using var adminBrowser = new HttpClient(new HttpClientHandler { AllowAutoRedirect = false }) { BaseAddress = new Uri(webUrl) };
+    var adminLogin = new Dictionary<string,string>(loginForm) {
+        ["Email"] = "admin@example.test", ["__RequestVerificationToken"] = Csrf(await adminBrowser.GetStringAsync("Account/Login")) };
+    var signedIn = await adminBrowser.PostAsync("Account/Login", new FormUrlEncodedContent(adminLogin));
+    Check(signedIn.StatusCode == HttpStatusCode.Redirect, "Admin signs into Web");
+    var directory = await adminBrowser.GetStringAsync("Admin/Members");
+    Check(directory.Contains("bob@example.test") && !directory.Contains("an.nguyen@example.com"), "Directory includes existing MySQL accounts without a Web login");
+    using var registration = await http.PostAsJsonAsync("api/auth/register", new { displayName = "New Reader", email = "newreader@example.test", password });
+    registration.EnsureSuccessStatusCode();
+    directory = await adminBrowser.GetStringAsync("Admin/Members?q=newreader");
+    Check(directory.Contains("newreader@example.test") && !directory.Contains("bob@example.test"), "New API registration immediately appears in filtered admin directory");
     var readHtml=await browser.GetStringAsync($"Stories/Read?storyId={story.StoryId}&no=1");
     Check(readHtml.Contains("data-percent=\"42.25\"") && readHtml.Contains("reading-progress.js"),
         "Web reader renders saved scroll percent from API");

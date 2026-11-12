@@ -27,7 +27,25 @@ public class ReadingProgressApiClient(HttpClient http)
         response.EnsureSuccessStatusCode();
         return "Đã đổi 50 xu lấy một thẻ bảo vệ chuỗi.";
     }
-    public async Task<string> GrantAsync(Guid requestId, string email, int coins, int days, string? token)
+    public record DirectoryMember(int UserId, string DisplayName, string Email, string Role, DateTime CreatedAt, string AccountStatus);
+
+    public async Task<List<DirectoryMember>> FindMembersAsync(string? keyword, string? role, string? token)
+    {
+        var result = new List<DirectoryMember>();
+        var query = $"keyword={Uri.EscapeDataString(keyword ?? "")}&role={Uri.EscapeDataString(role == "User" ? "Member" : role ?? "all")}";
+        for (var page = 1; ; page++)
+        {
+            using var response = await SendAsync(HttpMethod.Get, $"api/admin/users?{query}&page={page}&pageSize=50", token);
+            response.EnsureSuccessStatusCode();
+            var batch = await response.Content.ReadFromJsonAsync<PagedApi<DirectoryMember>>()
+                ?? throw new HttpRequestException("Thiếu danh sách thành viên.");
+            result.AddRange(batch.Items);
+            if (result.Count >= batch.TotalCount || batch.Items.Count == 0) return result;
+        }
+    }
+
+    public async Task<string> GrantAsync(
+Guid requestId, string email, int coins, int days, string? token)
     {
         using var response = await SendAsync(HttpMethod.Post, "api/admin/users/reader-grants", token,
             new { requestId, email, coins, days });
