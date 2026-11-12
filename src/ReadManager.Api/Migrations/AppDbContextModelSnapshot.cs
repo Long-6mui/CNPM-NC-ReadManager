@@ -1000,6 +1000,9 @@ namespace ReadManager.Api.Migrations
                     b.Property<int>("CurrentStreak")
                         .HasColumnType("int");
 
+                    b.Property<int>("EarnedStreakCoins")
+                        .HasColumnType("int");
+
                     b.Property<int>("FreezeCards")
                         .HasColumnType("int");
 

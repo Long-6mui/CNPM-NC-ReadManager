@@ -9,6 +9,7 @@ public class UserStreak
     public int UserId { get; set; }                 // khóa chính, cũng là khóa ngoại tới Users
 
     public int CurrentStreak { get; set; }          // chuỗi hiện tại (ngày)
+    public int EarnedStreakCoins { get; set; }
     public int LongestStreak { get; set; }          // chuỗi dài nhất từng đạt
     public DateOnly? LastReadDate { get; set; }     // ngày (giờ VN) đọc gần nhất được tính vào chuỗi
 

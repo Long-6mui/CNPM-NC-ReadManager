@@ -29,6 +29,21 @@ try
     }
     await db.SaveChangesAsync();
     var admin=await db.Users.SingleAsync(x=>x.Role=="Admin");
+    var streakService = new ReadManager.Api.Services.StreakService(db);
+    await streakService.RecordReadAsync(admin.UserId);
+    var streak = await db.UserStreaks.SingleAsync(row => row.UserId == admin.UserId);
+    Check(streak.EarnedStreakCoins == 0, "First reading day starts a streak");
+    var today = ReadManager.Api.Services.StreakService.TodayVn(DateTime.UtcNow);
+    streak.LastReadDate = today.AddDays(-1);
+    await db.SaveChangesAsync();
+    await streakService.RecordReadAsync(admin.UserId);
+    await streakService.RecordReadAsync(admin.UserId);
+    await db.Entry(streak).ReloadAsync();
+    Check(streak.CurrentStreak == 2 && streak.EarnedStreakCoins == 5, "Continuing a streak earns five coins once per day");
+    streak.LastReadDate = today.AddDays(-3);
+    await db.SaveChangesAsync();
+    await streakService.RecordReadAsync(admin.UserId);
+    Check(streak.CurrentStreak == 1 && streak.EarnedStreakCoins == 5, "Restarting a streak preserves previously earned coins");
     var story=new Story {Title="Paid",Slug="paid",AuthorName="Test",CreatedBy=admin.UserId,Visibility="Public",AccessPolicy="Paid",CurrentPrice=50000};
     var other=new Story {Title="Outside",Slug="outside",AuthorName="Test",CreatedBy=admin.UserId,Visibility="Public",AccessPolicy="Paid",CurrentPrice=50000};
     db.Stories.AddRange(story,other);await db.SaveChangesAsync();

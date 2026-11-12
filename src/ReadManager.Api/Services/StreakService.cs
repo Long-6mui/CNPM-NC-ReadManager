@@ -114,6 +114,7 @@ public class StreakService : IStreakService
         Evaluate(st, today);
 
         st.CurrentStreak = st.CurrentStreak <= 0 ? 1 : st.CurrentStreak + 1;
+        if (st.CurrentStreak >= 2) st.EarnedStreakCoins += 5;
         st.LastReadDate = today;
         if (st.CurrentStreak > st.LongestStreak) st.LongestStreak = st.CurrentStreak;
         st.UpdatedAt = now;

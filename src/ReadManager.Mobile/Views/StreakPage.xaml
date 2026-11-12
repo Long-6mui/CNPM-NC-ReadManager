@@ -25,7 +25,7 @@
                 <Border Style="{StaticResource Panel}" IsVisible="{Binding IsGuest}">
                     <VerticalStackLayout Spacing="10">
                         <Label Text="🔥 Chuỗi đọc sách" Style="{StaticResource LblH2}" FontSize="22" />
-                        <Label Text="Đăng nhập, đọc mỗi ngày ít nhất 1 chương để giữ chuỗi và nhận phần thưởng thật: mã giảm giá gói đọc, huy hiệu, danh hiệu, khung avatar..."
+                        <Label Text="Từ ngày thứ hai của chuỗi, mỗi ngày đọc được cộng thêm 5 xu. Đăng nhập, đọc mỗi ngày ít nhất 1 chương để giữ chuỗi và nhận phần thưởng thật: mã giảm giá gói đọc, huy hiệu, danh hiệu, khung avatar..."
                                Style="{StaticResource LblMuted}" />
                         <Button Text="Đăng nhập" Style="{StaticResource BtnBrass}" Command="{Binding GoToLoginCommand}" />
                     </VerticalStackLayout>
