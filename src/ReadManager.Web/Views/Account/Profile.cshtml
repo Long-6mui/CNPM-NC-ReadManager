@@ -1,4 +1,4 @@
-﻿@using System.Security.Claims
+@using System.Security.Claims
 @{
     ViewData["Title"] = "Tài khoản";
     var name = User.Identity?.Name ?? "";
@@ -11,13 +11,13 @@
     <aside class="pf-card pf-side">
         <div class="pf-avatar" id="pfAvatar">@initial</div>
         <label class="btn btn-outline btn-sm pf-upload">Đổi ảnh đại diện<input type="file" id="avatarFile" accept="image/*" hidden /></label>
-        <p class="pf-hint">Ảnh được lưu trên trình duyệt này.</p>
+        <p class="pf-hint">Ảnh đại diện được lưu trên trình duyệt này.</p>
         <h1>@name</h1>
         <span class="pf-badge">@(isAdmin ? "Quản trị viên" : "Thành viên")</span>
         <div class="pf-info">
             <div><span>Tên thành viên</span><b>@name</b></div>
             <div><span>Email</span><b>@email</b></div>
-            <div><span>ID thành viên</span><b>@id</b></div>
+            <div><span>ID thành viên</span><b>#@id</b></div>
         </div>
         @if (isAdmin)
         {
@@ -28,26 +28,66 @@
         <section class="pf-card">
             <h2 class="pf-title">Hạng thành viên và gói đọc</h2>
             <div class="pf-plans">
-                <div class="pf-plan"><h3>Gói đọc theo tháng</h3><ul><li>Đọc các truyện nằm trong gói</li><li>Gia hạn sớm hoặc muộn đều được cộng dồn</li></ul><button class="btn btn-outline" disabled>Sắp ra mắt</button></div>
-                <div class="pf-plan"><h3>Mua riêng từng truyện</h3><ul><li>Mua quyền đọc một truyện</li><li>Độc lập với gói theo tháng</li></ul><button class="btn btn-outline" disabled>Sắp ra mắt</button></div>
+                <div class="pf-plan">
+                    <div>
+                        <h3>Gói đọc theo tháng</h3>
+                        <ul>
+                            <li>Đọc không giới hạn các truyện nằm trong gói</li>
+                            <li>Gia hạn sớm hoặc muộn đều được cộng dồn thời hạn</li>
+                        </ul>
+                    </div>
+                    <a class="btn btn-brass btn-sm" asp-controller="Plans" asp-action="Index">Xem các gói đọc</a>
+                </div>
+                <div class="pf-plan">
+                    <div>
+                        <h3>Đơn hàng &amp; truyện đã mua</h3>
+                        <ul>
+                            <li>Mua quyền đọc trọn bộ vĩnh viễn từng truyện</li>
+                            <li>Theo dõi trạng thái thanh toán và lịch sử giao dịch</li>
+                        </ul>
+                    </div>
+                    <a class="btn btn-outline btn-sm" asp-controller="Plans" asp-action="Mine">Gói &amp; đơn hàng của tôi</a>
+                </div>
             </div>
         </section>
-        <section class="pf-card"><h2 class="pf-title">Truyện đã xem gần nhất</h2><p class="pf-empty">Bạn chưa có truyện nào đã xem.</p></section>
-        <section class="pf-card"><h2 class="pf-title">Truyện đã thích</h2><div id="favList" class="pf-favs"><p class="pf-empty">Bạn chưa lưu truyện nào.</p></div></section>
+
+        <section class="pf-card">
+            <div class="flexbar" style="margin-bottom:10px;">
+                <h2 class="pf-title" style="margin-bottom:0;">Tủ sách &amp; tiến độ đọc</h2>
+                <a class="btn btn-outline btn-sm" asp-controller="Library" asp-action="Index">Mở thư viện của tôi →</a>
+            </div>
+            <p class="pf-hint" style="text-align:left; font-size:13.5px;">Xem danh sách truyện bạn đang đọc dở và các truyện đang theo dõi để nhận thông báo chương mới.</p>
+        </section>
+
+        <section class="pf-card">
+            <h2 class="pf-title">Truyện đã thích</h2>
+            <div id="favList" class="pf-favs"><p class="pf-empty">Bạn chưa lưu truyện nào.</p></div>
+        </section>
+
         <section class="pf-card">
             <h2 class="pf-title">Thông tin cá nhân</h2>
             <div class="pf-form">
                 <input value="@name" disabled aria-label="Tên hiển thị" />
                 <input value="@email" disabled aria-label="Email" />
-                <p class="pf-hint">Đổi tên và email cần API cập nhật hồ sơ. Khi đổi email, hệ thống sẽ gửi thư xác nhận đến địa chỉ mới. Tính năng này đang chờ Backend 2.</p>
+                <p class="pf-hint">Thông tin hồ sơ được đồng bộ trực tiếp từ tài khoản đăng nhập của bạn.</p>
             </div>
         </section>
+
         <section class="pf-card">
             <h2 class="pf-title">Đổi mật khẩu</h2>
             <form class="pf-form" asp-action="ChangePassword" method="post">
-                <input type="password" name="current" placeholder="Mật khẩu hiện tại" autocomplete="current-password" required />
-                <input type="password" name="next" placeholder="Mật khẩu mới (tối thiểu 6 ký tự)" minlength="6" autocomplete="new-password" required />
-                <input type="password" name="confirm" placeholder="Xác nhận mật khẩu mới" minlength="6" autocomplete="new-password" required />
+                <div class="pw-wrap">
+                    <input type="password" name="current" placeholder="Mật khẩu hiện tại" autocomplete="current-password" required />
+                    <button type="button" class="pw-eye" aria-label="Hiện mật khẩu">👁</button>
+                </div>
+                <div class="pw-wrap">
+                    <input type="password" name="next" placeholder="Mật khẩu mới (tối thiểu 6 ký tự)" minlength="6" autocomplete="new-password" required />
+                    <button type="button" class="pw-eye" aria-label="Hiện mật khẩu">👁</button>
+                </div>
+                <div class="pw-wrap">
+                    <input type="password" name="confirm" placeholder="Xác nhận mật khẩu mới" minlength="6" autocomplete="new-password" required />
+                    <button type="button" class="pw-eye" aria-label="Hiện mật khẩu">👁</button>
+                </div>
                 <button class="btn btn-brass" type="submit">Đổi mật khẩu</button>
             </form>
         </section>

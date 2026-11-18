@@ -1,12 +1,16 @@
-.pl{padding:32px 0 48px}.pl h1{font-family:var(--font-display);font-size:34px;margin:0 0 6px}
+.pl{padding:36px 0 52px}.pl h1{font-family:var(--font-display);font-size:32px;margin:0 0 8px}
 .pl h2{font-family:var(--font-display);font-size:22px;margin:26px 0 12px}
-.pl-sub{color:var(--muted);margin:0 0 10px}
+.pl-sub{color:var(--muted);margin:0 0 22px;font-size:14.5px;max-width:64ch}
 .pl-demo{display:inline-block;padding:4px 12px;border-radius:99px;background:rgba(245,182,62,.18);color:var(--amber);font-size:13px;margin-bottom:18px}
-.pl-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:20px}
-.pl-card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:24px;transition:transform .22s,box-shadow .22s}
-.pl-card:hover{transform:translateY(-8px);box-shadow:var(--shadow)}
-.pl-price{font-family:var(--font-display);font-size:34px;color:var(--brass);margin:6px 0 10px}
-.pl-card ul{margin:0 0 18px;padding-left:18px;color:var(--muted);line-height:1.8}
+.pl-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:22px}
+.pl-card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:26px;display:flex;flex-direction:column;justify-content:space-between;box-shadow:var(--shadow-sm);transition:transform .22s,box-shadow .22s,border-color .22s}
+.pl-card:hover{transform:translateY(-6px);box-shadow:var(--shadow);border-color:var(--brass)}
+.pl-card h3{font-size:20px;margin:0 0 4px}
+.pl-price{font-family:var(--font-display);font-size:34px;font-weight:700;color:var(--brass);margin:8px 0 14px}
+.pl-price small{font-family:var(--font-body);font-size:14px;font-weight:500;color:var(--muted)}
+.pl-card ul{margin:0 0 22px;padding-left:18px;color:var(--muted);line-height:1.85;font-size:14px}
+.pl-card form,.pl-card > a.btn{margin-top:auto}
+.pl-card button[type=submit],.pl-card > a.btn{width:100%}
 .pl-table{width:100%;border-collapse:collapse;background:var(--surface);border-radius:12px;overflow:hidden}
 .pl-table th,.pl-table td{padding:12px 14px;text-align:left;border-bottom:1px solid var(--border)}
 .pl-st{padding:3px 10px;border-radius:99px;font-size:12px;font-weight:700}

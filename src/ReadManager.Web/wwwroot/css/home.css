@@ -1,19 +1,19 @@
 .hp-hero {
-    background: radial-gradient(800px 380px at 85% 0,rgba(79,131,255,.5),transparent 60%),linear-gradient(135deg,var(--navy),#12347D);
+    background: radial-gradient(820px 400px at 85% 0,rgba(79,131,255,.45),transparent 62%),linear-gradient(135deg,var(--navy),#12347D);
     color: #fff;
-    padding: 56px 0 100px
+    padding: 54px 0 96px
 }
 
 .hp-hero-in {
     display: grid;
-    grid-template-columns: 1.1fr .9fr;
+    grid-template-columns: 1.15fr .85fr;
     gap: 32px;
     align-items: center
 }
 
 .hp-hero h1 {
-    font-size: clamp(34px,5vw,56px);
-    line-height: 1.1;
+    font-size: clamp(32px,4.5vw,52px);
+    line-height: 1.14;
     margin: 0 0 14px;
     color: #fff
 }
@@ -22,14 +22,20 @@
     color: #C3D2F5;
     max-width: 46ch;
     margin: 0 0 24px;
-    font-size: 16px
+    font-size: 16px;
+    line-height: 1.65;
 }
 
 .hp-eyebrow {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 99px;
+    background: rgba(245,182,62,.16);
+    border: 1px solid rgba(245,182,62,.35);
     color: var(--amber);
     font-weight: 700;
-    font-size: 13px;
-    margin-bottom: 12px
+    font-size: 12.5px;
+    margin-bottom: 14px
 }
 
 .hp-btns {
@@ -39,44 +45,58 @@
 }
 
     .hp-btns .btn-light {
-        background: transparent;
-        border: 1px solid rgba(255,255,255,.55);
+        background: rgba(255,255,255,.08);
+        border: 1px solid rgba(255,255,255,.5);
         color: #fff
     }
 
         .hp-btns .btn-light:hover {
-            background: rgba(255,255,255,.12)
+            background: rgba(255,255,255,.16)
         }
 
 .hp-fan {
     display: flex;
     justify-content: center;
     align-items: flex-end;
-    height: 300px
+    height: 290px
 }
 
     .hp-fan a {
-        width: 150px;
-        margin: 0 -16px;
-        transition: transform .25s;
-        filter: drop-shadow(0 14px 22px rgba(0,0,0,.35))
+        width: 148px;
+        margin: 0 -14px;
+        transition: transform .25s ease;
+        filter: drop-shadow(0 14px 22px rgba(0,0,0,.38))
     }
 
-        .hp-fan a:nth-child(1) {
-            transform: rotate(-9deg) translateY(16px)
+        .hp-fan.fan-3 a:nth-child(1) {
+            transform: rotate(-8deg) translateY(14px)
         }
 
-        .hp-fan a:nth-child(3) {
-            transform: rotate(9deg) translateY(16px)
+        .hp-fan.fan-3 a:nth-child(3) {
+            transform: rotate(8deg) translateY(14px)
         }
 
-        .hp-fan a:nth-child(2) {
+        .hp-fan.fan-3 a:nth-child(2) {
             z-index: 2;
-            width: 172px
+            width: 168px
+        }
+
+        .hp-fan.fan-2 a:nth-child(1) {
+            transform: rotate(-5deg) translateY(8px)
+        }
+
+        .hp-fan.fan-2 a:nth-child(2) {
+            transform: rotate(5deg) translateY(8px);
+            z-index: 2;
+        }
+
+        .hp-fan.fan-1 a {
+            width: 170px;
+            margin: 0;
         }
 
         .hp-fan a:hover {
-            transform: translateY(-16px) rotate(0) scale(1.05);
+            transform: translateY(-14px) rotate(0) scale(1.05);
             z-index: 3
         }
 
@@ -84,9 +104,10 @@
     display: grid;
     grid-template-columns: repeat(4,1fr);
     background: var(--surface);
+    border: 1px solid var(--border);
     border-radius: 16px;
     box-shadow: var(--shadow);
-    margin: -54px 0 44px;
+    margin: -50px 0 42px;
     position: relative;
     padding: 20px 0;
     text-align: center
@@ -116,8 +137,18 @@
 }
 
     .hp-h h2 {
-        font-size: 28px
+        font-size: 24px
     }
+
+    .hp-h a {
+        font-size: 13.5px;
+        font-weight: 600;
+        color: var(--brass-2);
+    }
+
+        .hp-h a:hover {
+            text-decoration: underline;
+        }
 
 .hp-sec {
     margin-bottom: 44px
@@ -125,7 +156,7 @@
 
 .hp-cats {
     display: grid;
-    grid-template-columns: repeat(auto-fill,minmax(150px,1fr));
+    grid-template-columns: repeat(auto-fill,minmax(160px,1fr));
     gap: 14px
 }
 
@@ -138,68 +169,56 @@
     border-radius: 14px;
     color: #fff;
     font-weight: 700;
+    font-size: 15px;
     background: linear-gradient(135deg,var(--c1),var(--c2));
     transition: transform .22s,box-shadow .22s
 }
 
     .hp-cat small {
         font-weight: 400;
-        opacity: .8
+        font-size: 12px;
+        opacity: .85;
+        margin-top: 2px;
     }
 
     .hp-cat:hover {
-        transform: translateY(-8px);
+        transform: translateY(-6px);
         box-shadow: var(--shadow)
     }
 
-    .hp-cat:nth-child(6n+1) {
-        --c1: #0B1F4B;
-        --c2: #1D4ED8
-    }
-
-    .hp-cat:nth-child(6n+2) {
-        --c1: #0F3B8C;
-        --c2: #38BDF8
-    }
-
-    .hp-cat:nth-child(6n+3) {
-        --c1: #1E3A8A;
-        --c2: #6366F1
-    }
-
-    .hp-cat:nth-child(6n+4) {
-        --c1: #0C4A6E;
-        --c2: #0EA5E9
-    }
-
-    .hp-cat:nth-child(6n+5) {
-        --c1: #172554;
-        --c2: #2563EB
-    }
-
-    .hp-cat:nth-child(6n+6) {
-        --c1: #312E81;
-        --c2: #60A5FA
-    }
+    .hp-cat:nth-child(6n+1) { --c1: #0B1F4B; --c2: #1D4ED8 }
+    .hp-cat:nth-child(6n+2) { --c1: #0F3B8C; --c2: #38BDF8 }
+    .hp-cat:nth-child(6n+3) { --c1: #1E3A8A; --c2: #6366F1 }
+    .hp-cat:nth-child(6n+4) { --c1: #0C4A6E; --c2: #0EA5E9 }
+    .hp-cat:nth-child(6n+5) { --c1: #172554; --c2: #2563EB }
+    .hp-cat:nth-child(6n+6) { --c1: #312E81; --c2: #60A5FA }
 
 .hp-tabs {
     display: flex;
-    gap: 22px;
+    gap: 20px;
     border-bottom: 1px solid var(--border);
-    margin-bottom: 12px
+    margin-bottom: 16px;
+    overflow-x: auto;
 }
 
     .hp-tabs button {
         background: none;
         border: 0;
-        padding: 8px 2px;
+        padding: 9px 4px;
         font: inherit;
+        font-size: 14.5px;
         font-weight: 600;
         color: var(--muted);
         cursor: pointer;
         border-bottom: 2px solid transparent;
-        margin-bottom: -1px
+        margin-bottom: -1px;
+        white-space: nowrap;
+        transition: color .15s;
     }
+
+        .hp-tabs button:hover {
+            color: var(--text);
+        }
 
         .hp-tabs button.on {
             color: var(--brass);
@@ -214,17 +233,37 @@
         display: block
     }
 
+.hp-pane-empty {
+    padding: 28px;
+    text-align: center;
+    color: var(--muted);
+    background: var(--surface);
+    border: 1px dashed var(--border);
+    border-radius: 12px;
+    font-size: 14px;
+}
+
+.hp-list-wrap {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    overflow: hidden;
+    box-shadow: var(--shadow-sm);
+}
+
 .hp-list {
     width: 100%;
     border-collapse: collapse;
     font-size: 14px;
-    background: var(--surface);
-    border-radius: 12px;
-    overflow: hidden
 }
 
     .hp-list td {
-        padding: 12px 14px
+        padding: 13px 16px;
+        border-bottom: 1px solid var(--border);
+    }
+
+    .hp-list tr:last-child td {
+        border-bottom: none;
     }
 
     .hp-list tr {
@@ -245,8 +284,19 @@
 
     .hp-list .m {
         color: var(--muted);
-        white-space: nowrap
+        white-space: nowrap;
+        font-size: 13px;
     }
+
+.hp-ch-pill {
+    display: inline-block;
+    padding: 2px 9px;
+    border-radius: 99px;
+    background: var(--surface-2);
+    color: var(--brass-2);
+    font-size: 12px;
+    font-weight: 600;
+}
 
 .hp-cta {
     border-radius: 18px;
@@ -257,12 +307,13 @@
     justify-content: space-between;
     gap: 20px;
     align-items: center;
-    flex-wrap: wrap
+    flex-wrap: wrap;
+    box-shadow: var(--shadow);
 }
 
     .hp-cta h2 {
         color: #fff;
-        font-size: 26px;
+        font-size: 25px;
         margin-bottom: 6px
     }
 
@@ -277,21 +328,33 @@
     }
 
     .hp-fan {
-        height: 230px
+        height: 225px
     }
 
         .hp-fan a {
-            width: 105px
+            width: 108px
         }
 
-            .hp-fan a:nth-child(2) {
+            .hp-fan.fan-3 a:nth-child(2) {
                 width: 124px
             }
 
     .hp-stats {
         grid-template-columns: 1fr 1fr;
-        row-gap: 14px
+        padding: 8px 0;
     }
+
+        .hp-stats div {
+            padding: 12px 8px;
+        }
+
+        .hp-stats div:nth-child(3) {
+            border-left: none;
+        }
+
+        .hp-stats div:nth-child(n+3) {
+            border-top: 1px solid var(--border);
+        }
 
     .hp-list .hide-sm {
         display: none

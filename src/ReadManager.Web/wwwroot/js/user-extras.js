@@ -1,4 +1,4 @@
-// Ảnh đại diện và truyện yêu thích lưu trên trình duyệt (tạm thời, cho đến khi có API).
+// Ảnh đại diện và truyện yêu thích lưu trên trình duyệt.
 (function () {
   var m = document.querySelector('meta[name=uid]'), uid = m ? m.content : '';
   function key(p) { return p + ':' + uid; }
@@ -51,18 +51,22 @@
   function el(tag, cls, text) { var e = document.createElement(tag); if (cls) e.className = cls; if (text) e.textContent = text; return e; }
   function renderFavs() {
     if (!box) return;
-    var list = favs(); if (!list.length) return;
+    var list = favs();
+    if (!list.length) {
+      box.innerHTML = '<p class="pf-empty">Bạn chưa lưu truyện nào.</p>';
+      return;
+    }
     box.textContent = '';
     list.forEach(function (f) {
       var wrap = el('div'), a = el('a', 'fav-card'), cv = el('div', 'story-cover');
       a.href = '/Stories/Details/' + encodeURIComponent(f.id);
       if (f.cover) { var im = el('img'); im.src = f.cover; im.alt = f.title; cv.appendChild(im); }
       else { var g = el('div', 'gen-cover'); g.appendChild(el('span', '', f.title)); cv.appendChild(g); }
-      a.appendChild(cv); a.appendChild(el('b', '', f.title)); a.appendChild(el('span', '', f.author));
-      var rm = el('button', 'fav-rm', 'Bỏ thích'); rm.type = 'button';
+      a.appendChild(cv); a.appendChild(el('b', '', f.title)); a.appendChild(el('span', '', f.author || 'Khuyết danh'));
+      var rm = el('button', 'fav-rm', '✕ Bỏ thích'); rm.type = 'button';
       rm.addEventListener('click', function () {
         localStorage.setItem(key('fav'), JSON.stringify(favs().filter(function (x) { return String(x.id) !== String(f.id); })));
-        box.innerHTML = '<p class="pf-empty">Bạn chưa lưu truyện nào.</p>'; renderFavs();
+        renderFavs();
       });
       wrap.appendChild(a); wrap.appendChild(rm); box.appendChild(wrap);
     });

@@ -29,38 +29,35 @@
                 <span class="tag">@statusLabel</span>
             </div>
             <h1>@story.Title</h1>
-            <div class="author">@(string.IsNullOrEmpty(story.Author) ? "Khuyết danh" : story.Author)</div>
-            <p class="desc">@story.Description</p>
+            <div class="author">✍️ @(string.IsNullOrEmpty(story.Author) ? "Khuyết danh" : story.Author)</div>
+            <p class="desc">@(string.IsNullOrWhiteSpace(story.Description) ? "Chưa có giới thiệu chi tiết cho truyện này." : story.Description)</p>
             <div class="actions">
                 @if (readNo.HasValue)
                 {
                     <a class="btn btn-brass" asp-action="Read" asp-route-storyId="@story.Id" asp-route-no="@readNo">
-                        @(Model.ContinueChapterNo.HasValue ? $"Đọc tiếp — Chương {Model.ContinueChapterNo}" : "Đọc từ đầu")
+                        @(Model.ContinueChapterNo.HasValue ? $"📖 Đọc tiếp — Chương {Model.ContinueChapterNo}" : "📖 Đọc từ đầu")
                     </a>
                 }
                 else
                 {
-                    <span class="btn" style="background:rgba(255,255,255,.12); color:#fff; border:1px solid rgba(255,255,255,.4); cursor:not-allowed;">📖 Chưa có chương</span>
+                    <span class="btn" style="background:rgba(255,255,255,.12); color:#fff; border:1px solid rgba(255,255,255,.35); cursor:not-allowed;">📖 Chưa có chương</span>
                 }
 
-                @* PB21 — MUA TRỌN BỘ TRUYỆN (giá lấy từ API) *@
                 @if (Model.Owned)
                 {
-                    <span class="btn btn-outline" style="cursor:default;">✔ Đã sở hữu</span>
+                    <span class="btn btn-outline" style="cursor:default;">✔ Đã sở hữu trọn bộ</span>
                 }
                 else if (Model.PendingOrderId.HasValue)
                 {
-                    <a class="btn btn-outline" asp-controller="Orders" asp-action="Details" asp-route-id="@Model.PendingOrderId">Xem đơn đang chờ thanh toán</a>
+                    <a class="btn btn-outline" asp-controller="Orders" asp-action="Details" asp-route-id="@Model.PendingOrderId">⏳ Đơn đang chờ thanh toán</a>
                 }
                 else if (Model.CanBuy)
                 {
-                    @* Bấm vào → mở trang "Mua trọn bộ" xem giá + thông tin, CHƯA tạo đơn. Chưa đăng nhập → tự chuyển tới trang đăng nhập *@
                     <a class="btn btn-brass" asp-controller="Orders" asp-action="Checkout" asp-route-storyId="@story.Id">🛒 Mua trọn bộ — @Model.BuyPrice.ToString("N0")₫</a>
                 }
 
                 <button type="button" class="btn btn-outline fav-btn" data-id="@story.Id" data-title="@story.Title" data-author="@story.Author" data-cover="@story.CoverUrl"><i>♡</i> <span>Yêu thích</span></button>
 
-                @* PB31 — THEO DÕI TRUYỆN: có chương mới sẽ nhận thông báo 🔔 *@
                 @if (User.Identity?.IsAuthenticated == true)
                 {
                     <form asp-action="Follow" asp-route-id="@story.Id" method="post" style="display:inline;">
@@ -78,35 +75,35 @@
             </div>
             <div class="stat-row">
                 <div><b>@Model.TotalChapters</b><span>Chương</span></div>
-@*                 <div><b>@story.Price.ToString("N0")₫</b><span>@(story.Access == AccessPolicy.Paid ? "Giá trọn bộ" : "Mua trọn bộ")</span></div>
- *@                <div><b>@(story.FreeChapterCount >= 999 ? "Tất cả" : story.FreeChapterCount.ToString())</b><span>Chương đọc miễn phí</span></div>
+                <div><b>@(story.FreeChapterCount >= 999 ? "Tất cả" : story.FreeChapterCount.ToString())</b><span>Chương miễn phí</span></div>
+                <div><b>@Model.FollowerCount</b><span>Người theo dõi</span></div>
             </div>
         </div>
     </div>
 </div>
 
 <style>
-    /* ===== Danh sách chương: 2 cột + phân trang ===== */
     .chapter-box {
         background: var(--surface);
         border: 1px solid var(--border);
-        border-radius: 8px;
-        padding: 22px 24px;
+        border-radius: 14px;
+        padding: 24px;
+        box-shadow: var(--shadow-sm);
     }
 
         .chapter-box h2 {
             text-align: center;
             font-size: 18px;
-            letter-spacing: .5px;
+            letter-spacing: .04em;
             text-transform: uppercase;
             color: var(--brass);
-            margin-bottom: 16px;
+            margin-bottom: 18px;
         }
 
     .chapter-grid {
         display: grid;
         grid-template-columns: 1fr 1fr;
-        column-gap: 20px;
+        column-gap: 22px;
     }
 
     @@media (max-width: 700px) {
@@ -120,10 +117,11 @@
         align-items: center;
         gap: 8px;
         padding: 11px 12px;
-        border-radius: 6px;
+        border-radius: 8px;
         font-size: 14px;
         color: var(--text);
         border-bottom: 1px dashed var(--border);
+        transition: background .15s, color .15s;
     }
 
         .chapter-item:hover {
@@ -137,7 +135,7 @@
 
         .chapter-item .arrow {
             flex: none;
-            opacity: .7;
+            opacity: .65;
         }
 
         .chapter-item .name {
@@ -151,71 +149,38 @@
         .chapter-item .muted {
             color: var(--muted);
         }
-    /* Nhãn "⏳ giờ ra mắt" của chương hẹn giờ */
+
     .upcoming-tag {
         flex: none;
-        font-size: 12px;
+        font-size: 11.5px;
+        font-weight: 600;
         padding: 2px 8px;
-        border-radius: 10px;
-        background: rgba(220, 160, 30, .15);
-        color: #9a6400;
+        border-radius: 99px;
+        background: rgba(245, 182, 62, .2);
+        color: #b4690e;
         white-space: nowrap;
     }
 
+    :root[data-theme="dark"] .upcoming-tag {
+        color: var(--amber);
+    }
+
     .chapter-item:hover .upcoming-tag {
-        background: rgba(255, 255, 255, .25);
+        background: rgba(255, 255, 255, .24);
         color: #fff;
     }
-
-    .pager {
-        display: flex;
-        gap: 6px;
-        flex-wrap: wrap;
-        justify-content: center;
-        margin-top: 18px;
-    }
-
-        .pager a, .pager span {
-            min-width: 30px;
-            height: 30px;
-            padding: 0 8px;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            border: 1px solid var(--border);
-            border-radius: 15px;
-            font-size: 12.5px;
-            color: var(--text);
-        }
-
-            .pager a:hover {
-                border-color: var(--brass);
-                color: var(--brass);
-            }
-
-        .pager .current {
-            background: var(--brass);
-            border-color: var(--brass);
-            color: #fff;
-            font-weight: 700;
-        }
-
-        .pager .dots {
-            border: none;
-        }
 </style>
 
 <div class="container section">
     <div class="two-col">
         <div>
             <div class="chapter-box" id="chapters">
-                <h2>Danh sách chương</h2>
+                <h2>Danh sách chương (@Model.TotalChapters)</h2>
                 @if (Model.Chapters.Any())
                 {
                     <div class="chapter-grid">
                         @foreach (var c in Model.Chapters)
                         {
-                            // Chương không có tiêu đề riêng (trống hoặc chỉ là "Chương N") → chỉ hiện "Chương N"
                             bool noTitle = string.IsNullOrWhiteSpace(c.Title) || c.Title.Trim() == $"Chương {c.No}";
                             <a class="chapter-item" asp-action="Read" asp-route-storyId="@story.Id" asp-route-no="@c.No"
                                title="@(noTitle ? $"Chương {c.No}" : $"Chương {c.No}: {c.Title}")">
@@ -229,7 +194,6 @@
                                 </span>
                                 @if (c.UpcomingAt.HasValue)
                                 {
-                                    @* Chương hẹn giờ: thấy trong danh sách nhưng chưa đọc được *@
                                     <span class="upcoming-tag" title="Sắp ra mắt">⏳ @c.UpcomingAt.Value.ToString("HH:mm dd/MM")</span>
                                 }
                                 else if (c.Locked)
@@ -240,11 +204,9 @@
                         }
                     </div>
 
-                    @* ===== Phân trang: 1 2 3 … 23 » ===== *@
                     @if (Model.ChapterPageCount > 1)
                     {
                         int cur = Model.ChapterPage, last = Model.ChapterPageCount;
-                        // Hiện trang đầu, trang cuối và 2 trang quanh trang hiện tại; chỗ bị bỏ thay bằng "…"
                         var shown = new SortedSet<int> { 1, last };
                         for (int p = cur - 2; p <= cur + 2; p++) { if (p >= 1 && p <= last) shown.Add(p); }
                         int prevShown = 0;
@@ -278,18 +240,22 @@
                 }
                 else
                 {
-                    <div class="empty-state"><h3>Chưa có chương nào</h3><p>Quản trị viên sẽ sớm đăng nội dung đầu tiên.</p></div>
+                    <div class="empty-state" style="border:none; padding:32px 12px;">
+                        <h3>Chưa có chương nào</h3>
+                        <p style="margin-bottom:0;">Quản trị viên sẽ sớm đăng nội dung đầu tiên.</p>
+                    </div>
                 }
             </div>
         </div>
         <div>
             <div class="panel">
-                <h3 style="font-size:15px; margin-bottom:10px;">Giới thiệu</h3>
-                <p style="font-size:13.5px; color:var(--muted);">@story.Description</p>
+                <h3 style="font-size:16px; margin-bottom:10px;">Thông tin truyện</h3>
+                <p style="font-size:13.5px; color:var(--muted);">@(string.IsNullOrWhiteSpace(story.Description) ? "Chưa có giới thiệu chi tiết cho truyện này." : story.Description)</p>
                 <div class="divider"></div>
-                <div style="font-size:13px; display:flex; flex-direction:column; gap:6px;">
-                    <div class="flexbar"><span style="color:var(--muted)">Tác giả</span><b>@story.Author</b></div>
+                <div style="font-size:13.5px; display:flex; flex-direction:column; gap:8px;">
+                    <div class="flexbar"><span style="color:var(--muted)">Tác giả</span><b>@(string.IsNullOrWhiteSpace(story.Author) ? "Khuyết danh" : story.Author)</b></div>
                     <div class="flexbar"><span style="color:var(--muted)">Tình trạng</span><b>@statusLabel</b></div>
+                    <div class="flexbar"><span style="color:var(--muted)">Hình thức</span><b>@chipLabel</b></div>
                     <div class="flexbar"><span style="color:var(--muted)">Cập nhật</span><b>@story.UpdatedAt.ToLocalTime().ToString("dd/MM/yyyy")</b></div>
                 </div>
             </div>

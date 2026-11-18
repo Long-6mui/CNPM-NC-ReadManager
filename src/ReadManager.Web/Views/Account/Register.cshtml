@@ -1,37 +1,43 @@
 @model RegisterVm
 @{ ViewData["Title"] = "Đăng ký"; }
 <div class="auth-wrap">
-    <div class="panel">
-        <h2 style="font-size:20px; margin-bottom:6px;">Tạo tài khoản</h2>
-        <p style="font-size:13px; color:var(--muted); margin-bottom:18px;">Bản xem trước biểu mẫu — chưa tạo tài khoản thật.</p>
+    <div class="panel" style="padding:28px;">
+        <h2 style="font-size:23px; margin-bottom:6px;">Tạo tài khoản</h2>
+        <p style="font-size:13.5px; color:var(--muted); margin-bottom:20px;">Đăng ký thành viên để lưu tiến độ đọc và theo dõi truyện yêu thích.</p>
         <form asp-action="Register" method="post">
             <input type="hidden" asp-for="ReturnUrl" />
             <div asp-validation-summary="ModelOnly" class="validation-summary-errors"></div>
             <div class="field">
                 <label asp-for="DisplayName"></label>
-                <input asp-for="DisplayName" type="text" />
+                <input asp-for="DisplayName" type="text" placeholder="Ví dụ: Nguyễn Minh Hiếu" />
                 <span asp-validation-for="DisplayName" class="text-danger"></span>
             </div>
             <div class="field">
-                <label asp-for="Email"></label>
-                <input asp-for="Email" type="text" autocomplete="email" />
+                <label asp-for="Email">Email</label>
+                <input asp-for="Email" type="email" autocomplete="email" placeholder="nhapemail@example.com" />
                 <span asp-validation-for="Email" class="text-danger"></span>
             </div>
             <div class="field-row">
                 <div class="field">
-                    <label asp-for="Password"></label>
-                    <input asp-for="Password" type="password" autocomplete="new-password" />
+                    <label asp-for="Password">Mật khẩu</label>
+                    <div class="pw-wrap">
+                        <input asp-for="Password" type="password" autocomplete="new-password" placeholder="Tối thiểu 6 ký tự" />
+                        <button type="button" class="pw-eye" aria-label="Hiện mật khẩu">👁</button>
+                    </div>
                     <span asp-validation-for="Password" class="text-danger"></span>
                 </div>
                 <div class="field">
                     <label asp-for="ConfirmPassword"></label>
-                    <input asp-for="ConfirmPassword" type="password" />
+                    <div class="pw-wrap">
+                        <input asp-for="ConfirmPassword" type="password" autocomplete="new-password" placeholder="Nhập lại mật khẩu" />
+                        <button type="button" class="pw-eye" aria-label="Hiện mật khẩu">👁</button>
+                    </div>
                     <span asp-validation-for="ConfirmPassword" class="text-danger"></span>
                 </div>
             </div>
-            <button type="submit" class="btn btn-brass btn-block">Tạo tài khoản</button>
+            <button type="submit" class="btn btn-brass btn-block" style="margin-top:4px;">Tạo tài khoản</button>
         </form>
-        <p style="font-size:12.5px; color:var(--muted); margin-top:14px; text-align:center;">
+        <p style="font-size:13px; color:var(--muted); margin-top:18px; text-align:center;">
             Đã có tài khoản? <a asp-action="Login" style="color:var(--brass-2); font-weight:600;">Đăng nhập</a>
         </p>
     </div>

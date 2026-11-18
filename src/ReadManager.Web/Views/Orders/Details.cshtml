@@ -12,49 +12,59 @@
         _ => ("badge-gray", Model.Status)
     };
 }
-<div class="container section" style="max-width:640px;">
-    <div class="section-head"><h2>Đơn hàng #@Model.OrderId</h2></div>
+<div class="container section" style="max-width:660px;">
+    <div class="section-head">
+        <h2>Chi tiết đơn hàng #@Model.OrderId</h2>
+        <span class="badge @badge">@label</span>
+    </div>
 
     <div class="panel">
-        <table class="data" style="background:transparent;">
-            <tbody>
-                <tr><td style="width:40%; color:var(--muted);">Món hàng</td>
-                    <td><b>@(Model.OrderType == "Story" ? "📖 Mua trọn bộ: " : "🎟 Gói đọc: ")@Model.ItemName</b></td></tr>
-                @if (Model.OrderType == "Story")
-                {
-                    <tr><td style="color:var(--muted);">Quyền đọc</td><td>Vĩnh viễn, tất cả chương</td></tr>
-                }
-                @if (Model.DurationMonths.HasValue)
-                {
-                    <tr><td style="color:var(--muted);">Thời hạn</td><td>@Model.DurationMonths tháng</td></tr>
-                }
-                <tr><td style="color:var(--muted);">Số tiền</td>
-                    <td><b style="font-size:20px;">@Model.Amount.ToString("N0")₫</b></td></tr>
-                <tr><td style="color:var(--muted);">Trạng thái</td>
-                    <td><span class="badge @badge">@label</span></td></tr>
-                <tr><td style="color:var(--muted);">Ngày tạo</td><td>@Local(Model.CreatedAt)</td></tr>
-                @if (Model.PaidAt.HasValue)
-                {
-                    <tr><td style="color:var(--muted);">Ngày thanh toán</td><td>@Local(Model.PaidAt)</td></tr>
-                }
-            </tbody>
-        </table>
+        <div class="table-wrap">
+            <table class="data">
+                <tbody>
+                    <tr><td style="width:38%; color:var(--muted);">Nội dung đơn hàng</td>
+                        <td><b>@(Model.OrderType == "Story" ? "📖 Mua trọn bộ: " : "🎟 Gói đọc: ")@Model.ItemName</b></td></tr>
+                    @if (Model.OrderType == "Story")
+                    {
+                        <tr><td style="color:var(--muted);">Quyền đọc</td><td>Vĩnh viễn, bao gồm tất cả chương</td></tr>
+                    }
+                    @if (Model.DurationMonths.HasValue)
+                    {
+                        <tr><td style="color:var(--muted);">Thời hạn gói</td><td>@Model.DurationMonths tháng</td></tr>
+                    }
+                    <tr><td style="color:var(--muted);">Số tiền thanh toán</td>
+                        <td><b style="font-size:20px; color:var(--brass);">@Model.Amount.ToString("N0")₫</b></td></tr>
+                    <tr><td style="color:var(--muted);">Trạng thái</td>
+                        <td><span class="badge @badge">@label</span></td></tr>
+                    <tr><td style="color:var(--muted);">Thời gian tạo</td><td>@Local(Model.CreatedAt)</td></tr>
+                    @if (Model.PaidAt.HasValue)
+                    {
+                        <tr><td style="color:var(--muted);">Thời gian thanh toán</td><td>@Local(Model.PaidAt)</td></tr>
+                    }
+                </tbody>
+            </table>
+        </div>
 
         @if (Model.Status == "Pending")
         {
-            @* Cổng thanh toán: phần Thanh toán (BE4 — feature/s2-payments) sẽ nối vào đây *@
-            <p class="hint" style="margin-top:14px;">Đơn hàng đã được tạo và đang chờ thanh toán. Cổng thanh toán đang được tích hợp.</p>
+            <div class="banner banner-info" style="margin-top:16px;">
+                Đơn hàng đã được khởi tạo và đang chờ xác nhận thanh toán. Quyền đọc sẽ được kích hoạt ngay sau khi giao dịch hoàn tất.
+            </div>
+        }
+        else if (Model.Status == "Paid")
+        {
+            <div class="banner banner-success" style="margin-top:16px;">
+                ✓ Thanh toán thành công. Quyền đọc của bạn đã sẵn sàng!
+            </div>
         }
 
-        <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:18px;">
+        <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:20px;">
             @if (Model.StoryId.HasValue)
             {
-                <a class="btn btn-outline" asp-controller="Stories" asp-action="Details" asp-route-id="@Model.StoryId">← Quay lại truyện</a>
+                <a class="btn btn-brass" asp-controller="Stories" asp-action="Details" asp-route-id="@Model.StoryId">← Quay lại truyện</a>
             }
-            else
-            {
-                <a class="btn btn-outline" asp-controller="Home" asp-action="Index">← Về trang chủ</a>
-            }
+            <a class="btn btn-outline" asp-controller="Plans" asp-action="Mine">Danh sách đơn hàng</a>
+            <a class="btn btn-ghost" asp-controller="Home" asp-action="Index">Về trang chủ</a>
         </div>
     </div>
 </div>

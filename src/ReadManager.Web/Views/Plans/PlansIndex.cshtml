@@ -1,37 +1,58 @@
 @model List<ReadManager.Web.Services.ReadingPlanApi>
 @{
     ViewData["Title"] = "Gói đọc";
-    var titles = (Dictionary<int, string>)ViewBag.StoryTitles ?? new();
-
+    var titles = ViewBag.StoryTitles as Dictionary<int, string> ?? new();
 }
 <link rel="stylesheet" href="~/css/plans.css" asp-append-version="true" />
 <div class="container pl">
-    <h1>Gói đọc</h1>
-    <p class="pl-sub">Chọn gói để tạo đơn hàng. Quyền đọc chỉ có hiệu lực sau khi thanh toán được xác nhận và quyền được cấp.</p>
-    <div class="pl-grid">
-        @foreach (var p in Model)
-        {
-            var v = p.CurrentVersion!;
-
-            <div class="pl-card">
-                <h3>@p.Name</h3>
-                <div class="pl-price">@v.Price.ToString("N0")đ</div>
-                <ul>
-                    <li>Thời hạn @v.DurationMonths tháng</li>
-                    @if (v.ScopeType == "All") { <li>Đọc tất cả truyện trả phí</li> }
+    <h1>Gói đọc hội viên</h1>
+    <p class="pl-sub">Chọn gói đọc phù hợp để mở khóa kho truyện trả phí. Quyền đọc có hiệu lực ngay sau khi giao dịch thanh toán được xác nhận.</p>
+    @if (Model.Count == 0)
+    {
+        <div class="empty-state">
+            <h3>Hiện chưa có gói đọc nào đang mở bán</h3>
+            <p>Vui lòng quay lại sau hoặc khám phá các truyện đọc miễn phí trên thư viện.</p>
+            <a class="btn btn-brass" asp-controller="Stories" asp-action="Browse">Khám phá thư viện</a>
+        </div>
+    }
+    else
+    {
+        <div class="pl-grid">
+            @foreach (var p in Model)
+            {
+                var v = p.CurrentVersion!;
+                <div class="pl-card">
+                    <div>
+                        <h3>@p.Name</h3>
+                        <div class="pl-price">@v.Price.ToString("N0")đ <small>/ @v.DurationMonths tháng</small></div>
+                        <ul>
+                            <li>Thời hạn sử dụng <b>@v.DurationMonths tháng</b></li>
+                            @if (v.ScopeType == "All")
+                            {
+                                <li>Đọc không giới hạn <b>tất cả truyện trả phí</b></li>
+                            }
+                            else
+                            {
+                                <li>Áp dụng cho <b>@v.StoryIds.Count truyện</b>:
+                                    @string.Join(", ", v.StoryIds.Select(id => titles.TryGetValue(id, out var t) ? t : $"#{id}"))</li>
+                            }
+                            <li>Cộng dồn thời hạn khi gia hạn</li>
+                        </ul>
+                    </div>
+                    @if (User.Identity?.IsAuthenticated == true)
+                    {
+                        <form asp-action="Buy" method="post">
+                            <input type="hidden" name="planId" value="@p.PlanId" />
+                            <input type="hidden" name="planVersionId" value="@v.PlanVersionId" />
+                            <button class="btn btn-brass" type="submit">Đăng ký gói này</button>
+                        </form>
+                    }
                     else
                     {
-                        <li>Áp dụng cho @v.StoryIds.Count truyện:
-                            @string.Join(", ", v.StoryIds.Select(id => titles.TryGetValue(id, out var t) ? t : $"#{id}"))</li>
+                        <a class="btn btn-brass" asp-controller="Account" asp-action="Login" asp-route-returnUrl="/Plans">Đăng nhập để mua</a>
                     }
-                </ul>
-                @if (User.Identity?.IsAuthenticated == true)
-                {
-                    <form asp-action="Buy" method="post"><input type="hidden" name="planId" value="@p.PlanId" /><input type="hidden" name="planVersionId" value="@v.PlanVersionId" /><button class="btn btn-brass" type="submit">Tạo đơn mua gói</button></form>
-                }
-                else { <a class="btn btn-brass" asp-controller="Account" asp-action="Login" asp-route-returnUrl="/Plans">Đăng nhập để mua</a> }
-            </div>
-        }
-    </div>
-    @if (Model.Count == 0) { <p class="pl-sub">Hiện chưa có gói nào đang bán.</p> }
+                </div>
+            }
+        </div>
+    }
 </div>

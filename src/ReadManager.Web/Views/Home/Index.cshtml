@@ -1,125 +1,452 @@
 @model HomeVm
 @{
     ViewData["Title"] = "Trang chủ";
-    var fan = new[] { 1, 0, 2 }.Where(i => i < Model.Updated.Count).Select(i => Model.Updated[i]).ToList();
+
+
+
+    var slides = new List<(dynamic Story, string Tag, string Genre, int ArtTheme)>();
+
+    var seenIds = new HashSet<int>();
+
+    var genreNames = Model.Genres.Select(g => g.Name).ToList();
+
+    int gIdx = 0;
+
+
+
+    void CollectSlides(IEnumerable<dynamic> list, string tag)
+
+    {
+
+        foreach (var item in list)
+
+        {
+
+            if (slides.Count >= 5) break;
+
+            if (seenIds.Add((int)item.Id))
+
+            {
+
+                var gName = genreNames.Count > 0 ? genreNames[gIdx % genreNames.Count] : tag;
+
+                var themeNo = (gIdx % 5) + 1;
+
+                gIdx++;
+
+                slides.Add((item, tag, gName, themeNo));
+
+            }
+
+        }
+
+    }
+
+
+
+    CollectSlides(Model.Updated, "Mới cập nhật");
+
+    CollectSlides(Model.Newest, "Vừa ra mắt");
+
+    CollectSlides(Model.Free, "Đọc miễn phí");
+
+
+
+    var firstSlide = slides.FirstOrDefault();
+
+
+
+    string GetAuthor(dynamic st) => st != null && !string.IsNullOrWhiteSpace((string)st.Author) ? (string)st.Author : "Khuyết danh";
+
+    string GetChapters(dynamic st) => st != null && st.PublishedChapterCount > 0 ? $"{st.PublishedChapterCount} chương" : "Mới phát hành";
+
+
+
+    string GetBlurb(dynamic st, string genre) => st != null && st.PublishedChapterCount > 0
+
+    ? $"Tác phẩm thuộc thể loại {genre}, hiện đã cập nhật {st.PublishedChapterCount} chương trên thư viện FOLIO."
+
+    : $"Tác phẩm tuyển chọn thuộc thể loại {genre}, sẵn sàng để bạn khám phá và lưu vào tủ sách.";
 }
 @functions {
     static string Ago(DateTime t)
+
     {
+
         var s = DateTime.UtcNow - t;
+
         if (s.TotalMinutes < 1) return "vừa xong";
+
         if (s.TotalHours < 1) return $"{(int)s.TotalMinutes} phút trước";
+
         if (s.TotalDays < 1) return $"{(int)s.TotalHours} giờ trước";
+
         if (s.TotalDays < 30) return $"{(int)s.TotalDays} ngày trước";
+
         return t.ToLocalTime().ToString("dd/MM/yyyy");
+
     }
 }
 <link rel="stylesheet" href="~/css/home.css" asp-append-version="true" />
+
 @if (Model.Updated.Count == 0)
+
 {
-    <div class="container"><div class="empty-state"><h2>Không tìm thấy truyện phù hợp</h2><p>Thử tên truyện khác hoặc bỏ bộ lọc.</p><a asp-action="Index">Xem tất cả truyện</a></div></div>
+    <div class="container section">
+        <div class="empty-state marvel-glass-panel">
+            <h2>Không tìm thấy truyện phù hợp</h2>
+            <p>Thử tìm với tên truyện khác, xóa bộ lọc hoặc quay lại danh sách đầy đủ.</p>
+            <a class="btn btn-brass" asp-action="Index">Xem tất cả truyện</a>
+        </div>
+    </div>
 }
+
 else
+
 {
-    <section class="hp-hero">
-        <div class="container hp-hero-in">
-            <div>
-                <div class="hp-eyebrow">Thư viện đọc truyện trực tuyến</div>
-                <h1>Mỗi trang sách, một chân trời mới.</h1>
-                <p>Khám phá những câu chuyện mới, từ hành trình kỳ ảo đến những điều bình dị mỗi ngày.</p>
-                <div class="hp-btns">
-                    <a class="btn btn-brass" asp-controller="Stories" asp-action="Browse">Khám phá thư viện</a>
-                    <a class="btn btn-light" asp-controller="Stories" asp-action="Browse" asp-route-access="Free">Đọc miễn phí</a>
+    <!-- ================= 3D SCROLL-DRIVEN SPATIAL HERO TRACK ================= -->
+    <section class="cd-scroll-track" id="cdScrollTrack">
+        <div class="cd-sticky-viewport" id="cdStickyViewport">
+            <!-- Kho dữ liệu slide ẩn để JS đồng bộ mượt -->
+            <div class="cd-slide-data-store" id="mvBgStack" aria-hidden="true">
+                @for (int i = 0; i < slides.Count; i++)
+
+                {
+
+                    var sl = slides[i];
+
+                    var s = sl.Story;
+                    <div class="cd-bg-slide @(i == 0 ? "active" : "")"
+                         data-slide-idx="@i"
+                         data-art-theme="@sl.ArtTheme"
+                         data-tag="@sl.Tag"
+                         data-genre="@sl.Genre"
+                         data-title="@s.Title"
+                         data-author="@GetAuthor(s)"
+                         data-chapters="@GetChapters(s)"
+                         data-blurb="@GetBlurb(s, sl.Genre)"
+                         data-cover="@(s.CoverUrl ?? "")"
+                         data-url="@Url.Action("Details", "Stories", new { id = s.Id })"></div>
+                }
+            </div>
+
+            <!-- Sân khấu không gian 3D (Perspective + Preserve-3D) -->
+            <div class="cd-3d-world" id="cd3dWorld">
+                <!-- Lớp chiều sâu Z = -520px: Lưới kiến trúc 3D & Hào quang -->
+                <div class="cd-depth-grid" id="cdDepthGrid" aria-hidden="true"></div>
+                <div class="cd-depth-nebula" id="cdDepthNebula" aria-hidden="true"></div>
+
+                <!-- Lớp chiều sâu Z = -320px đến -120px: Các thẻ truyện vệ tinh bay trong không gian 3D -->
+                <div class="cd-orbit-field" id="cdOrbitField">
+                    @for (int i = 1; i < slides.Count; i++)
+                    {
+
+                        var orb = slides[i];
+
+                        var st = orb.Story;
+                        <button type="button"
+                                class="cd-orbit-card art-cover-@orb.ArtTheme"
+                                data-orbit-idx="@i"
+                                title="Chuyển sang: @st.Title">
+                            @if (!string.IsNullOrEmpty((string)st.CoverUrl))
+                            {
+                                <img src="@st.CoverUrl" alt="@st.Title" loading="lazy" />
+                            }
+                            <div class="cd-orbit-overlay">
+                                <span class="cd-orbit-tag">0@(i + 1) • @orb.Genre</span>
+                                <strong class="cd-orbit-title">@st.Title</strong>
+                            </div>
+                        </button>
+                    }
+                </div>
+
+                <!-- Khung nội dung chính (Z = 0px -> +140px khi cuộn) -->
+                <div class="container cd-spatial-grid">
+                    <!-- CỘT TRÁI: Typography nổi khối 3D -->
+                    <div class="cd-spatial-copy" id="cdSpatialCopy">
+                        <div class="cd-eyebrow-pill">
+                            <span class="cd-pill-dot"></span>
+                            <span id="mvBannerGenre">@firstSlide.Genre</span>
+                            <span class="cd-pill-sep">•</span>
+                            <span id="mvBannerTag">@firstSlide.Tag</span>
+                        </div>
+
+                        <h1 class="cd-banner-title" id="mvBannerTitle">
+                            @firstSlide.Story.Title
+                        </h1>
+
+                        <p class="cd-banner-blurb" id="mvBannerBlurb">
+                            @GetBlurb(firstSlide.Story, firstSlide.Genre)
+                        </p>
+
+                        <div class="cd-banner-meta">
+                            <span>Tác giả: <strong id="mvBannerAuthor">@GetAuthor(firstSlide.Story)</strong></span>
+                            <span class="cd-meta-sep">•</span>
+                            <span class="cd-meta-badge" id="mvBannerChapters">@GetChapters(firstSlide.Story)</span>
+                        </div>
+
+                        <div class="cd-banner-actions">
+                            <a class="cd-btn-primary" id="mvBannerBtn"
+                               asp-controller="Stories"
+                               asp-action="Details"
+                               asp-route-id="@firstSlide.Story.Id">
+                                <span>Đọc ngay</span>
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14" /><path d="m12 5 7 7-7 7" /></svg>
+                            </a>
+                            <a class="cd-btn-secondary" asp-controller="Stories" asp-action="Browse">
+                                <span>Khám phá thư viện</span>
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- CỘT PHẢI: Vật thể Sách Bìa Cứng 3D & Vòng Quỹ Đạo Xoay Theo Cuộn -->
+                    <div class="cd-spatial-stage" id="cdSpatialStage">
+                        <div class="cd-gyro-ring ring-outer" id="cdGyroOuter" aria-hidden="true"></div>
+                        <div class="cd-gyro-ring ring-inner" id="cdGyroInner" aria-hidden="true"></div>
+
+                        <a class="cd-main-book" id="mv3dBook"
+                           asp-controller="Stories"
+                           asp-action="Details"
+                           asp-route-id="@firstSlide.Story.Id"
+                           title="Xem chi tiết truyện">
+                            <div class="cd-book-spine"></div>
+                            <div class="cd-book-pages"></div>
+                            <div class="cd-book-cover">
+                                <div class="cd-book-crease"></div>
+                                <div class="cd-book-sheen"></div>
+
+                                <img id="mvBookCoverImg"
+                                     class="@(string.IsNullOrEmpty((string)firstSlide.Story.CoverUrl) ? "is-hidden" : "")"
+                                     src="@(firstSlide.Story.CoverUrl ?? "")"
+                                     alt="@firstSlide.Story.Title" />
+
+                                <div class="cd-typo-cover art-cover-@firstSlide.ArtTheme @(!string.IsNullOrEmpty((string)firstSlide.Story.CoverUrl) ? "is-hidden" : "")"
+                                     id="mvBookTypoCover">
+                                    <div class="typo-top-row">
+                                        <span class="typo-genre" id="mvBookTypoGenre">@firstSlide.Genre</span>
+                                        <span class="typo-seal">F</span>
+                                    </div>
+                                    <div class="typo-center-box">
+                                        <strong class="typo-title" id="mvBookTypoTitle">@firstSlide.Story.Title</strong>
+                                    </div>
+                                    <div class="typo-bottom-row">
+                                        <small class="typo-author" id="mvBookTypoAuthor">@GetAuthor(firstSlide.Story)</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="cd-book-shadow"></div>
+                        </a>
+
+                        @* <!-- Lớp tiền cảnh Z = +110px: Thẻ nổi lơ lửng phía trước vật thể -->
+                        <div class="cd-fg-chip chip-left" id="cdFgChipLeft">
+                            <span class="chip-kicker">TIÊU ĐIỂM 3D</span>
+                            <strong id="mvCalloutMeta">@GetChapters(firstSlide.Story)</strong>
+                        </div>
+
+                        <div class="cd-fg-chip chip-right" id="cdFgChipRight">
+                            <span class="chip-kicker">ĐỘ SÂU Z</span>
+                            <strong id="cdDepthReadout">0.00m</strong>
+                        </div> *@
+                    </div>
                 </div>
             </div>
-            <div class="hp-fan">
-                @foreach (var s in fan)
-                {
-                    <a asp-controller="Stories" asp-action="Details" asp-route-id="@s.Id" title="@s.Title">
-                        <div class="story-cover">
-                            @if (!string.IsNullOrEmpty(s.CoverUrl))
-                            {
-                                <img src="@s.CoverUrl" alt="Bìa truyện @s.Title">
-                            }
-                            else
-                            {
-                                <div class="gen-cover"><span>@s.Title</span></div>
-                            }
-                        </div>
-                    </a>
-                }
+
+            <!-- Thanh điều hướng 5 tác phẩm & gợi ý cuộn -->
+            <div class="cd-hero-footer">
+                <div class="container cd-switcher-row" id="mvSlideTabs">
+                    @for (int i = 0; i < slides.Count; i++)
+                    {
+
+                        var sl = slides[i];
+                        <button type="button" class="cd-slide-tab @(i == 0 ? "active" : "")" data-slide-target="@i">
+                            <span class="cd-tab-progress"></span>
+                            <span class="cd-tab-num">0@(i + 1)</span>
+                            <span class="cd-tab-name">@sl.Story.Title</span>
+                        </button>
+                    }
+                </div>
             </div>
         </div>
     </section>
-    <div class="container">
-        <div class="hp-stats">
-            <div><b>@Model.TotalStories</b><span>Bộ truyện</span></div>
-            <div><b>@Model.TotalGenres</b><span>Thể loại</span></div>
-            <div><b>@Model.TotalChapters</b><span>Chương</span></div>
-            <div><b>@Model.Free.Count</b><span>Truyện đọc miễn phí</span></div>
+
+    <div class="container cd-content-flow">
+        <!-- ================= DẢI THỐNG KÊ Z-DEPTH ================= -->
+        <div class="hp-stats cd-stats-ribbon cd-z-block" data-z-depth="1">
+            <div class="stat-3d-cell" data-tilt-3d data-tilt-max="6">
+                <div class="tilt-glare"></div>
+                <b data-count-target="@Model.TotalStories">@Model.TotalStories</b>
+                <span>Bộ truyện</span>
+            </div>
+            <div class="stat-3d-cell" data-tilt-3d data-tilt-max="6">
+                <div class="tilt-glare"></div>
+                <b data-count-target="@Model.TotalGenres">@Model.TotalGenres</b>
+                <span>Thể loại</span>
+            </div>
+            <div class="stat-3d-cell" data-tilt-3d data-tilt-max="6">
+                <div class="tilt-glare"></div>
+                <b data-count-target="@Model.TotalChapters">@Model.TotalChapters</b>
+                <span>Chương</span>
+            </div>
+            <div class="stat-3d-cell" data-tilt-3d data-tilt-max="6">
+                <div class="tilt-glare"></div>
+                <b data-count-target="@Model.Free.Count">@Model.Free.Count</b>
+                <span>Đọc miễn phí</span>
+            </div>
         </div>
 
+        <!-- ================= THỂ LOẠI (3D LAYERED CARDS) ================= -->
         @if (Model.Genres.Count > 0)
+
         {
-            <section class="hp-sec">
-                <div class="hp-h"><h2>Tìm thể loại bạn thích</h2><a asp-controller="Stories" asp-action="Browse">Xem tất cả</a></div>
-                <div class="hp-cats">
+            <section class="hp-sec cd-z-block" data-z-depth="1.15">
+                <div class="hp-h">
+                    <div>
+                        <span class="sec-kicker">Khám phá theo chủ đề</span>
+                        <h2>Tìm thể loại bạn thích</h2>
+                    </div>
+                    <a asp-controller="Stories" asp-action="Browse">Xem tất cả →</a>
+                </div>
+                <div class="hp-cats cd-stagger-cards">
+                    @{
+                        var catIdx = 0;
+                    }
                     @foreach (var g in Model.Genres.Take(6))
+
                     {
-                        <a class="hp-cat" asp-controller="Stories" asp-action="Browse" asp-route-genre="@g.Id">@g.Name<small>Xem truyện</small></a>
+
+                        catIdx++;
+                        <a class="hp-cat cat-theme-@catIdx cd-depth-card"
+                           style="--card-i:@catIdx;"
+                           data-tilt-3d
+                           data-tilt-max="9"
+                           asp-controller="Stories"
+                           asp-action="Browse"
+                           asp-route-genre="@g.Id">
+                            <div class="tilt-glare"></div>
+                            <span class="cat-3d-title">@g.Name</span>
+                            <small>Xem truyện →</small>
+                        </a>
                     }
                 </div>
             </section>
         }
 
-        <section class="hp-sec">
-            <div class="hp-h"><h2>Truyện nổi bật</h2></div>
-            <div class="hp-tabs" id="hpTabs">
-                <button type="button" class="on">Mới cập nhật</button><button type="button">Vừa đăng</button><button type="button">Đọc miễn phí</button>
+        <!-- ================= TRUYỆN NỔI BẬT (3D COVERFLOW RAIL) ================= -->
+        <section class="hp-sec cd-z-block" data-z-depth="1.1">
+            <div class="hp-h">
+                <div>
+                    <span class="sec-kicker">Tuyển chọn không gian</span>
+                    <h2>Truyện nổi bật</h2>
+                </div>
             </div>
-            <div class="hp-pane on"><div class="rail">@foreach (var s in Model.Updated)
+            <div class="hp-tabs" id="hpTabs">
+                <button type="button" class="on">Mới cập nhật</button>
+                <button type="button">Vừa đăng</button>
+                <button type="button">Đọc miễn phí</button>
+            </div>
+            <div class="hp-pane on">
+                <div class="rail marvel-3d-rail cd-coverflow-rail">
+                    @foreach (var s in Model.Updated)
                     {
                         <partial name="_StoryCard" model="s" />
-                    }</div></div>
-            <div class="hp-pane"><div class="rail">@foreach (var s in Model.Newest)
-                    {
-                        <partial name="_StoryCard" model="s" />
-                    }</div></div>
-            <div class="hp-pane"><div class="rail">@foreach (var s in Model.Free)
-                    {
-                        <partial name="_StoryCard" model="s" />
-                    }</div></div>
-        </section>
+                    }
+                </div>
+            </div>
+            <div class="hp-pane">
+                @if (Model.Newest.Count > 0)
 
-        <section class="hp-sec">
-            <div class="hp-h"><h2>Mới lên chương</h2><a asp-controller="Stories" asp-action="Browse">Xem toàn bộ</a></div>
-            <table class="hp-list">
-                @foreach (var s in Model.Updated)
                 {
-                    <tr>
-                        <td><a asp-controller="Stories" asp-action="Details" asp-route-id="@s.Id">@s.Title</a></td>
-                        <td class="m hide-sm">@s.Author</td>
-                        <td class="m">@(s.PublishedChapterCount > 0 ? $"Chương {s.PublishedChapterCount}" : "Chưa có chương")</td>
-                        <td class="m">@Ago(s.UpdatedAtSort)</td>
-                    </tr>
+                    <div class="rail marvel-3d-rail cd-coverflow-rail">
+                        @foreach (var s in Model.Newest)
+
+                        {
+                            <partial name="_StoryCard" model="s" />
+                        }
+                    </div>
                 }
-            </table>
+
+                else
+
+                {
+                    <div class="hp-pane-empty">Chưa có truyện mới đăng gần đây.</div>
+                }
+            </div>
+            <div class="hp-pane">
+                @if (Model.Free.Count > 0)
+
+                {
+                    <div class="rail marvel-3d-rail cd-coverflow-rail">
+                        @foreach (var s in Model.Free)
+
+                        {
+                            <partial name="_StoryCard" model="s" />
+                        }
+                    </div>
+                }
+
+                else
+
+                {
+                    <div class="hp-pane-empty">Hiện chưa có truyện miễn phí nào trong danh sách.</div>
+                }
+            </div>
         </section>
 
+        <!-- ================= MỚI LÊN CHƯƠNG ================= -->
+        <section class="hp-sec cd-z-block" data-z-depth="1">
+            <div class="hp-h">
+                <div>
+                    <span class="sec-kicker">Cập nhật liên tục</span>
+                    <h2>Mới lên chương</h2>
+                </div>
+                <a asp-controller="Stories" asp-action="Browse">Xem toàn bộ →</a>
+            </div>
+            <div class="hp-list-wrap">
+                <table class="hp-list">
+                    @foreach (var s in Model.Updated)
+                    {
+                        <tr>
+                            <td><a asp-controller="Stories" asp-action="Details" asp-route-id="@s.Id">@s.Title</a></td>
+                            <td class="m hide-sm">@(string.IsNullOrWhiteSpace(s.Author) ? "Khuyết danh" : s.Author)</td>
+                            <td class="m"><span class="hp-ch-pill">@(s.PublishedChapterCount > 0 ? $"Chương {s.PublishedChapterCount}" : "Chưa có chương")</span></td>
+                            <td class="m" style="text-align:right;">@Ago(s.UpdatedAtSort)</td>
+                        </tr>
+                    }
+                </table>
+            </div>
+        </section>
+
+        <!-- ================= CTA BANNER ================= -->
         @if (User.Identity?.IsAuthenticated != true)
+
         {
-            <div class="hp-cta">
-                <div><h2>Tham gia cộng đồng đọc truyện</h2><p>Đăng nhập để theo dõi truyện bạn yêu thích.</p></div>
-                <div class="hp-btns"><a class="btn btn-light" asp-controller="Account" asp-action="Login">Đăng nhập</a><a class="btn btn-brass" style="background:var(--amber);color:#241A08" asp-controller="Account" asp-action="Register">Đăng ký</a></div>
+            <div class="hp-cta cd-z-block" data-z-depth="1.05">
+                <div>
+                    <span class="sec-kicker">Hội viên FOLIO</span>
+                    <h2>Tham gia cộng đồng đọc truyện</h2>
+                    <p>Đăng nhập để lưu tiến độ đọc và nhận thông báo khi truyện yêu thích ra chương mới.</p>
+                </div>
+                <div class="hp-btns">
+                    <a class="btn btn-light btn-marvel-glass" asp-controller="Account" asp-action="Login">Đăng nhập</a>
+                    <a class="btn btn-brass btn-marvel-cut" asp-controller="Account" asp-action="Register">Đăng ký</a>
+                </div>
             </div>
         }
     </div>
 }
+
 @section Scripts {
     <script>
         (function () {
             var t = document.querySelectorAll('#hpTabs button'), p = document.querySelectorAll('.hp-pane');
-            t.forEach(function (b, i) { b.addEventListener('click', function () { t.forEach(function (x, j) { x.classList.toggle('on', i === j); p[j].classList.toggle('on', i === j); }); }); });
+            t.forEach(function (b, i) {
+                b.addEventListener('click', function () {
+                    t.forEach(function (x, j) {
+                        x.classList.toggle('on', i === j);
+                        p[j].classList.toggle('on', i === j);
+                    });
+                });
+            });
         })();
     </script>
 }

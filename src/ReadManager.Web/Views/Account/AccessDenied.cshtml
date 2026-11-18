@@ -1,8 +1,9 @@
 @{ ViewData["Title"] = "Không có quyền truy cập"; }
-<div class="container section">
+<div class="container section" style="max-width:520px;">
     <div class="empty-state">
+        <div style="font-size:36px; margin-bottom:10px;">🔒</div>
         <h3>Bạn không có quyền truy cập trang này</h3>
-        <p>Chức năng này chỉ dành cho quản trị viên.</p>
-        <p><a href="/" style="color:var(--brass-2); font-weight:600;">← Về trang chủ</a></p>
+        <p>Khu vực này chỉ dành cho tài khoản quản trị viên của hệ thống.</p>
+        <a class="btn btn-brass" asp-controller="Home" asp-action="Index">← Về trang chủ</a>
     </div>
 </div>

@@ -3,8 +3,6 @@
     ViewData["Title"] = $"Chương {Model.Chapter.No}: {Model.Chapter.Title}";
     var paragraphs = (Model.Chapter.Content ?? "").Replace("\r\n", "\n").Split("\n\n", StringSplitOptions.RemoveEmptyEntries);
 
-    // ===== CHỐNG LỘ NỘI DUNG: hình mờ (watermark) ghi tên người đọc + thời gian =====
-    // Ai chụp màn hình đem đi chia sẻ thì ảnh vẫn dính tên tài khoản → truy ra người làm lộ.
     var reader = User.Identity?.IsAuthenticated == true ? User.Identity!.Name ?? "Độc giả" : "Khách";
     var markText = System.Security.SecurityElement.Escape($"{reader} · {DateTime.Now:dd/MM/yyyy HH:mm}");
     var markSvg = $"<svg xmlns='http://www.w3.org/2000/svg' width='360' height='200'>"
@@ -12,7 +10,6 @@
     var markUrl = "data:image/svg+xml;charset=utf-8," + Uri.EscapeDataString(markSvg);
 }
 <style>
-    /* ===== Chống copy / chụp / in nội dung chương ===== */
     .protected {
         position: relative;
         user-select: none;
@@ -32,14 +29,21 @@
             filter: blur(10px);
             transition: filter .15s;
         }
-    /* mất focus / bấm PrtSc → làm mờ */
+
     .shield-msg {
         display: none;
         position: sticky;
-        top: 40%;
+        top: 42%;
         z-index: 3;
         text-align: center;
         font-weight: 600;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        padding: 12px 18px;
+        border-radius: 10px;
+        box-shadow: var(--shadow);
+        max-width: 380px;
+        margin: 0 auto;
     }
 
     .protected.shielded .shield-msg {
@@ -50,9 +54,29 @@
         .protected .reader-text {
             display: none !important;
         }
-        /* in trang → không in nội dung */
+
         .protected::after {
             content: "Nội dung chương được bảo vệ, không thể in.";
+        }
+    }
+
+    .rb-controls {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        flex: none;
+    }
+
+    .rb-sep {
+        width: 1px;
+        height: 18px;
+        background: var(--border);
+        margin: 0 2px;
+    }
+
+    @@media (max-width: 600px) {
+        .rb-paper-group {
+            display: none;
         }
     }
 </style>
@@ -60,9 +84,16 @@
     <div class="container reader-bar-inner">
         <a class="btn btn-ghost btn-sm" asp-action="Details" asp-route-id="@Model.Story.Id">← @Model.Story.Title</a>
         <span class="rb-title">Chương @Model.Chapter.No: @Model.Chapter.Title</span>
-        <div style="display:flex; gap:6px;">
-            <button class="size-btn" id="fontSmaller" type="button">A-</button>
-            <button class="size-btn" id="fontBigger" type="button">A+</button>
+        <div class="rb-controls">
+            <div class="rb-paper-group" style="display:flex; gap:4px;">
+                <button class="size-btn active" type="button" data-paper-btn="default" title="Nền mặc định">Sáng</button>
+                <button class="size-btn" type="button" data-paper-btn="sepia" title="Nền giấy ấm">Giấy</button>
+                <button class="size-btn" type="button" data-paper-btn="night" title="Nền tối đọc đêm">Đêm</button>
+            </div>
+            <span class="rb-sep rb-paper-group"></span>
+            <button class="size-btn" id="fontSmaller" type="button" title="Giảm cỡ chữ">A-</button>
+            <span id="fontSizeVal" class="hint" style="margin:0; min-width:34px; text-align:center;">18px</span>
+            <button class="size-btn" id="fontBigger" type="button" title="Tăng cỡ chữ">A+</button>
         </div>
     </div>
 </div>
@@ -79,12 +110,11 @@
 
     @if (Model.UpcomingAt.HasValue && !Model.NotYetPublicPreview && string.IsNullOrEmpty(Model.Chapter.Content))
     {
-        @* Chương hẹn giờ: chưa tới giờ ra mắt → hiện giờ ra mắt + đếm ngược, tới giờ tự tải lại trang *@
         var releaseIso = DateTime.SpecifyKind(Model.UpcomingAt.Value, DateTimeKind.Local).ToUniversalTime().ToString("o");
         <div class="locked-box">
             <h3>⏳ Chương sắp ra mắt</h3>
             <p>Chương này sẽ ra mắt lúc <b>@Model.UpcomingAt.Value.ToString("HH:mm 'ngày' dd/MM/yyyy")</b>.</p>
-            <p style="font-size:20px; font-weight:700; margin-top:8px;" id="countdown" data-release="@releaseIso"></p>
+            <p style="font-size:22px; font-weight:700; color:var(--brass); margin-top:10px;" id="countdown" data-release="@releaseIso"></p>
         </div>
         <script>
             (function () {
@@ -93,7 +123,7 @@
                 const pad = n => String(n).padStart(2, '0');
                 function tick() {
                     let s = Math.max(0, Math.floor((release - Date.now()) / 1000));
-                    if (s === 0) { location.reload(); return; }   // tới giờ → tải lại để đọc
+                    if (s === 0) { location.reload(); return; }
                     const d = Math.floor(s / 86400); s %= 86400;
                     const h = Math.floor(s / 3600); s %= 3600;
                     const m = Math.floor(s / 60); s %= 60;
@@ -107,10 +137,10 @@
     else if (Model.Locked)
     {
         <div class="locked-box">
-            <h3>Chương này dành cho độc giả đã mở khóa</h3>
-            <p>Nội dung chương này đang khóa. Bạn có thể xem các lựa chọn mua truyện hoặc gói đọc.</p>
-            <div style="display:flex; gap:10px; justify-content:center; flex-wrap:wrap; margin-top:12px;">
-                <a class="btn btn-brass" asp-controller="Orders" asp-action="Checkout" asp-route-storyId="@Model.Story.Id">Mua trọn bộ truyện</a>
+            <h3>🔒 Chương này dành cho độc giả đã mở khóa</h3>
+            <p>Nội dung chương này đang khóa. Bạn có thể mua trọn bộ truyện hoặc đăng ký gói đọc hội viên.</p>
+            <div style="display:flex; gap:10px; justify-content:center; flex-wrap:wrap; margin-top:16px;">
+                <a class="btn btn-brass" asp-controller="Orders" asp-action="Checkout" asp-route-storyId="@Model.Story.Id">🛒 Mua trọn bộ truyện</a>
                 <a class="btn btn-outline" asp-controller="Plans" asp-action="Index">Xem gói đọc</a>
             </div>
         </div>
@@ -128,25 +158,24 @@
             </div>
         </div>
         <script>
-            // ===== Chống copy / chụp màn hình nội dung chương =====
             (function () {
                 const box = document.getElementById('readerContent');
                 const stop = e => e.preventDefault();
 
-                // 1. Chặn bôi đen, chuột phải, copy, cắt, kéo thả chữ
                 ['copy', 'cut', 'contextmenu', 'selectstart', 'dragstart'].forEach(ev => box.addEventListener(ev, stop));
-                // (bỏ qua ô nhập bình luận / báo cáo để người đọc vẫn copy/dán chữ của mình được)
                 const isTyping = e => e.target.closest && e.target.closest('textarea, input, select');
                 document.addEventListener('copy', e => { if (isTyping(e)) return; e.preventDefault(); e.clipboardData && e.clipboardData.setData('text/plain', ''); });
 
-                // 2. Chặn phím tắt: Ctrl+C / A / X / S / P / U (copy, chọn hết, lưu trang, in, xem mã nguồn)
                 document.addEventListener('keydown', e => {
-                    if (isTyping(e)) return;   // đang gõ bình luận → không chặn phím tắt
+                    if (isTyping(e)) return;
                     const k = e.key.toLowerCase();
                     if ((e.ctrlKey || e.metaKey) && ['c', 'a', 'x', 's', 'p', 'u'].includes(k)) { e.preventDefault(); }
+                    if (!e.ctrlKey && !e.metaKey && !e.altKey) {
+                        if (e.key === 'ArrowLeft') document.getElementById('prevChapterLink')?.click();
+                        if (e.key === 'ArrowRight') document.getElementById('nextChapterLink')?.click();
+                    }
                 });
 
-                // 3. Bấm PrintScreen → xóa ảnh vừa chụp khỏi clipboard + làm mờ nội dung một lúc
                 const shield = ms => {
                     box.classList.add('shielded');
                     if (ms) setTimeout(() => box.classList.remove('shielded'), ms);
@@ -158,7 +187,6 @@
                     }
                 });
 
-                // 4. Rời khỏi trang (mở công cụ cắt màn hình Win+Shift+S, chuyển cửa sổ, chuyển tab) → làm mờ
                 window.addEventListener('blur', () => shield());
                 window.addEventListener('focus', () => box.classList.remove('shielded'));
                 document.addEventListener('visibilitychange', () => document.hidden ? shield() : box.classList.remove('shielded'));
@@ -169,33 +197,30 @@
     <div class="reader-toolbar">
         @if (Model.PrevNo.HasValue)
         {
-            <a class="btn btn-outline btn-sm" asp-action="Read" asp-route-storyId="@Model.Story.Id" asp-route-no="@Model.PrevNo">← Chương trước</a>
+            <a id="prevChapterLink" class="btn btn-outline btn-sm" asp-action="Read" asp-route-storyId="@Model.Story.Id" asp-route-no="@Model.PrevNo">← Chương trước</a>
         }
         else
         {
-
-            <span></span>
+            <span class="btn btn-outline btn-sm" style="opacity:.4; cursor:not-allowed;">← Chương trước</span>
         }
-        <a class="btn btn-outline btn-sm" asp-action="Details" asp-route-id="@Model.Story.Id">Danh sách chương</a>
+        <a class="btn btn-outline btn-sm" asp-action="Details" asp-route-id="@Model.Story.Id">📑 Danh sách chương</a>
         @if (Model.NextNo.HasValue)
         {
-            <a class="btn btn-outline btn-sm" asp-action="Read" asp-route-storyId="@Model.Story.Id" asp-route-no="@Model.NextNo">Chương sau →</a>
+            <a id="nextChapterLink" class="btn btn-brass btn-sm" asp-action="Read" asp-route-storyId="@Model.Story.Id" asp-route-no="@Model.NextNo">Chương sau →</a>
         }
         else
         {
-
-            <span></span>
+            <span class="btn btn-outline btn-sm" style="opacity:.4; cursor:not-allowed;">Chương sau →</span>
         }
     </div>
 
-    @* ===== PB33 — NÚT BÁO CÁO VI PHẠM (dùng chung cho chương và bình luận) ===== *@
     @{
         var loggedIn = User.Identity?.IsAuthenticated == true;
         var chapterReadable = !Model.UpcomingAt.HasValue || Model.NotYetPublicPreview || !string.IsNullOrEmpty(Model.Chapter.Content);
 
         async Task ReportBox(string targetType, int targetId, string label)
         {
-            <details class="report-dd">
+            <details class="dd report-dd">
                 <summary>⚑ @label</summary>
                 <form asp-action="Report" method="post" class="report-form">
                     <input type="hidden" name="targetType" value="@targetType" />
@@ -203,7 +228,7 @@
                     <input type="hidden" name="storyId" value="@Model.Story.Id" />
                     <input type="hidden" name="no" value="@Model.Chapter.No" />
                     <div class="field">
-                        <label>Lý do</label>
+                        <label>Lý do báo cáo</label>
                         <select name="reason" required>
                             <option value="">— Chọn lý do —</option>
                             @foreach (var r in Model.ReportReasons)
@@ -214,9 +239,9 @@
                     </div>
                     <div class="field">
                         <label>Ghi chú thêm (bắt buộc nếu chọn "Khác")</label>
-                        <textarea name="note" maxlength="500" rows="2"></textarea>
+                        <textarea name="note" maxlength="500" rows="2" placeholder="Mô tả ngắn gọn vấn đề..."></textarea>
                     </div>
-                    <button type="submit" class="btn btn-danger btn-sm">Gửi báo cáo</button>
+                    <button type="submit" class="btn btn-danger btn-sm btn-block">Gửi báo cáo</button>
                 </form>
             </details>
         }
@@ -224,14 +249,15 @@
 
     @if (chapterReadable && loggedIn && !Model.NotYetPublicPreview)
     {
-        <div class="report-chapter">@{ await ReportBox("Chapter", Model.Chapter.Id, "Báo cáo chương này"); }</div>
+        <div class="report-chapter">@{
+                await ReportBox("Chapter", Model.Chapter.Id, "Báo cáo chương này");
+            }</div>
     }
 
-    @* ===== PB32 — BÌNH LUẬN ===== *@
     @if (chapterReadable)
     {
-        <section class="comments" id="comments">
-            <h3>Bình luận (@Model.CommentTotal)</h3>
+        <section class="comments panel" id="comments" style="margin-top:24px;">
+            <h3 style="font-size:18px; margin-bottom:14px;">💬 Bình luận (@Model.CommentTotal)</h3>
 
             @if (loggedIn && Model.RestrictionNote is not null)
             {
@@ -243,8 +269,8 @@
                     <input type="hidden" name="storyId" value="@Model.Story.Id" />
                     <input type="hidden" name="no" value="@Model.Chapter.No" />
                     <input type="hidden" name="chapterId" value="@Model.Chapter.Id" />
-                    <div class="field">
-                        <textarea name="content" maxlength="1000" required placeholder="Chia sẻ cảm nghĩ của bạn về chương này..."></textarea>
+                    <div class="field" style="margin-bottom:10px;">
+                        <textarea name="content" maxlength="1000" rows="3" required placeholder="Chia sẻ cảm nghĩ của bạn về chương này..."></textarea>
                     </div>
                     <button type="submit" class="btn btn-brass btn-sm">Gửi bình luận</button>
                 </form>
@@ -253,42 +279,45 @@
             {
                 <p class="comment-login">
                     <a asp-controller="Account" asp-action="Login"
-                       asp-route-returnUrl="@Url.Action("Read", new { storyId = Model.Story.Id, no = Model.Chapter.No })">Đăng nhập</a>
-                    để bình luận.
+                       asp-route-returnUrl="@Url.Action("Read", new { storyId = Model.Story.Id, no = Model.Chapter.No })" style="color:var(--brass-2); font-weight:600;">Đăng nhập</a>
+                    để tham gia bình luận cùng độc giả khác.
                 </p>
             }
 
             @if (Model.Comments.Count == 0)
             {
-                <p class="comment-empty">Chưa có bình luận nào. Hãy là người đầu tiên!</p>
+                <p class="comment-empty">Chưa có bình luận nào. Hãy là người đầu tiên nêu cảm nhận!</p>
             }
             else
             {
                 <ul class="comment-list">
                     @foreach (var cm in Model.Comments)
                     {
+                        var cmInitial = string.IsNullOrWhiteSpace(cm.DisplayName) ? "?" : cm.DisplayName.Trim()[0].ToString().ToUpper();
                         <li class="comment-item">
-                            <div class="comment-head">
-                                <b>@cm.DisplayName</b>
-                                <span class="comment-time">@ReadManager.Web.Services.StoriesApiClient.ToLocal(cm.CreatedAt)?.ToString("HH:mm dd/MM/yyyy")</span>
-                                <div class="comment-actions">
-                                    @if (cm.CanDelete)
-                                    {
-                                        <form asp-action="DeleteComment" method="post" onsubmit="return confirm('Xóa bình luận này?');">
-                                            <input type="hidden" name="commentId" value="@cm.CommentId" />
-                                            <input type="hidden" name="storyId" value="@Model.Story.Id" />
-                                            <input type="hidden" name="no" value="@Model.Chapter.No" />
-                                            <button type="submit" class="btn btn-ghost btn-sm">Xóa</button>
-                                        </form>
-                                    }
-                                    else if (loggedIn)
-                                    {
-                                        await ReportBox("Comment", cm.CommentId, "Báo cáo");
-                                    }
+                            <div class="comment-avatar">@cmInitial</div>
+                            <div class="comment-main">
+                                <div class="comment-head">
+                                    <b>@cm.DisplayName</b>
+                                    <span class="comment-time">@ReadManager.Web.Services.StoriesApiClient.ToLocal(cm.CreatedAt)?.ToString("HH:mm dd/MM/yyyy")</span>
+                                    <div class="comment-actions">
+                                        @if (cm.CanDelete)
+                                        {
+                                            <form asp-action="DeleteComment" method="post" onsubmit="return confirm('Xóa bình luận này?');">
+                                                <input type="hidden" name="commentId" value="@cm.CommentId" />
+                                                <input type="hidden" name="storyId" value="@Model.Story.Id" />
+                                                <input type="hidden" name="no" value="@Model.Chapter.No" />
+                                                <button type="submit" class="btn btn-ghost btn-sm" style="color:var(--crimson);">Xóa</button>
+                                            </form>
+                                        }
+                                        else if (loggedIn)
+                                        {
+                                            await ReportBox("Comment", cm.CommentId, "Báo cáo");
+                                        }
+                                    </div>
                                 </div>
+                                <div class="comment-body">@cm.Content</div>
                             </div>
-                            @* white-space: pre-line → giữ xuống dòng; Razor tự mã hóa HTML nên không sợ chèn mã độc *@
-                            <div class="comment-body">@cm.Content</div>
                         </li>
                     }
                 </ul>
@@ -296,26 +325,115 @@
         </section>
     }
     <style>
-        .comments { margin-top: 32px; padding-top: 20px; border-top: 1px solid rgba(127,127,127,.25); }
-        .comments h3 { margin-bottom: 12px; }
-        .comment-form { margin-bottom: 18px; }
-        .comment-list { list-style: none; padding: 0; margin: 0; }
-        .comment-item { padding: 12px 0; border-bottom: 1px solid rgba(127,127,127,.15); }
-        .comment-head { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 4px; }
-        .comment-time { font-size: 12.5px; opacity: .65; padding-top: 2px; }
-        .comment-actions { margin-left: auto; }
-        .comment-body { white-space: pre-line; line-height: 1.55; overflow-wrap: anywhere; }
-        .comment-empty, .comment-login { opacity: .75; }
+        .comment-form {
+            margin-bottom: 20px;
+        }
 
-        /* Nút báo cáo: bấm vào mới mở form nhỏ */
-        .report-chapter { margin-top: 14px; text-align: right; }
-        .report-dd { position: relative; display: inline-block; text-align: left; }
-        .report-dd > summary { cursor: pointer; list-style: none; font-size: 12.5px; opacity: .7; padding: 4px 6px; }
-        .report-dd > summary::-webkit-details-marker { display: none; }
-        .report-dd > summary:hover { opacity: 1; color: var(--crimson); }
-        .report-dd[open] > summary { opacity: 1; color: var(--crimson); }
-        .report-form { position: absolute; right: 0; z-index: 20; width: 300px; margin-top: 4px; padding: 14px;
-                       background: var(--surface); border: 1px solid var(--border); border-radius: 6px; box-shadow: 0 8px 24px rgba(0,0,0,.15); }
-        .report-form select, .report-form textarea { width: 100%; }
+        .comment-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .comment-item {
+            display: flex;
+            gap: 12px;
+            padding: 14px 0;
+            border-top: 1px solid var(--border);
+        }
+
+        .comment-avatar {
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            flex: none;
+            background: var(--surface-2);
+            color: var(--brass-2);
+            font-weight: 700;
+            font-size: 14px;
+            display: grid;
+            place-items: center;
+        }
+
+        .comment-main {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .comment-head {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 4px;
+            flex-wrap: wrap;
+        }
+
+        .comment-time {
+            font-size: 12px;
+            color: var(--muted);
+        }
+
+        .comment-actions {
+            margin-left: auto;
+        }
+
+        .comment-body {
+            white-space: pre-line;
+            line-height: 1.6;
+            font-size: 14.5px;
+            overflow-wrap: anywhere;
+        }
+
+        .comment-empty, .comment-login {
+            color: var(--muted);
+            font-size: 14px;
+            margin: 0;
+        }
+
+        .report-chapter {
+            margin-top: 10px;
+            text-align: right;
+        }
+
+        .report-dd {
+            position: relative;
+            display: inline-block;
+            text-align: left;
+        }
+
+            .report-dd > summary {
+                cursor: pointer;
+                list-style: none;
+                font-size: 12.5px;
+                color: var(--muted);
+                padding: 4px 8px;
+                border-radius: 6px;
+            }
+
+                .report-dd > summary::-webkit-details-marker {
+                    display: none;
+                }
+
+                .report-dd > summary:hover, .report-dd[open] > summary {
+                    color: var(--crimson);
+                    background: var(--surface-2);
+                }
+
+        .report-form {
+            position: absolute;
+            right: 0;
+            z-index: 25;
+            width: min(300px, calc(100vw - 48px));
+            margin-top: 6px;
+            padding: 14px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            box-shadow: var(--shadow);
+        }
+
+            .report-form select, .report-form textarea {
+                width: 100%;
+            }
     </style>
 </div>
