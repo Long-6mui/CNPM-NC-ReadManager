@@ -88,6 +88,19 @@ public class CommentService : ICommentService
             })
             .ToListAsync();
 
+        // Sprint 5 — gắn danh hiệu / khung avatar của chuỗi đọc
+        var uids = items.Select(i => i.UserId).Distinct().ToList();
+        var looks = await _db.UserStreaks.AsNoTracking()
+            .Where(s => uids.Contains(s.UserId))
+            .Select(s => new { s.UserId, s.SelectedTitle, s.SelectedFrame })
+            .ToListAsync();
+        foreach (var it in items)
+        {
+            var look = looks.FirstOrDefault(l => l.UserId == it.UserId);
+            it.Title = look?.SelectedTitle;
+            it.AvatarFrame = look?.SelectedFrame;
+        }
+
         return new PagedResultDto<CommentDto>
         {
             Items = items,
@@ -150,6 +163,10 @@ public class CommentService : ICommentService
             .Where(u => u.UserId == userId)
             .Select(u => new { u.DisplayName, u.AvatarUrl })
             .FirstAsync();
+        var myLook = await _db.UserStreaks.AsNoTracking()
+            .Where(s => s.UserId == userId)
+            .Select(s => new { s.SelectedTitle, s.SelectedFrame })
+            .FirstOrDefaultAsync();
 
         return new CommentDto
         {
@@ -160,6 +177,8 @@ public class CommentService : ICommentService
             UserId = userId,
             DisplayName = user.DisplayName,
             AvatarUrl = user.AvatarUrl,
+            Title = myLook?.SelectedTitle,
+            AvatarFrame = myLook?.SelectedFrame,
             Content = comment.Content,
             CreatedAt = comment.CreatedAt,
             CanDelete = true

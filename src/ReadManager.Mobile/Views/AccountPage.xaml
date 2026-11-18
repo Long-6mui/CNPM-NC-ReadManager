@@ -47,6 +47,28 @@
 
             <!-- ============ ĐÃ ĐĂNG NHẬP ============ -->
             <VerticalStackLayout IsVisible="{Binding IsLoggedIn}" Spacing="14">
+                <Label Text="{Binding CoinText}" FontAttributes="Bold" />
+                <Button Text="Sở thích đọc" Command="{Binding EditGenresCommand}" />
+
+                <!-- Tài khoản bị hạn chế / khóa (Sprint 3 — dữ liệu từ Backend 2) -->
+                <Border Padding="14" StrokeThickness="0" BackgroundColor="#FDECEC" IsVisible="{Binding HasStatusBanner}">
+                    <Border.StrokeShape>
+                        <RoundRectangle CornerRadius="8" />
+                    </Border.StrokeShape>
+                    <Label Text="{Binding StatusBanner}" TextColor="{StaticResource WebCrimson}" FontSize="13.5" FontAttributes="Bold" />
+                </Border>
+
+                <!-- Thông báo + theo dõi (Sprint 3) -->
+                <Border Style="{StaticResource Panel}">
+                    <VerticalStackLayout Spacing="10">
+                        <Button Text="{Binding NotificationsText}" Style="{StaticResource BtnBrass}"
+                                Command="{Binding GoToNotificationsCommand}" />
+                        <Button Text="Truyện đang theo dõi" Style="{StaticResource BtnOutlineSm}" HeightRequest="44"
+                                Command="{Binding GoToFollowedCommand}" />
+                        <Button Text="🔥 Chuỗi đọc sách &amp; phần thưởng" Style="{StaticResource BtnOutlineSm}" HeightRequest="44"
+                                Command="{Binding GoToStreakCommand}" />
+                    </VerticalStackLayout>
+                </Border>
 
                 <!-- Thẻ thông tin (pf-side) -->
                 <Border Style="{StaticResource Panel}">
@@ -110,7 +132,8 @@
                                 <Label Text="Gói đọc theo tháng" FontSize="15" FontAttributes="Bold" TextColor="{StaticResource WebText}" />
                                 <Label Text="• Đọc các truyện nằm trong gói" Style="{StaticResource LblMuted}" />
                                 <Label Text="• Gia hạn sớm hoặc muộn đều được cộng dồn" Style="{StaticResource LblMuted}" />
-                                <Button Text="Sắp ra mắt" Style="{StaticResource BtnOutlineSm}" IsEnabled="False" Margin="0,6,0,0" />
+                                <Button Text="Xem các gói đọc" Style="{StaticResource BtnBrassSm}" Margin="0,6,0,0"
+                                        Command="{Binding GoToPlansCommand}" />
                             </VerticalStackLayout>
                         </Border>
 
@@ -119,9 +142,13 @@
                                 <Label Text="Mua riêng từng truyện" FontSize="15" FontAttributes="Bold" TextColor="{StaticResource WebText}" />
                                 <Label Text="• Mua quyền đọc một truyện" Style="{StaticResource LblMuted}" />
                                 <Label Text="• Độc lập với gói theo tháng" Style="{StaticResource LblMuted}" />
-                                <Button Text="Sắp ra mắt" Style="{StaticResource BtnOutlineSm}" IsEnabled="False" Margin="0,6,0,0" />
+                                <Button Text="Tìm truyện trả phí" Style="{StaticResource BtnOutlineSm}" Margin="0,6,0,0"
+                                        Command="{Binding GoToPaidStoriesCommand}" />
                             </VerticalStackLayout>
                         </Border>
+
+                        <Button Text="Lịch sử thanh toán" Style="{StaticResource BtnOutlineSm}" HeightRequest="44"
+                                Command="{Binding GoToOrderHistoryCommand}" />
                     </VerticalStackLayout>
                 </Border>
 
@@ -193,6 +220,10 @@
                 <Button Text="Đăng xuất" Style="{StaticResource BtnOutlineSm}" HeightRequest="44"
                         Command="{Binding LogoutCommand}" />
             </VerticalStackLayout>
+
+            <!-- Cài đặt kết nối (Sprint 4: demo trên điện thoại thật) -->
+            <Button Text="⚙ Địa chỉ máy chủ" Style="{StaticResource BtnLink}"
+                    Command="{Binding OpenServerSettingsCommand}" HorizontalOptions="Center" />
 
         </VerticalStackLayout>
     </ScrollView>

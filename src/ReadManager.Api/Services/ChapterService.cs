@@ -1,4 +1,4 @@
-﻿using System.Text;
+using System.Text;
 using Microsoft.EntityFrameworkCore;
 using MySqlConnector;
 using ReadManager.Api.Data;
@@ -45,10 +45,17 @@ public class ChapterService : IChapterService
     // PB31 — báo cho người theo dõi khi có chương mới
     private readonly INotificationService _notifications;
 
-    public ChapterService(AppDbContext db, INotificationService notifications)
+    private readonly IEntitlementService? _entitlementService;
+
+    // Sprint 5 — chuỗi đọc sách (tùy chọn: các bài test cũ không truyền vẫn chạy bình thường)
+    private readonly IStreakService? _streak;
+
+    public ChapterService(AppDbContext db, INotificationService notifications, IEntitlementService? entitlementService = null, IStreakService? streak = null)
     {
         _db = db;
         _notifications = notifications;
+        _entitlementService = entitlementService;
+        _streak = streak;
     }
 
     //  PHẦN 1: ĐỌC DỮ LIỆU
@@ -139,7 +146,26 @@ public class ChapterService : IChapterService
             return null;
 
         // 2. PB10 — KIỂM TRA QUYỀN ĐỌC MIỄN PHÍ. Admin luôn đọc được.
-        var locked = !isAdmin && IsLocked(chapter.Story.AccessPolicy, chapter.AccessLevel);
+        // 2. PB10 & PB22 — KIỂM TRA QUYỀN ĐỌC. Admin luôn đọc được.
+        var locked = false;
+        string? lockReason = null;
+        if (!isAdmin && IsLocked(chapter.Story.AccessPolicy, chapter.AccessLevel))
+        {
+            if (_entitlementService is not null)
+            {
+                var access = await _entitlementService.CheckChapterAccessAsync(chapter.ChapterId, readerId, isAdmin);
+                if (!access.CanRead)
+                {
+                    locked = true;
+                    lockReason = access.Reason;
+                }
+            }
+            else
+            {
+                locked = true;
+                lockReason = readerId.HasValue ? "SubscriptionRequired" : "LoginRequired";
+            }
+        }
 
         // Hẹn giờ: chưa tới giờ ra mắt → độc giả chưa đọc được (admin vẫn xem trước được)
         var upcoming = IsUpcoming(chapter.PublicationStatus, chapter.ScheduledAt, DateTime.UtcNow);
@@ -147,7 +173,16 @@ public class ChapterService : IChapterService
 
         // PB40 — độc giả đọc được nội dung → ghi 1 lượt đọc (Admin xem trước thì không tính)
         if (!isAdmin && !hideContent)
+        {
             await RecordReadAsync(chapter.StoryId, chapter.ChapterId, readerId);
+
+            // Sprint 5 — đã đăng nhập → tính vào chuỗi đọc (lỗi chuỗi không được làm hỏng việc đọc chương)
+            if (_streak is not null && readerId.HasValue)
+            {
+                try { await _streak.RecordReadAsync(readerId.Value); }
+                catch (Exception) { /* bỏ qua */ }
+            }
+        }
 
         // 3. Tìm chương TRƯỚC và chương SAU để làm nút chuyển chương.
         var siblings = _db.Chapters.AsNoTracking().Where(c => c.StoryId == chapter.StoryId);
@@ -178,6 +213,7 @@ public class ChapterService : IChapterService
             AccessLevel = chapter.AccessLevel,
             PublicationStatus = chapter.PublicationStatus,
             IsLocked = locked,
+            LockReason = lockReason,
             IsUpcoming = upcoming,
             ScheduledAt = chapter.ScheduledAt,
             PreviousChapterId = prev?.ChapterId,                 // "?." = nếu prev là null thì kết quả cũng null

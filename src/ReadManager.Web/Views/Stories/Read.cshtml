@@ -98,6 +98,18 @@
     </div>
 </div>
 <div class="reader-wrap">
+    @if (Model.SyncProgress)
+    {
+        <form id="readingProgress" asp-controller="Library" asp-action="SaveProgress" method="post"
+              data-percent="@Model.ScrollPercent.ToString(System.Globalization.CultureInfo.InvariantCulture)"
+              data-loaded="@(Model.ProgressLoaded ? "true" : "false")">
+            <input type="hidden" name="storyId" value="@Model.Story.Id" />
+            <input type="hidden" name="chapterId" value="@Model.Chapter.Id" />
+            <p id="coinReward" role="status" data-start="@Url.Action("StartReward", "Library")" data-finish="@Url.Action("FinishReward", "Library")"></p>
+            <p id="progressStatus" role="status" aria-live="polite">@Model.ProgressError</p>
+        </form>
+    }
+
     @if (Model.UpcomingAt.HasValue && !string.IsNullOrEmpty(Model.Chapter.Content))
     {
         <div class="banner banner-warn" style="margin-bottom:18px;">Bạn đang xem trước — chương hẹn ra mắt lúc @Model.UpcomingAt.Value.ToString("HH:mm dd/MM/yyyy"), độc giả chưa đọc được.</div>
@@ -437,3 +449,11 @@
             }
     </style>
 </div>
+
+@section Scripts {
+    @if (Model.SyncProgress)
+    {
+        <script src="~/js/reader-coins.js" asp-append-version="true"></script>
+        <script src="~/js/reading-progress.js" asp-append-version="true"></script>
+    }
+}

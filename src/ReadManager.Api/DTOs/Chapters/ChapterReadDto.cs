@@ -1,4 +1,4 @@
-﻿namespace ReadManager.Api.DTOs.Chapters;
+namespace ReadManager.Api.DTOs.Chapters;
 
 // PB12 — ĐỌC CHƯƠNG
 // Dữ liệu cho màn hình đọc: có nội dung + nút chương trước/sau.
@@ -18,6 +18,7 @@ public class ChapterReadDto
     public string AccessLevel { get; set; } = "Free";
     public string PublicationStatus { get; set; } = "Draft";
     public bool IsLocked { get; set; }                       // true = cần mở khóa mới đọc được
+    public string? LockReason { get; set; }                  // LoginRequired | SubscriptionExpired | SubscriptionRequired | StoryPurchaseRequired
 
     // ----- Nút "Chương trước" / "Chương sau" -----
     // null = không có (đang ở chương đầu hoặc chương cuối)

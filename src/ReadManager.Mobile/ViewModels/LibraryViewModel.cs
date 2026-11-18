@@ -7,19 +7,35 @@ using ReadManager.Mobile.Services.Auth;
 
 namespace ReadManager.Mobile.ViewModels;
 
-// Tab "Tủ sách": 2 mục — "Đã xem gần đây" (lịch sử) và "Yêu thích".
+// Tab "Tủ sách": 4 mục — "Đang đọc" (Sprint 3), "Đã xem gần đây" (lịch sử), "Yêu thích" và "Đã mua" (gói đang dùng + truyện đã mua trọn bộ).
 public partial class LibraryViewModel : BaseViewModel
 {
     private readonly ILibraryService _library;
     private readonly IAuthService _auth;
+    private readonly IReadingAccessService _access;
+    private readonly ReaderActivityService _reader;
+    private readonly IReadingProgressService _progress;
 
     public ObservableCollection<LibraryEntry> Items { get; } = new();
+
+    // ----- Mục "Đã mua" (Sprint 2) -----
+    public ObservableCollection<PlanEntitlement> MyPlans { get; } = new();
+    public ObservableCollection<OwnedStory> OwnedStories { get; } = new();
+
+    [ObservableProperty] private bool purchasesNeedLogin;
+    [ObservableProperty] private bool purchasesEmpty;
+    [ObservableProperty] private bool hasMyPlans;
+    [ObservableProperty] private bool hasOwnedStories;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(IsTab0))]
     [NotifyPropertyChangedFor(nameof(IsTab1))]
+    [NotifyPropertyChangedFor(nameof(IsTab2))]
+    [NotifyPropertyChangedFor(nameof(IsTab3))]
+    [NotifyPropertyChangedFor(nameof(ShowProgressInfo))]
+    [NotifyPropertyChangedFor(nameof(ShowList))]
     [NotifyPropertyChangedFor(nameof(ShowClear))]
-    private int selectedTab;
+    private int selectedTab = 3;   // mở tủ sách là thấy ngay "Đang đọc"
 
     [ObservableProperty] private bool showEmpty;
     [ObservableProperty] private string emptyTitle = string.Empty;
@@ -32,12 +48,20 @@ public partial class LibraryViewModel : BaseViewModel
 
     public bool IsTab0 => SelectedTab == 0;
     public bool IsTab1 => SelectedTab == 1;
+    public bool IsTab2 => SelectedTab == 2;
+    public bool IsTab3 => SelectedTab == 3;                    // "Đang đọc"
+    public bool ShowProgressInfo => IsTab0 || IsTab3;          // hiện "đang đọc chương nào + lúc xem"
+    public bool ShowList => SelectedTab != 2;
     public bool ShowClear => IsTab0 && HasItems;
 
-    public LibraryViewModel(ILibraryService library, IAuthService auth)
+    public LibraryViewModel(ILibraryService library, IAuthService auth, IReadingAccessService access,
+        IReadingProgressService progress, ReaderActivityService reader)
     {
+        _reader = reader;
+        _progress = progress;
         _library = library;
         _auth = auth;
+        _access = access;
     }
 
     // Gọi mỗi lần tab hiện ra để cập nhật sau khi xem truyện / bấm yêu thích
@@ -46,14 +70,14 @@ public partial class LibraryViewModel : BaseViewModel
     {
         try { await _auth.IsLoggedInAsync(); } // nạp CurrentUser để chọn đúng tủ sách của tài khoản
         catch { /* mất mạng: dùng tủ sách theo thông tin hiện có */ }
-        Show();
+        await ShowAsync();
     }
 
     [RelayCommand]
-    private void SelectTab(string? index)
+    private async Task SelectTabAsync(string? index)
     {
         SelectedTab = int.TryParse(index, out var i) ? i : 0;
-        Show();
+        await ShowAsync();
     }
 
     [RelayCommand]
@@ -78,12 +102,17 @@ public partial class LibraryViewModel : BaseViewModel
     }
 
     [RelayCommand]
-    private void Remove(LibraryEntry? entry)
+    private async Task RemoveAsync(LibraryEntry? entry)
     {
         if (entry is null) return;
-        if (IsTab0) _library.RemoveFromHistory(entry.StoryId);
-        else _library.RemoveFavorite(entry.StoryId);
-        Show();
+        await RunSafeAsync(async () =>
+        {
+            if (IsTab3) await _progress.RemoveAsync(entry.StoryId);
+            else if (IsTab0) _library.RemoveFromHistory(entry.StoryId);
+            else if (_auth.CurrentUser is not null) await _reader.SetFavorite(entry.StoryId, false);
+            else _library.RemoveFavorite(entry.StoryId);
+        });
+        await ShowAsync();
     }
 
     [RelayCommand]
@@ -95,9 +124,85 @@ public partial class LibraryViewModel : BaseViewModel
         Show();
     }
 
-    private void Show()
+    // ----- Mục "Đã mua" -----
+    [RelayCommand]
+    private async Task OpenOwnedStoryAsync(OwnedStory? story)
     {
-        var source = IsTab0 ? _library.GetHistory() : _library.GetFavorites();
+        if (story is null) return;
+        await Shell.Current.GoToAsync(nameof(Views.StoryDetailPage), new Dictionary<string, object>
+        {
+            { "id", story.StoryId }
+        });
+    }
+
+    [RelayCommand]
+    private async Task OpenPlansAsync() => await Shell.Current.GoToAsync(nameof(Views.PlansPage));
+
+    [RelayCommand]
+    private async Task OpenHistoryAsync() => await Shell.Current.GoToAsync(nameof(Views.OrderHistoryPage));
+
+    [RelayCommand]
+    private async Task GoToLoginAsync() => await Shell.Current.GoToAsync("//LoginPage");
+
+    private async Task ShowAsync()
+    {
+        if (SelectedTab == 2) await LoadPurchasesAsync();
+        else if (SelectedTab == 3) await LoadReadingAsync();
+        else if (IsTab1) await RunSafeAsync(async () => Show(await _reader.Favorites()));
+        else Show();
+    }
+
+    private async Task LoadPurchasesAsync()
+    {
+        Items.Clear();
+        ShowEmpty = false;
+        HasItems = false;
+        CountText = string.Empty;
+
+        var loggedIn = _auth.CurrentUser is not null;
+        PurchasesNeedLogin = !loggedIn;
+        MyPlans.Clear();
+        OwnedStories.Clear();
+        HasMyPlans = false;
+        HasOwnedStories = false;
+        PurchasesEmpty = false;
+        if (!loggedIn) return;
+
+        await RunSafeAsync(async () =>
+        {
+            var purchases = await _access.GetPurchasesAsync();
+            foreach (var p in purchases.Plans) MyPlans.Add(p);
+            foreach (var s in purchases.Stories) OwnedStories.Add(s);
+            HasMyPlans = MyPlans.Count > 0;
+            HasOwnedStories = OwnedStories.Count > 0;
+            PurchasesEmpty = !HasMyPlans && !HasOwnedStories;
+            CountText = $"{MyPlans.Count} gói đang dùng · {OwnedStories.Count} truyện đã mua";
+        });
+    }
+
+    // Mục "Đang đọc": các truyện đã đọc dở (có chương đang đọc), mới đọc nhất lên đầu
+    private async Task LoadReadingAsync()
+    {
+        MyPlans.Clear();
+        OwnedStories.Clear();
+        Items.Clear();
+        PurchasesNeedLogin = false;
+        PurchasesEmpty = false;
+
+        List<LibraryEntry> reading = new();
+        await RunSafeAsync(async () => reading = await _progress.GetReadingAsync());
+        foreach (var e in reading) Items.Add(e);
+
+        HasItems = Items.Count > 0;
+        ShowEmpty = !HasItems;
+        CountText = HasItems ? $"{Items.Count} truyện đang đọc" : string.Empty;
+        EmptyTitle = "Bạn chưa đọc dở truyện nào.";
+        EmptyHint = "Đọc một chương bất kỳ, truyện sẽ hiện ở đây để bạn bấm “Đọc tiếp”.";
+    }
+
+    private void Show(IReadOnlyList<LibraryEntry>? favorites = null)
+    {
+        var source = IsTab0 ? _library.GetHistory() : favorites ?? _library.GetFavorites();
 
         Items.Clear();
         foreach (var entry in source) Items.Add(entry);

@@ -2,6 +2,7 @@
 @{ ViewData["Title"] = "Quản lý đơn hàng"; }
 <div class="container section">
     <partial name="_AdminNav" /><h1>Quản lý đơn hàng</h1>
+    <a asp-action="Recovery">Giao dịch cần cấp lại quyền</a>
     <p>Đơn đang chờ thanh toán chưa cấp quyền đọc. Giao dịch đã thanh toán cần được cấp quyền trước khi mở khóa nội dung.</p>
     @if (Model.Items.Count == 0) { <p>Chưa có đơn hàng.</p> }
     <table class="data">

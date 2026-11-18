@@ -47,18 +47,17 @@
 
         @if (Model.Status == "Pending")
         {
-            <div class="banner banner-info" style="margin-top:16px;">
-                Đơn hàng đã được khởi tạo và đang chờ xác nhận thanh toán. Quyền đọc sẽ được kích hoạt ngay sau khi giao dịch hoàn tất.
-            </div>
-        }
-        else if (Model.Status == "Paid")
-        {
-            <div class="banner banner-success" style="margin-top:16px;">
-                ✓ Thanh toán thành công. Quyền đọc của bạn đã sẵn sàng!
-            </div>
+            @if (Model.CanPay)
+            {
+                <form asp-action="StartPayment" method="post" style="margin-top:14px;">
+                    <input type="hidden" name="id" value="@Model.OrderId" />
+                    <button class="btn btn-brass" type="submit">Bắt đầu thanh toán</button>
+                </form>
+            }
+            else { <p>Đơn đã hết thời gian thanh toán. Vui lòng tạo đơn mới.</p> }
         }
 
-        <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:20px;">
+        <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:18px;">
             @if (Model.StoryId.HasValue)
             {
                 <a class="btn btn-brass" asp-controller="Stories" asp-action="Details" asp-route-id="@Model.StoryId">← Quay lại truyện</a>

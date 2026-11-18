@@ -1,79 +1,40 @@
 @model ReadManager.Web.Services.PagedApi<ReadManager.Web.Services.OrderApi>
-@{
-    ViewData["Title"] = "Đơn hàng của tôi";
-    int pageCount = Math.Max(1, (int)Math.Ceiling(Model.TotalCount / (double)Math.Max(1, Model.PageSize)));
-}
-<div class="container section" style="max-width:920px;">
-    <div class="section-head">
-        <h2>Gói &amp; đơn hàng của tôi</h2>
-        <a class="btn btn-brass btn-sm" asp-action="Index">+ Xem các gói đọc</a>
-    </div>
-    <p class="section-sub" style="margin-bottom:20px;">Đơn đang chờ thanh toán chưa cấp quyền đọc. Quyền đọc sẽ được kích hoạt ngay sau khi thanh toán hoàn tất.</p>
-
-    @if (Model.Items.Count == 0)
+@{ ViewData["Title"] = "Gói và thanh toán của tôi"; }
+<div class="container section">
+    <h1>Gói và thanh toán của tôi</h1>
+    <p>Đơn đang chờ thanh toán chưa cấp quyền đọc. Giao dịch đã thanh toán cần được cấp quyền trước khi mở khóa nội dung.</p>
+    @if (ViewBag.LibraryError is string error) { <p role="alert">@error</p> }
+    @if (ViewBag.Library is ReadManager.Web.Services.UserLibraryApi library)
     {
-        <div class="empty-state">
-            <h3>Bạn chưa có đơn hàng nào</h3>
-            <p>Hãy chọn một gói đọc hội viên hoặc mua trọn bộ truyện yêu thích để bắt đầu.</p>
-            <a class="btn btn-brass" asp-action="Index">Xem các gói đọc</a>
-        </div>
-    }
-    else
-    {
-        <div class="table-wrap">
-            <table class="data">
-                <thead>
-                    <tr>
-                        <th>Mã đơn</th>
-                        <th>Nội dung</th>
-                        <th>Số tiền</th>
-                        <th>Trạng thái</th>
-                        <th></th>
-                    </tr>
-                </thead>
-                <tbody>
-                @foreach (var order in Model.Items)
-                {
-                    var (badge, status) = order.Status switch
-                    {
-                        "Pending" => ("badge-gold", "Chờ thanh toán"),
-                        "Paid" => ("badge-green", "Đã thanh toán"),
-                        "Failed" => ("badge-red", "Thất bại"),
-                        "Expired" => ("badge-gray", "Hết hạn"),
-                        "Cancelled" => ("badge-gray", "Đã hủy"),
-                        _ => ("badge-gray", order.Status)
-                    };
-                    <tr>
-                        <td><b>#@order.OrderId</b></td>
-                        <td>@order.ItemName</td>
-                        <td><b>@order.Amount.ToString("N0")₫</b></td>
-                        <td><span class="badge @badge">@status</span></td>
-                        <td style="text-align:right;">
-                            <a class="btn btn-outline btn-sm" asp-controller="Orders" asp-action="Details" asp-route-id="@order.OrderId">Xem đơn</a>
-                        </td>
-                    </tr>
-                }
-                </tbody>
-            </table>
-        </div>
-
-        @if (pageCount > 1)
+        <h2>Gói đọc của tôi</h2>
+        @if (library.Subscriptions.History.Count == 0) { <p>Chưa có quyền dùng gói được cấp.</p> }
+        @foreach (var sub in library.Subscriptions.History)
         {
-            <nav class="pager" aria-label="Phân trang đơn hàng">
-                @if (Model.Page > 1)
-                {
-                    <a asp-action="Mine" asp-route-page="@(Model.Page - 1)" title="Trang trước">«</a>
-                }
-                @for (int p = 1; p <= pageCount; p++)
-                {
-                    if (p == Model.Page) { <span class="current">@p</span> }
-                    else { <a asp-action="Mine" asp-route-page="@p">@p</a> }
-                }
-                @if ((long)Model.Page * Model.PageSize < Model.TotalCount)
-                {
-                    <a asp-action="Mine" asp-route-page="@(Model.Page + 1)" title="Trang sau">»</a>
-                }
-            </nav>
+            <div class="panel">
+                <strong>@sub.PlanName</strong> — @sub.StatusBadge
+                <p>@sub.StartsAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm") đến @sub.EndsAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</p>
+                <p>Phạm vi: @(sub.ScopeType == "All" ? "Toàn bộ truyện" : "Các truyện được chọn trong phiên bản đã mua")</p>
+                @if (sub.CanRenew) { <a asp-action="Index">Xem gói để gia hạn</a> }
+            </div>
         }
+        <h2>Truyện đã mua</h2>
+        @if (library.PurchasedStories.Count == 0) { <p>Chưa có truyện đã mua còn quyền đọc.</p> }
+        @foreach (var story in library.PurchasedStories)
+        { <p><a asp-controller="Stories" asp-action="Details" asp-route-id="@story.StoryId">@story.Title</a></p> }
     }
+    <h2>Lịch sử đơn hàng</h2>
+    @if (Model.Items.Count == 0) { <p>Chưa có đơn hàng.</p> }
+    <table class="data">
+        <thead><tr><th>Mã đơn</th><th>Nội dung</th><th>Số tiền</th><th>Trạng thái</th><th></th></tr></thead>
+        <tbody>
+        @foreach (var order in Model.Items)
+        {
+            var status = order.Status switch { "Pending" => "Chờ thanh toán", "Paid" => "Đã thanh toán", "Failed" => "Thất bại", "Expired" => "Hết hạn", "Cancelled" => "Đã hủy", _ => order.Status };
+            <tr><td>@order.OrderId</td><td>@order.ItemName</td><td>@order.Amount.ToString("N0") đ</td><td>@status</td>
+                <td><a asp-controller="Orders" asp-action="Details" asp-route-id="@order.OrderId">Xem đơn</a></td></tr>
+        }
+        </tbody>
+    </table>
+    @if (Model.Page > 1) { <a asp-action="Mine" asp-route-page="@(Model.Page - 1)">Trang trước</a> }
+    @if ((long)Model.Page * Model.PageSize < Model.TotalCount) { <a asp-action="Mine" asp-route-page="@(Model.Page + 1)">Trang sau</a> }
 </div>

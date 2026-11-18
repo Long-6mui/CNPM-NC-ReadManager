@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:ReadManager.Mobile.ViewModels"
+             xmlns:models="clr-namespace:ReadManager.Mobile.Models"
+             x:DataType="vm:FollowedStoriesViewModel"
+             x:Class="ReadManager.Mobile.Views.FollowedStoriesPage"
+             Title="Truyện đang theo dõi"
+             BackgroundColor="{StaticResource WebBg}">
+
+    <Shell.BackButtonBehavior>
+        <BackButtonBehavior IconOverride="ic_back.png" />
+    </Shell.BackButtonBehavior>
+
+    <Grid RowDefinitions="Auto,*">
+
+        <VerticalStackLayout Grid.Row="0" Padding="16,12,16,4" Spacing="6">
+            <Label Text="{Binding CountText}" Style="{StaticResource LblMuted}" />
+            <Label Text="{Binding ErrorMessage}" TextColor="{StaticResource WebCrimson}"
+                   IsVisible="{Binding ErrorMessage, Converter={StaticResource StringToBoolConverter}}" />
+            <ActivityIndicator IsRunning="{Binding IsBusy}" IsVisible="{Binding IsBusy}" Color="{StaticResource WebRoyal}" />
+        </VerticalStackLayout>
+
+        <CollectionView Grid.Row="1" ItemsSource="{Binding Items}" SelectionMode="None" Margin="16,6,16,0">
+            <CollectionView.Footer>
+                <BoxView HeightRequest="16" Color="Transparent" />
+            </CollectionView.Footer>
+            <CollectionView.ItemTemplate>
+                <DataTemplate x:DataType="models:FollowedStory">
+                    <Border Style="{StaticResource Panel}" Padding="12" Margin="0,0,0,10">
+                        <Grid ColumnDefinitions="68,*" ColumnSpacing="12">
+                            <Border HeightRequest="100" StrokeThickness="1" Stroke="{StaticResource WebBorder}" VerticalOptions="Start">
+                                <Border.StrokeShape>
+                                    <RoundRectangle CornerRadius="4" />
+                                </Border.StrokeShape>
+                                <Border.GestureRecognizers>
+                                    <TapGestureRecognizer
+                                        Command="{Binding Source={RelativeSource AncestorType={x:Type vm:FollowedStoriesViewModel}}, Path=OpenCommand}"
+                                        CommandParameter="{Binding .}" />
+                                </Border.GestureRecognizers>
+                                <Grid>
+                                    <Grid.Background>
+                                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                            <GradientStop Color="#3B4E63" Offset="0.0" />
+                                            <GradientStop Color="#22303F" Offset="1.0" />
+                                        </LinearGradientBrush>
+                                    </Grid.Background>
+                                    <Label Text="{Binding Title}" IsVisible="{Binding HasNoCover}"
+                                           FontFamily="{StaticResource SerifFont}" FontSize="9.5" FontAttributes="Bold"
+                                           TextColor="White" HorizontalTextAlignment="Center"
+                                           VerticalOptions="Center" Margin="4" />
+                                    <Image Source="{Binding CoverUrl}" IsVisible="{Binding HasCover}" Aspect="AspectFill" />
+                                </Grid>
+                            </Border>
+                            <VerticalStackLayout Grid.Column="1" Spacing="3">
+                                <Label Text="{Binding Title}" Style="{StaticResource LblCardTitle}" FontSize="15" />
+                                <Label Text="{Binding FollowedText}" Style="{StaticResource LblCardMeta}" />
+                                <HorizontalStackLayout Spacing="8" Margin="0,8,0,0">
+                                    <Button Text="Xem truyện" Style="{StaticResource BtnBrassSm}"
+                                            Command="{Binding Source={RelativeSource AncestorType={x:Type vm:FollowedStoriesViewModel}}, Path=OpenCommand}"
+                                            CommandParameter="{Binding .}" />
+                                    <Button Text="Bỏ theo dõi" Style="{StaticResource BtnLink}" TextColor="{StaticResource WebCrimson}"
+                                            Command="{Binding Source={RelativeSource AncestorType={x:Type vm:FollowedStoriesViewModel}}, Path=UnfollowCommand}"
+                                            CommandParameter="{Binding .}" />
+                                </HorizontalStackLayout>
+                            </VerticalStackLayout>
+                        </Grid>
+                    </Border>
+                </DataTemplate>
+            </CollectionView.ItemTemplate>
+        </CollectionView>
+
+        <VerticalStackLayout Grid.Row="1" IsVisible="{Binding ShowEmpty}" VerticalOptions="Start"
+                             Padding="24,60" Spacing="8" InputTransparent="True">
+            <Label Text="Bạn chưa theo dõi truyện nào." Style="{StaticResource LblH2}" FontSize="18" HorizontalTextAlignment="Center" />
+            <Label Text="Bấm “Theo dõi” ở trang chi tiết truyện để nhận thông báo chương mới." Style="{StaticResource LblMuted}"
+                   HorizontalTextAlignment="Center" />
+        </VerticalStackLayout>
+
+        <VerticalStackLayout Grid.Row="1" IsVisible="{Binding IsLoggedIn, Converter={StaticResource InvertedBoolConverter}}"
+                             VerticalOptions="Start" Padding="24,60" Spacing="12">
+            <Label Text="Đăng nhập để xem truyện đang theo dõi." Style="{StaticResource LblH2}" FontSize="18" HorizontalTextAlignment="Center" />
+            <Button Text="Đăng nhập" Style="{StaticResource BtnBrass}" Command="{Binding GoToLoginCommand}" />
+        </VerticalStackLayout>
+    </Grid>
+</ContentPage>

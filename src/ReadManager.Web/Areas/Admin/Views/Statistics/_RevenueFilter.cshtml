@@ -1,0 +1,74 @@
+﻿@model ReadManager.Web.ViewModels.RevenueStatsVm
+@{
+    var f = Model.Filter; var r = Model.Rev;
+    var today = ReadManager.Web.ViewModels.StatsFilter.TodayVn.ToString("yyyy-MM-dd");
+    var plans = Model.Options.Data?.Plans ?? new();
+    var stories = Model.Options.Data?.Stories ?? new();
+}
+<div class="st-filter">
+    <div class="pillbar" role="group" aria-label="Khoảng thời gian nhanh">
+        @foreach (var (key, label) in new[] { ("today", "Hôm nay"), ("7", "7 ngày"), ("30", "30 ngày"), ("month", "Tháng này") })
+        {
+            <a class="pill @(f.Preset == key ? "active" : "")" asp-action="Revenue" asp-route-preset="@key" asp-route-type="@r.Type" asp-route-planVersionId="@r.PlanVersionId" asp-route-storyId="@r.StoryId" asp-route-groupBy="@r.GroupBy">@label</a>
+        }
+    </div>
+    <form method="get" asp-action="Revenue" class="st-range">
+        <label>Từ ngày<input type="date" name="from" value="@f.FromText" max="@today" required /></label>
+        <label>Đến ngày<input type="date" name="to" value="@f.ToText" max="@today" required /></label>
+        <label>
+            Loại
+            <select name="type" id="rv-type">
+                <option value="all" selected="@(r.Type == "all")">Tất cả</option>
+                <option value="plan" selected="@(r.Type == "plan")">Gói đọc</option>
+                <option value="story" selected="@(r.Type == "story")">Mua truyện</option>
+            </select>
+        </label>
+        <label>
+            Gói
+            <select name="planVersionId" id="rv-plan">
+                <option value="">Tất cả gói</option>
+                @foreach (var p in plans)
+                {
+                    <option value="@p.PlanVersionId" selected="@(r.PlanVersionId == p.PlanVersionId)">@p.Label</option>
+                }
+                @if (r.PlanVersionId is int pid && plans.All(p => p.PlanVersionId != pid))
+                {
+                    <option value="@pid" selected>Gói #@pid</option>
+                }
+            </select>
+        </label>
+        <label>
+            Truyện
+            <select name="storyId" id="rv-story">
+                <option value="">Tất cả truyện</option>
+                @foreach (var s in stories)
+                {
+                    <option value="@s.StoryId" selected="@(r.StoryId == s.StoryId)">@s.Title</option>
+                }
+                @if (r.StoryId is int sid && stories.All(s => s.StoryId != sid))
+                {
+                    <option value="@sid" selected>Truyện #@sid</option>
+                }
+            </select>
+        </label>
+        <input type="hidden" name="groupBy" value="@r.GroupBy" />
+        <button class="btn btn-brass btn-sm" type="submit">Áp dụng</button>
+    </form>
+    @if (!Model.Options.Ok)
+    {
+        <div class="banner banner-warn" role="status">Chưa tải được danh sách gói / truyện để lọc. @Model.Options.Error</div>
+    }
+    @if (f.Error is not null)
+    {
+        <div class="banner banner-warn" role="alert">@f.Error Đang hiển thị 30 ngày gần nhất.</div>
+    }
+    @if (f.Note is not null)
+    {
+        <div class="banner banner-info" role="status">@f.Note</div>
+    }
+    @if (r.Note is not null)
+    {
+        <div class="banner banner-info" role="status">@r.Note</div>
+    }
+    <p class="st-period">Đang xem: <b>@f.Label</b> (giờ Việt Nam)</p>
+</div>

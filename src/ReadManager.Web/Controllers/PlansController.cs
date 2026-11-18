@@ -5,7 +5,7 @@ using ReadManager.Web.Services;
 
 namespace ReadManager.Web.Controllers;
 
-public class PlansController(PlansApiClient plans, StoriesApiClient stories) : Controller
+public class PlansController(PlansApiClient plans, StoriesApiClient stories, PaymentsApiClient payments) : Controller
 {
     private const string ApiDown = "Không tải được dữ liệu từ API. Vui lòng thử lại.";
     private Task<string?> Token() => HttpContext.GetTokenAsync("access_token");
@@ -67,7 +67,15 @@ public class PlansController(PlansApiClient plans, StoriesApiClient stories) : C
     [Authorize]
     public async Task<IActionResult> Mine(int page = 1)
     {
-        try { return View(await stories.MyOrdersAsync(await Token(), page)); }
+        try
+        {
+            var token = await Token();
+            var orders = await stories.MyOrdersAsync(token, page);
+            var library = await payments.LibraryAsync(token);
+            if (library.Ok) ViewBag.Library = library.Data;
+            else ViewBag.LibraryError = library.Message;
+            return View(orders);
+        }
         catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException)
         {
             TempData["Toast"] = ApiDown;

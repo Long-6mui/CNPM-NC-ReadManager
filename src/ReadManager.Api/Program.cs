@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
 using ReadManager.Api.Authentication;
@@ -22,16 +22,22 @@ builder.Services.AddScoped<IReadingPlanService, ReadingPlanService>();
 builder.Services.AddScoped<IStoryService, StoryService>();
 builder.Services.AddScoped<IGenreService, GenreService>();
 builder.Services.AddScoped<IChapterService, ChapterService>();
+builder.Services.AddScoped<IEntitlementService, EntitlementService>();
+builder.Services.AddScoped<IActivityStatisticsService, ActivityStatisticsService>(); // BE2 — PB37 thống kê hoạt động
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IOrderService, OrderService>();   // BE3 — đơn hàng (PB19, PB21, PB26)
 builder.Services.Configure<PaymentOptions>(builder.Configuration.GetSection(PaymentOptions.SectionName));
 builder.Services.AddScoped<IEntitlementGrantService, EntitlementGrantService>();   // BE4 — cấp quyền đọc
 builder.Services.AddScoped<IPaymentService, PaymentService>();                      // BE4 — PB19/PB21/PB24/PB25 thanh toán
 builder.Services.AddScoped<IContentStatisticsService, ContentStatisticsService>();   // BE3 — PB40 thống kê nội dung
+builder.Services.AddScoped<IRevenueStatisticsService, RevenueStatisticsService>();   // BE4 — PB38/PB39 thống kê doanh thu
+builder.Services.AddScoped<IDiscoveryService, DiscoveryService>();                   // BE3 — Khám phá & Bảng xếp hạng
 builder.Services.AddScoped<ICommentService, CommentService>();             // BE4 — PB32 bình luận
 builder.Services.AddScoped<IReportService, ReportService>();               // BE4 — PB33 báo cáo vi phạm
 builder.Services.AddScoped<IFollowService, FollowService>();               // BE4 — PB31 theo dõi truyện
 builder.Services.AddScoped<INotificationService, NotificationService>();   // BE4 — PB31 thông báo chương mới
+builder.Services.AddScoped<IStreakService, StreakService>();                      // Sprint 5 — chuỗi đọc sách
+builder.Services.AddHostedService<StreakReminderWorker>();                         // Sprint 5 — nhắc nhở mất chuỗi
 builder.Services.AddScoped<IReadingProgressService, ReadingProgressService>();   // BE2 — PB28–29 tiến độ đọc
 builder.Services.AddScoped<IUserManagementService, UserManagementService>();      // BE2 — PB35 quản lý thành viên
 builder.Services.AddScoped<IUserRestrictionService, UserRestrictionService>();    // BE2 — PB36 hạn chế / tạm ngừng

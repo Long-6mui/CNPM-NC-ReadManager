@@ -1,0 +1,110 @@
+using System.Net;
+using System.Net.Http.Headers;
+using System.Net.Http.Json;
+namespace ReadManager.Web.Services;
+
+public record ReadingPositionApi(int StoryId, int ChapterId, int ChapterNumber, string ChapterTitle, decimal ScrollPercent, DateTime UpdatedAt);
+public record ReadingStoryApi(int StoryId, string Title, string AuthorName, string? CoverUrl, int ChapterId,
+    int ChapterNumber, string ChapterTitle, decimal ScrollPercent, int PublishedChapterCount, bool HasNewChapters, DateTime LastReadAt);
+
+public class ReadingProgressApiClient(HttpClient http)
+{
+    private async Task<HttpResponseMessage> SendAsync(HttpMethod method, string path, string? token, object? body = null)
+    {
+        using var request = new HttpRequestMessage(method, path);
+        if (!string.IsNullOrEmpty(token)) request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        if (body is not null) request.Content = JsonContent.Create(body);
+        return await http.SendAsync(request);
+    }
+    public async Task<string> BuyFreezeCardAsync(Guid requestId, string? token)
+    {
+        using var response = await SendAsync(HttpMethod.Post, $"api/reader/freeze-cards/{requestId}", token);
+        if (response.StatusCode == HttpStatusCode.Conflict)
+        {
+            var error = await response.Content.ReadFromJsonAsync<PurchaseError>();
+            return error?.Message ?? "Chưa đổi được thẻ.";
+        }
+        response.EnsureSuccessStatusCode();
+        return "Đã đổi 50 xu lấy một thẻ bảo vệ chuỗi.";
+    }
+    public record DirectoryMember(int UserId, string DisplayName, string Email, string Role, DateTime CreatedAt, string AccountStatus);
+
+    public async Task<List<DirectoryMember>> FindMembersAsync(string? keyword, string? role, string? token)
+    {
+        var result = new List<DirectoryMember>();
+        var query = $"keyword={Uri.EscapeDataString(keyword ?? "")}&role={Uri.EscapeDataString(role == "User" ? "Member" : role ?? "all")}";
+        for (var page = 1; ; page++)
+        {
+            using var response = await SendAsync(HttpMethod.Get, $"api/admin/users?{query}&page={page}&pageSize=50", token);
+            response.EnsureSuccessStatusCode();
+            var batch = await response.Content.ReadFromJsonAsync<PagedApi<DirectoryMember>>()
+                ?? throw new HttpRequestException("Thiếu danh sách thành viên.");
+            result.AddRange(batch.Items);
+            if (result.Count >= batch.TotalCount || batch.Items.Count == 0) return result;
+        }
+    }
+
+    public async Task<string> GrantAsync(
+Guid requestId, string email, int coins, int days, string? token)
+    {
+        using var response = await SendAsync(HttpMethod.Post, "api/admin/users/reader-grants", token,
+            new { requestId, email, coins, days });
+        if (response.StatusCode is HttpStatusCode.NotFound or HttpStatusCode.BadRequest or HttpStatusCode.Conflict)
+            return (await response.Content.ReadFromJsonAsync<PurchaseError>())?.Message ?? "Yêu cầu không hợp lệ.";
+        response.EnsureSuccessStatusCode();
+        return coins > 0 ? $"Đã cộng {coins} xu cho {email}." : $"Đã cộng {days} ngày chuỗi cho {email}.";
+    }
+    private record PurchaseError(string Message);
+    public record CoinBalance(int Coins, int FreezeCards = 0);
+    public record ChapterTicket(string Ticket);
+    public record CoinReward(bool Granted);
+
+    private async Task<T> ReaderRequest<T>(HttpMethod method, string route, string? token, object? body = null)
+    {
+        using var response = await SendAsync(method, "api/reader/" + route, token, body);
+        response.EnsureSuccessStatusCode();
+        return await response.Content.ReadFromJsonAsync<T>() ?? throw new HttpRequestException("Thiếu phản hồi từ API xu.");
+    }
+
+    public Task<CoinBalance> Balance(string? token) => ReaderRequest<CoinBalance>(HttpMethod.Get, "profile", token);
+    public Task<ChapterTicket> StartReward(int id, string? token) =>
+        ReaderRequest<ChapterTicket>(HttpMethod.Post, $"chapters/{id}/start", token);
+    public Task<CoinReward> FinishReward(int id, string ticket, decimal percent, string? token) =>
+        ReaderRequest<CoinReward>(HttpMethod.Post, $"chapters/{id}/finish", token, new { ticket, percent });
+
+    public async Task<ReadingPositionApi?> GetAsync(int storyId, string? token)
+    {
+        using var response = await SendAsync(HttpMethod.Get, $"api/stories/{storyId}/progress", token);
+        if (response.StatusCode == HttpStatusCode.NotFound) return null;
+        response.EnsureSuccessStatusCode();
+        return await response.Content.ReadFromJsonAsync<ReadingPositionApi>();
+    }
+    public async Task<List<ReadingStoryApi>> ListAsync(string? token)
+    {
+        var items = new List<ReadingStoryApi>();
+        for (var page=1; ; page++)
+        {
+            using var response = await SendAsync(HttpMethod.Get, $"api/me/reading?page={page}&pageSize=50", token);
+            response.EnsureSuccessStatusCode();
+            var data = await response.Content.ReadFromJsonAsync<PagedApi<ReadingStoryApi>>()
+                ?? throw new HttpRequestException("API trả danh sách tiến độ trống.");
+            items.AddRange(data.Items);
+            if (data.Items.Count == 0 || items.Count >= data.TotalCount) return items;
+        }
+    }
+    public async Task SaveAsync(int storyId, int chapterId, decimal scrollPercent, string? token)
+    {
+        using var response = await SendAsync(HttpMethod.Put, $"api/stories/{storyId}/progress", token, new { chapterId, scrollPercent });
+        response.EnsureSuccessStatusCode();
+    }
+    public async Task<bool> RemoveAsync(int storyId, string? token)
+    {
+        using var response = await SendAsync(HttpMethod.Delete, $"api/stories/{storyId}/progress", token);
+        if (response.StatusCode == HttpStatusCode.NotFound) return false;
+        response.EnsureSuccessStatusCode();
+        return true;
+    }
+    public static string ErrorMessage(Exception ex) => ex is HttpRequestException { StatusCode: HttpStatusCode.Unauthorized }
+        ? "Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại để đồng bộ tiến độ."
+        : "Chưa kết nối được tiến độ đọc. Vui lòng thử lại; dữ liệu đã lưu trên máy chủ được giữ nguyên.";
+}

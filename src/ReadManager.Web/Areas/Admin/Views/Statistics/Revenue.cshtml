@@ -5,8 +5,17 @@
     ViewData["Title"] = "Thống kê doanh thu";
     ViewBag.Tab = "revenue";
     var retry = Context.Request.Path + Context.Request.QueryString;
+    var rf = Model.Rev; var f = Model.Filter;
     string Money(decimal v) => v.ToString("N0") + "đ";
     string W(decimal v, decimal total) => (total <= 0 ? 0 : Math.Min(100, (double)(v / total * 100))).ToString("0.#", System.Globalization.CultureInfo.InvariantCulture);
+    string Pct(double v) => v.ToString("0.#", System.Globalization.CultureInfo.InvariantCulture);
+    string Label(RevenueBucketApi b) => rf.GroupBy switch
+    {
+        "month" => b.PeriodStart.ToString("MM/yyyy"),
+        "week" => b.PeriodStart == b.PeriodEnd ? b.PeriodStart.ToString("dd/MM") : $"{b.PeriodStart:dd/MM}–{b.PeriodEnd:dd/MM}",
+        _ => b.PeriodStart.ToString("dd/MM")
+    };
+    var groupLabel = rf.GroupBy switch { "week" => "tuần", "month" => "tháng", _ => "ngày" };
 }
 <link rel="stylesheet" href="~/css/plans.css" asp-append-version="true" />
 <link rel="stylesheet" href="~/css/statistics.css" asp-append-version="true" />
@@ -17,69 +26,160 @@
         <div class="st-main">
             <h3>Thống kê</h3>
             <partial name="_Tabs" model="Model.Filter" />
-            <partial name="_Filter" model="Model.Filter" />
+            <partial name="_RevenueFilter" model="Model" />
 
-            @if (!Model.Report.Ok) { <partial name="_StatState" model="Model.Report.Notice(retry)" /> }
+            @if (!Model.Overview.Ok)
+            {
+                <partial name="_StatState" model="Model.Overview.Notice(retry)" />
+            }
             else
             {
-                var r = Model.Report.Data!;
-                if (r.OrderCount == 0)
+                var o = Model.Overview.Data!;
+                if (o.OrderCount == 0)
                 {
-                    <partial name="_StatState" model='new StatNotice("empty", "Chưa có giao dịch thanh toán thành công trong khoảng thời gian này.", null)' />
+                    <partial name="_StatState" model='new StatNotice("empty", "Chưa có giao dịch thanh toán thành công trong khoảng thời gian và bộ lọc này.", null)' />
                 }
                 else
                 {
                     <div class="st-kpis">
-                        <partial name="_Kpi" model='new KpiVm("Tổng doanh thu", Money(r.Total))' />
-                        <partial name="_Kpi" model='new KpiVm("Đơn đã thanh toán", r.OrderCount.ToString("N0"), $"Trung bình {Money(r.AverageOrder)}/đơn")' />
-                        <partial name="_Kpi" model='new KpiVm("Doanh thu gói đọc", Money(r.PlanTotal), $"{W(r.PlanTotal, r.Total)}% tổng")' />
-                        <partial name="_Kpi" model='new KpiVm("Doanh thu mua truyện", Money(r.StoryTotal), $"{W(r.StoryTotal, r.Total)}% tổng")' />
+                        <partial name="_Kpi" model='new KpiVm("Tổng doanh thu", Money(o.TotalRevenue))' />
+                        <partial name="_Kpi" model='new KpiVm("Đơn đã thanh toán", o.OrderCount.ToString("N0"), $"Trung bình {Money(o.AverageOrderValue)}/đơn")' />
+                        @if (rf.Type != "story")
+                        {
+                            <partial name="_Kpi" model='new KpiVm("Doanh thu gói đọc", Money(o.PlanRevenue), $"Mua mới {Money(o.NewPlanRevenue)} · Gia hạn {Money(o.RenewalRevenue)}")' />
+                            <partial name="_Kpi" model='new KpiVm("Lượt mua gói", o.PlanOrders.ToString("N0"), $"{o.NewPlanOrders:N0} mua mới · {o.RenewalOrders:N0} gia hạn")' />
+                        }
+                        @if (rf.Type != "plan")
+                        {
+                            <partial name="_Kpi" model='new KpiVm("Doanh thu mua truyện", Money(o.StoryRevenue), $"{W(o.StoryRevenue, o.TotalRevenue)}% tổng · {o.StoryOrders:N0} lượt mua")' />
+                        }
                     </div>
 
-                    <section class="st-card"><div class="st-card-head"><h4>Doanh thu theo ngày</h4>
-                        <a class="btn btn-outline btn-sm" asp-action="ExportRevenue" asp-route-from="@Model.Filter.FromText" asp-route-to="@Model.Filter.ToText">Xuất CSV</a></div>
-                        @SvgCharts.Columns("Doanh thu theo ngày (đồng)", r.Days.Select(x => x.Date.ToString("dd/MM")).ToList(), new ChartSeries("Doanh thu", r.Days.Select(x => (double)x.Total).ToList()))
-                    </section>
-
-                    <section class="st-card"><h4>Doanh thu theo gói đọc</h4>
-                        @if (r.ByPlan.Count == 0) { <partial name="_StatState" model='new StatNotice("empty", "Chưa có đơn mua gói trong khoảng này.", null)' /> }
+                    <section class="st-card">
+                        <div class="st-card-head">
+                            <h4>Doanh thu theo @groupLabel</h4>
+                            <div class="st-card-tools">
+                                <div class="pillbar" role="group" aria-label="Gom biểu đồ theo">
+                                    @foreach (var (key, label) in new[] { ("day", "Ngày"), ("week", "Tuần"), ("month", "Tháng") })
+                                    {
+                                        <a class="pill @(rf.GroupBy == key ? "active" : "")" asp-action="Revenue" asp-route-from="@f.FromText" asp-route-to="@f.ToText" asp-route-type="@rf.Type" asp-route-planVersionId="@rf.PlanVersionId" asp-route-storyId="@rf.StoryId" asp-route-groupBy="@key">@label</a>
+                                    }
+                                </div>
+                                <a class="btn btn-outline btn-sm" asp-action="ExportRevenue" asp-route-from="@f.FromText" asp-route-to="@f.ToText" asp-route-type="@rf.Type" asp-route-planVersionId="@rf.PlanVersionId" asp-route-storyId="@rf.StoryId">Xuất CSV</a>
+                            </div>
+                        </div>
+                        @if (!Model.Series.Ok)
+                        {
+                            <partial name="_StatState" model="Model.Series.Notice(retry)" />
+                        }
                         else
                         {
-                            <div class="st-scroll"><table class="pl-table"><thead><tr><th>Gói</th><th>Lượt mua</th><th>Doanh thu</th><th>Tỷ trọng</th></tr></thead><tbody>
-                            @foreach (var p in r.ByPlan)
-                            {
-                                <tr><td>@p.Name</td><td>@p.Orders.ToString("N0")</td><td>@Money(p.Revenue)</td><td><span class="st-bar" aria-hidden="true"><i style="width:@W(p.Revenue, r.PlanTotal)%"></i></span>@W(p.Revenue, r.PlanTotal)%</td></tr>
-                            }
-                            </tbody></table></div>
+                            var buckets = Model.Series.Data!;
+                            <div class="st-chartwrap">@SvgCharts.Columns($"Doanh thu theo {groupLabel} (đồng)", buckets.Select(Label).ToList(), new ChartSeries("Doanh thu", buckets.Select(x => (double)x.TotalRevenue).ToList()))</div>
+                            <details class="st-sub">
+                                <summary>Chi tiết theo @groupLabel</summary>
+                                <div class="st-scroll">
+                                    <table class="pl-table">
+                                        <thead><tr><th>@(rf.GroupBy == "day" ? "Ngày" : rf.GroupBy == "week" ? "Tuần" : "Tháng")</th><th>Số đơn</th><th>Gói đọc</th><th>Mua truyện</th><th>Tổng</th></tr></thead>
+                                        <tbody>
+                                            @foreach (var b in buckets.Where(x => x.Orders > 0))
+                                            {
+                                                <tr><td>@(rf.GroupBy == "day" ? b.PeriodStart.ToString("dd/MM/yyyy") : b.PeriodStart == b.PeriodEnd ? b.PeriodStart.ToString("dd/MM/yyyy") : $"{b.PeriodStart:dd/MM/yyyy} – {b.PeriodEnd:dd/MM/yyyy}")</td><td>@b.Orders</td><td>@Money(b.PlanRevenue)</td><td>@Money(b.StoryRevenue)</td><td>@Money(b.TotalRevenue)</td></tr>
+                                            }
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </details>
                         }
                     </section>
 
-                    <section class="st-card"><h4>Doanh thu và lượt mua theo truyện</h4>
-                        @if (r.ByStory.Count == 0) { <partial name="_StatState" model='new StatNotice("empty", "Chưa có lượt mua truyện trong khoảng này.", null)' /> }
-                        else
-                        {
-                            <div class="st-scroll"><table class="pl-table"><thead><tr><th>Truyện</th><th>Lượt mua</th><th>Doanh thu</th><th>Tỷ trọng</th></tr></thead><tbody>
-                            @foreach (var s in r.ByStory.Take(20))
+                    @if (rf.Type != "story")
+                    {
+                        <section class="st-card">
+                            <h4>Doanh thu theo gói đọc</h4>
+                            @if (!Model.Plans.Ok)
                             {
-                                <tr><td>@s.Name</td><td>@s.Orders.ToString("N0")</td><td>@Money(s.Revenue)</td><td><span class="st-bar" aria-hidden="true"><i style="width:@W(s.Revenue, r.StoryTotal)%"></i></span>@W(s.Revenue, r.StoryTotal)%</td></tr>
+                                <partial name="_StatState" model="Model.Plans.Notice(retry)" />
                             }
-                            </tbody></table></div>
-                            @if (r.ByStory.Count > 20) { <p class="st-note">Hiển thị 20/@r.ByStory.Count truyện có doanh thu cao nhất.</p> }
-                        }
-                    </section>
+                            else if (Model.Plans.Data!.Count == 0)
+                            {
 
-                    <details class="st-card"><summary>Chi tiết theo từng ngày</summary>
-                        <div class="st-scroll"><table class="pl-table"><thead><tr><th>Ngày</th><th>Số đơn</th><th>Gói đọc</th><th>Mua truyện</th><th>Tổng</th></tr></thead><tbody>
-                        @foreach (var d in r.Days.Where(x => x.Orders > 0))
-                        {
-                            <tr><td>@d.Date.ToString("dd/MM/yyyy")</td><td>@d.Orders</td><td>@Money(d.Plan)</td><td>@Money(d.Story)</td><td>@Money(d.Total)</td></tr>
-                        }
-                        </tbody></table></div>
-                    </details>
+                                <partial name="_StatState" model='new StatNotice("empty", "Chưa có đơn mua gói trong khoảng này.", null)' />
+                            }
+                            else
+                            {
+                                <div class="st-scroll">
+                                    <table class="pl-table">
+                                        <thead><tr><th>Gói</th><th>Lượt mua</th><th>Mua mới / Gia hạn</th><th>Doanh thu</th><th>Tỷ trọng</th></tr></thead>
+                                        <tbody>
+                                            @foreach (var p in Model.Plans.Data!)
+                                            {
+                                                <tr><td>@p.Label</td><td>@p.Orders.ToString("N0")</td><td>@p.NewOrders.ToString("N0") / @p.RenewalOrders.ToString("N0")</td><td>@Money(p.Revenue)</td><td><span class="st-bar" aria-hidden="true"><i style="width:@Pct(p.SharePercent)%"></i></span>@Pct(p.SharePercent)%</td></tr>
+                                            }
+                                        </tbody>
+                                    </table>
+                                </div>
+                            }
+                        </section>
+                    }
+
+                    @if (rf.Type != "plan")
+                    {
+                        <section class="st-card">
+                            <h4>Doanh thu và lượt mua theo truyện</h4>
+                            @if (!Model.Stories.Ok)
+                            {
+                                <partial name="_StatState" model="Model.Stories.Notice(retry)" />
+                            }
+                            else if (Model.Stories.Data!.Count == 0)
+                            {
+
+                                <partial name="_StatState" model='new StatNotice("empty", "Chưa có lượt mua truyện trong khoảng này.", null)' />
+                            }
+                            else
+                            {
+                                <div class="st-scroll">
+                                    <table class="pl-table">
+                                        <thead><tr><th>Truyện</th><th>Lượt mua</th><th>Doanh thu</th><th>Tỷ trọng</th></tr></thead>
+                                        <tbody>
+                                            @foreach (var s in Model.Stories.Data!)
+                                            {
+                                                <tr><td>@s.Title</td><td>@s.Purchases.ToString("N0")</td><td>@Money(s.Revenue)</td><td><span class="st-bar" aria-hidden="true"><i style="width:@Pct(s.SharePercent)%"></i></span>@Pct(s.SharePercent)%</td></tr>
+                                            }
+                                        </tbody>
+                                    </table>
+                                </div>
+                                @if (Model.Stories.Data!.Count >= 20)
+                                {
+                                    <p class="st-note">Hiển thị tối đa 20 truyện có doanh thu cao nhất.</p>
+                                }
+                            }
+                        </section>
+                    }
                 }
-                @if (r.Truncated) { <div class="banner banner-warn" role="alert">Chỉ đọc được 3.000 đơn gần nhất nên số liệu có thể thiếu. Hãy chọn khoảng thời gian ngắn hơn.</div> }
-                <p class="st-note">Chỉ tính đơn đã thanh toán thành công; mỗi mã đơn được tính một lần@(r.DuplicatesIgnored > 0 ? $" (đã bỏ qua {r.DuplicatesIgnored} dòng trùng)" : ""). Ngày tính theo ngày thanh toán, giờ Việt Nam. Số liệu lấy từ danh sách đơn hàng của hệ thống.</p>
+                <p class="st-note">Chỉ tính đơn đã thanh toán thành công; mỗi mã đơn được tính một lần. Số tiền là số đã chốt của đơn lúc mua (không lấy giá hiện tại). Ngày tính theo ngày thanh toán, giờ Việt Nam; tuần bắt đầu từ thứ Hai, tuần / tháng ở hai đầu khoảng chỉ gồm các ngày nằm trong khoảng đã chọn. Gia hạn = mua lại cùng một gói khi gói cũ còn hạn. Tiền mua gói thuộc doanh thu gói, không cộng vào doanh thu từng truyện.</p>
             }
         </div>
     </div>
 </div>
+@section Scripts {
+    <script>
+        // Chọn loại → khóa ô không liên quan (ô bị khóa không được gửi lên): Gói đọc → tắt ô Truyện; Mua truyện → tắt ô Gói
+        (function () {
+            var type = document.getElementById('rv-type'), plan = document.getElementById('rv-plan'), story = document.getElementById('rv-story');
+            if (!type || !plan || !story) return;
+            function sync() {
+                plan.disabled = type.value === 'story';
+                story.disabled = type.value === 'plan';
+            }
+            type.addEventListener('change', function () {
+                if (type.value === 'story') plan.value = '';
+                if (type.value === 'plan') story.value = '';
+                sync();
+            });
+            plan.addEventListener('change', function () { if (plan.value) { story.value = ''; type.value = 'plan'; sync(); } });
+            story.addEventListener('change', function () { if (story.value) { plan.value = ''; type.value = 'story'; sync(); } });
+            sync();
+        })();
+    </script>
+}

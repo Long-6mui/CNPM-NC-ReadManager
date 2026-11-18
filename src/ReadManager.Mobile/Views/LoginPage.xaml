@@ -7,6 +7,10 @@
              Title="Đăng nhập"
              BackgroundColor="{StaticResource WebBg}">
 
+    <Shell.BackButtonBehavior>
+        <BackButtonBehavior IconOverride="ic_back.png" Command="{Binding GoHomeCommand}" />
+    </Shell.BackButtonBehavior>
+
     <ScrollView>
         <VerticalStackLayout Padding="20,28" Spacing="14">
 
@@ -48,6 +52,9 @@
                     </HorizontalStackLayout>
                 </VerticalStackLayout>
             </Border>
+
+            <Button Text="⚙ Địa chỉ máy chủ" Style="{StaticResource BtnLink}"
+                    Command="{Binding OpenServerSettingsCommand}" HorizontalOptions="Center" />
 
             <Button Text="← Về trang chủ" Style="{StaticResource BtnLink}"
                     Command="{Binding GoHomeCommand}" HorizontalOptions="Center" />

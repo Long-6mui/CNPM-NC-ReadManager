@@ -35,6 +35,7 @@
             ContentTemplate="{DataTemplate views:LibraryPage}"
             Route="LibraryPage" />
 
+        <ShellContent Title="Xếp hạng" Route="HeartRanking" ContentTemplate="{DataTemplate views:HeartRankingPage}" />
         <ShellContent
             Title="Tài khoản"
             Icon="tab_account.png"

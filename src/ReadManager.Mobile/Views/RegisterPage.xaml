@@ -7,6 +7,10 @@
              Title="Đăng ký"
              BackgroundColor="{StaticResource WebBg}">
 
+    <Shell.BackButtonBehavior>
+        <BackButtonBehavior IconOverride="ic_back.png" />
+    </Shell.BackButtonBehavior>
+
     <ScrollView>
         <VerticalStackLayout Padding="20,28" Spacing="14">
 

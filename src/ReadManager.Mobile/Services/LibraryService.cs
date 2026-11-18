@@ -53,14 +53,19 @@ public class LibraryService : ILibraryService
         }
     }
 
-    public void RecordChapter(int storyId, int chapterId, int chapterNumber, string title)
+    public void RecordChapter(int storyId, int chapterId, int chapterNumber, string title, decimal scrollPercent = 0)
     {
         var list = Load(HistoryKey);
         var entry = list.FirstOrDefault(e => e.StoryId == storyId);
-        if (entry is null) return; // chưa có trong lịch sử (vào thẳng chương) thì bỏ qua
+        if (entry is null)
+        {
+            entry = new LibraryEntry { StoryId = storyId, Title = $"Truyện #{storyId}" };
+            list.Add(entry);
+        }
         entry.LastChapterId = chapterId;
         entry.LastChapterNumber = chapterNumber;
         entry.LastChapterTitle = title;
+        entry.ScrollPercent = Math.Clamp(scrollPercent, 0, 100);
         entry.ViewedAt = DateTime.UtcNow;
         Save(HistoryKey, list);
     }

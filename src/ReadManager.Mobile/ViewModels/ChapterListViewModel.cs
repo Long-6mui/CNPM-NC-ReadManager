@@ -42,12 +42,7 @@ public partial class ChapterListViewModel : BaseViewModel
     {
         if (chapter is null) return;
 
-        if (chapter.IsLocked)
-        {
-            ErrorMessage = "Chương này chưa mở khoá miễn phí.";
-            return;
-        }
-
+        // Chương khóa vẫn mở màn đọc: màn đó hiện nút "Mua trọn bộ" thay cho nội dung.
         await Shell.Current.GoToAsync(nameof(Views.ChapterReaderPage), new Dictionary<string, object>
         {
             { "chapterId", chapter.ChapterId }

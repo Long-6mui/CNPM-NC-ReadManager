@@ -1,4 +1,4 @@
-﻿namespace ReadManager.Api.Entities;
+namespace ReadManager.Api.Entities;
 
 // BE3 — ĐƠN HÀNG (PB19 mua/gia hạn gói, PB21 mua truyện, PB26 lịch sử thanh toán)
 // Mỗi đơn mua đúng 1 thứ: 1 gói đọc (OrderType = "Plan") HOẶC 1 truyện (OrderType = "Story").
@@ -27,6 +27,11 @@ public class Order
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
     public DateTime? PaidAt { get; set; }           // lúc thanh toán thành công
+
+    // SPRINT 5 — giảm giá từ chuỗi đọc: Amount là số tiền SAU giảm
+    public decimal? OriginalAmount { get; set; }    // giá gốc trước giảm (null = không dùng coupon)
+    public decimal DiscountAmount { get; set; }     // số tiền được giảm
+    public int? CouponId { get; set; }
 
     public User User { get; set; } = null!;
     public ReadingPlanVersion? PlanVersion { get; set; }

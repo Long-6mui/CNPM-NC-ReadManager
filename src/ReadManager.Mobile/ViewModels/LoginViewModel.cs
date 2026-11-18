@@ -1,6 +1,7 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using ReadManager.Mobile.Models.Auth;
+using ReadManager.Mobile.Services;
 using ReadManager.Mobile.Services.Auth;
 
 namespace ReadManager.Mobile.ViewModels;
@@ -15,9 +16,14 @@ public partial class LoginViewModel : BaseViewModel
     [ObservableProperty]
     private string password = string.Empty;
 
-    public LoginViewModel(IAuthService authService)
+    private readonly ReaderActivityService _reader;
+    private readonly ILibraryService _library;
+
+    public LoginViewModel(IAuthService authService, ReaderActivityService reader, ILibraryService library)
     {
         _authService = authService;
+        _library = library;
+        _reader = reader;
     }
 
     [RelayCommand]
@@ -31,14 +37,29 @@ public partial class LoginViewModel : BaseViewModel
 
         await RunSafeAsync(async () =>
         {
-            var user = await _authService.LoginAsync(new LoginRequest
+            try
             {
-                UsernameOrEmail = UsernameOrEmail.Trim(),
-                Password = Password
-            });
+                await _authService.LoginAsync(new LoginRequest
+                {
+                    UsernameOrEmail = UsernameOrEmail.Trim(),
+                    Password = Password
+                });
+            }
+            catch (ApiException ex) when (ex.StatusCode == 403)
+            {
+                // Tài khoản bị khóa / tạm ngừng: hiện đúng lời của API, nếu API không kèm lời thì dùng câu mặc định
+                throw new ApiException(403, ex.Message.Contains("HTTP 403")
+                    ? "Tài khoản của bạn đang bị khóa hoặc tạm ngừng. Vui lòng liên hệ quản trị viên."
+                    : ex.Message, ex.Error);
+            }
+
+            SessionFlags.AccountRestricted = false;
 
             // "//" thay toàn bộ stack để không back lại màn Login.
             await Shell.Current.GoToAsync("//StoryListPage");
+            if (_library.GetFavorites().Count > 0) await _reader.Favorites();
+            if (await _reader.Profile() is { Prompted: false })
+                await Shell.Current.GoToAsync(nameof(Views.ReaderGenresPage));
         });
     }
 
@@ -47,6 +68,9 @@ public partial class LoginViewModel : BaseViewModel
     {
         await Shell.Current.GoToAsync(nameof(Views.RegisterPage));
     }
+
+    [RelayCommand]
+    private Task OpenServerSettingsAsync() => ServerSettings.PromptAsync();
 
     // Quay về Trang chủ (đăng nhập là tuỳ chọn, giống web)
     [RelayCommand]
