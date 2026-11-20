@@ -19,7 +19,7 @@ public record CouponApi(int CouponId, string Name, int Percent, List<int> Durati
 // ----- Lịch sử cộng/trừ xu — HỢP ĐỒNG API cho Backend (xem doc/WEB_REWARDS_API_CONTRACT.md) -----
 //   GET api/reader/coin-history?page=1&pageSize=20  → PagedApi<CoinTransactionApi>
 //   Amount > 0 là cộng xu, < 0 là trừ xu. Type: ChapterReward | StreakReward | FreezeCard | Voucher | AdminGrant | Refund
-public record CoinTransactionApi(long Id, int Amount, string Type, string Description, int? BalanceAfter, DateTime CreatedAt);
+public record CoinTransactionApi(long Id, int Amount, string Type, string Description, long? BalanceAfter, DateTime CreatedAt);
 
 // ----- Voucher mua truyện — HỢP ĐỒNG API cho Backend (Voucher) -----
 //   GET  api/vouchers/offers                         → List<VoucherOfferApi>  (voucher đang cho đổi bằng xu)

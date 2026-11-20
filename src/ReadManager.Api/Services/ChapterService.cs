@@ -47,15 +47,11 @@ public class ChapterService : IChapterService
 
     private readonly IEntitlementService? _entitlementService;
 
-    // Sprint 5 — chuỗi đọc sách (tùy chọn: các bài test cũ không truyền vẫn chạy bình thường)
-
-
     public ChapterService(AppDbContext db, INotificationService notifications, IEntitlementService? entitlementService = null, IStreakService? streak = null)
     {
         _db = db;
         _notifications = notifications;
         _entitlementService = entitlementService;
-
     }
 
     //  PHẦN 1: ĐỌC DỮ LIỆU

@@ -33,11 +33,13 @@ Quy tắc khôi phục chuỗi và các mốc thưởng hiện có tiếp tục 
 GET /api/reader/profile trả coins, freezeCards, prompted, genres.
 coins là số nguyên 64-bit.
 
-GET /api/reader/coins/history?page=1&pageSize=20 yêu cầu đăng nhập.
+GET /api/reader/coin-history?page=1&pageSize=20 yêu cầu đăng nhập.
+Route /api/reader/coins/history được giữ làm alias cùng dữ liệu.
 Chỉ trả lịch sử của tài khoản trong token.
 page >= 1 (tối đa 1000000), pageSize từ 1 đến 100.
 Kết quả gồm items, totalCount, page, pageSize.
-Mỗi item có coinTransactionId, amount, balanceAfter, kind, description, createdAt.
+Mỗi item có id, amount, balanceAfter, type, description, createdAt theo contract Web.
+Các trường coinTransactionId và kind cũng được giữ. type FreezeCard tương ứng kind FreezeCardPurchase.
 amount dương là cộng xu, âm là trừ xu. createdAt là UTC.
 Sắp xếp theo coinTransactionId giảm dần để giao dịch mới nhất ở đầu.
 

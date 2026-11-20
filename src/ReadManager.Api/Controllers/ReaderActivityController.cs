@@ -55,6 +55,7 @@ public class ReaderActivityController(AppDbContext db, IEntitlementService right
     private Task<long> BalanceAsync() => CoinLedger.BalanceAsync(db, UserId);
 
     [HttpGet("coins/history")]
+    [HttpGet("coin-history")]
     public async Task<IActionResult> History(int page = 1, int pageSize = 20)
     {
         if (page < 1 || pageSize < 1 || pageSize > 100 || page > 1000000)
@@ -63,7 +64,7 @@ public class ReaderActivityController(AppDbContext db, IEntitlementService right
         var totalCount = await query.CountAsync();
         var items = await query.OrderByDescending(t => t.CoinTransactionId)
             .Skip((page - 1) * pageSize).Take(pageSize)
-            .Select(t => new { t.CoinTransactionId, t.Amount, t.BalanceAfter, t.Kind, t.Description, t.CreatedAt })
+            .Select(t => new { id = t.CoinTransactionId, t.CoinTransactionId, t.Amount, t.BalanceAfter, type = t.Kind == "FreezeCardPurchase" ? "FreezeCard" : t.Kind, t.Kind, t.Description, t.CreatedAt })
             .ToListAsync();
         return Ok(new { items, totalCount, page, pageSize });
     }

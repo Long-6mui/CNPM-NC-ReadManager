@@ -5,7 +5,7 @@ namespace ReadManager.Web.ViewModels;
 // Trang "Ví xu & chuỗi đọc": số dư xu, chuỗi, thẻ bảo vệ, coupon gói, voucher mua truyện, lịch sử xu
 public class RewardsVm
 {
-    public int? Coins { get; set; }
+    public long? Coins { get; set; }
     public int FreezeCards { get; set; }
     public string? WalletError { get; set; }
 

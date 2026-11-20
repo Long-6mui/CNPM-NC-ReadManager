@@ -95,6 +95,10 @@ internal static class ReadingRewardsChecks
         var history = await mobile.GetFromJsonAsync<JsonElement>("api/reader/coins/history?pageSize=2");
         check(history.GetProperty("items").GetArrayLength() == 2 && history.GetProperty("totalCount").GetInt32() == 4,
             "Ledger paginates chapter reward, streak reward, admin grant and purchase");
+        var webRewards = new ReadManager.Web.Services.RewardsApiClient(web);
+        var webHistory = await webRewards.CoinHistoryAsync(1, token);
+        check(webHistory.Ok && webHistory.Data!.Items[0].Type == "FreezeCard" && webHistory.Data.Items[0].Id > 0,
+            "New Web rewards page contract matches backend ledger");
         var all = await web.GetFromJsonAsync<JsonElement>("api/reader/coins/history");
         check(all.GetProperty("items").EnumerateArray().Sum(x => x.GetProperty("amount").GetInt32()) == 0 &&
             all.GetProperty("items")[0].GetProperty("balanceAfter").GetInt64() == 0,

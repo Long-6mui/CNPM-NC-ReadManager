@@ -46,7 +46,7 @@
     <section class="pf-card" id="wallet">
         <div class="rw-wallet">
             <div class="rw-stat"><span>Số dư xu</span>
-                <b>@(Model.Coins is int c ? $"{c:N0} xu" : "—")</b></div>
+                <b>@(Model.Coins is long c ? $"{c:N0} xu" : "—")</b></div>
             <div class="rw-stat"><span>Thẻ bảo vệ chuỗi</span><b>@Model.FreezeCards / 5</b></div>
             <form asp-action="BuyFreezeCard" method="post" class="rw-buy">
                 <input type="hidden" name="requestId" value="@Guid.NewGuid()" />
@@ -168,7 +168,7 @@
             <div class="rw-offers">
                 @foreach (var o in Model.Offers)
                 {
-                    var enough = Model.Coins is int have && have >= o.CoinCost;
+                    var enough = Model.Coins is long have && have >= o.CoinCost;
                     <form asp-action="RedeemVoucher" method="post" class="rw-offer">
                         <input type="hidden" name="offerId" value="@o.OfferId" />
                         <input type="hidden" name="requestId" value="@Guid.NewGuid()" />
@@ -177,7 +177,7 @@
                         <span class="hint">@(o.MinOrderAmount is > 0 ? $"Đơn từ {o.MinOrderAmount:N0}₫ · " : "")Dùng trong @o.ValidDays ngày sau khi đổi</span>
                         @if (!string.IsNullOrEmpty(o.Description)) { <span class="hint">@o.Description</span> }
                         <button class="btn btn-brass btn-sm" type="submit" disabled="@(!enough)">Đổi @o.CoinCost.ToString("N0") xu</button>
-                        @if (!enough && Model.Coins is int have2) { <span class="hint">Thiếu @((o.CoinCost - have2).ToString("N0")) xu</span> }
+                        @if (!enough && Model.Coins is long have2) { <span class="hint">Thiếu @((o.CoinCost - have2).ToString("N0")) xu</span> }
                     </form>
                 }
             </div>
@@ -238,7 +238,7 @@
                                 <td>@Local(t.CreatedAt)</td>
                                 <td><b>@TypeLabel(t.Type)</b>@if (!string.IsNullOrEmpty(t.Description)) { <div class="hint">@t.Description</div> }</td>
                                 <td style="text-align:right" class="@(t.Amount >= 0 ? "rw-plus" : "rw-minus")">@(t.Amount >= 0 ? "+" : "")@t.Amount.ToString("N0")</td>
-                                <td style="text-align:right">@(t.BalanceAfter is int ba ? ba.ToString("N0") : "—")</td>
+                                <td style="text-align:right">@(t.BalanceAfter is long ba ? ba.ToString("N0") : "—")</td>
                             </tr>
                         }
                     </tbody>
@@ -252,3 +252,4 @@
         }
     </section>
 </div>
+

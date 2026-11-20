@@ -1,6 +1,6 @@
 # Web — Ví xu, chuỗi đọc, voucher: hợp đồng API
 
-Giao diện Web đã làm xong. Phần dưới là các endpoint mà Web gọi nhưng **Backend chưa có**.
+Cập nhật 20/11/2026: API lịch sử xu đã nối backend và được kiểm thử qua RewardsApiClient. Các endpoint voucher mua truyện bên dưới tiếp tục là hợp đồng để backend voucher và đơn hàng triển khai.
 Web tự ẩn/hiện thông báo "chưa bật" khi API trả 404, nên có thể gắn API từng phần mà không làm hỏng trang.
 
 Đã có sẵn trên API (Web dùng ngay): `GET api/me/streak`, `POST api/me/streak/restore`, `GET api/me/coupons`,
@@ -15,7 +15,7 @@ Web tự ẩn/hiện thông báo "chưa bật" khi API trả 404, nên có thể
 | `amount` (int) | dương = cộng xu, âm = trừ xu |
 | `type` | `ChapterReward`, `StreakReward`, `FreezeCard`, `Voucher`, `AdminGrant`, `Refund` |
 | `description` | ví dụ "Chương 3 — Tên truyện" |
-| `balanceAfter` (int?) | số dư sau giao dịch |
+| `balanceAfter` (long?) | số dư sau giao dịch |
 | `createdAt` | UTC |
 
 ## 2. Voucher mua truyện
