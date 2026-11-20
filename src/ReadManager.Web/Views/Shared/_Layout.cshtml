@@ -35,6 +35,7 @@
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/theme.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/account.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/rewards.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/marvel-3d-theme.css" asp-append-version="true" />
 
     <style>
@@ -124,6 +125,7 @@
                             <div class="user-menu-name">@User.Identity.Name</div>
                             <a asp-area="" asp-controller="Account" asp-action="Profile">Tài khoản của tôi</a>
                             <a asp-area="" asp-controller="Library" asp-action="Index">Thư viện của tôi</a>
+                            <a asp-area="" asp-controller="Account" asp-action="Rewards">Ví xu &amp; chuỗi đọc</a>
                             <a asp-area="" asp-controller="Plans" asp-action="Mine">Gói &amp; thanh toán của tôi</a>
                             <a asp-area="" asp-controller="Notifications" asp-action="Index">Thông báo @(unreadNoti > 0 ? $"({unreadNoti})" : "")</a>
                             @if (User.IsInRole("Admin"))

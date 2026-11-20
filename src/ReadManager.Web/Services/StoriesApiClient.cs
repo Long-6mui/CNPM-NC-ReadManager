@@ -68,14 +68,17 @@ public record NotificationListApi(List<NotificationApi> Items, int TotalCount, i
 public record OrderQuoteApi(
     string OrderType, int? StoryId, int? PlanId, int? PlanVersionId,
     string ItemName, decimal Amount, int? DurationMonths,
-    bool CanBuy, bool AlreadyOwned, int? PendingOrderId, string? Message);
+    bool CanBuy, bool AlreadyOwned, int? PendingOrderId, string? Message,
+    decimal? OriginalAmount = null, decimal DiscountAmount = 0, int? VoucherId = null);   // giá gốc / tiền giảm khi chọn voucher (Amount = số tiền phải trả)
 
 public record OrderApi(
     int OrderId, int UserId, string? UserName, string OrderType,
     int? PlanId, int? PlanVersionId, int? StoryId,
     string ItemName, decimal Amount, int? DurationMonths,
     string Status, DateTime CreatedAt, DateTime? PaidAt, DateTime? ExpiresAt,
-    bool CanPay);
+    bool CanPay,
+    decimal? OriginalAmount = null, decimal DiscountAmount = 0, int? CouponId = null,
+    int? VoucherId = null, string? VoucherName = null);   // Amount = số tiền phải trả (đã trừ giảm giá)
 
 public record UploadChaptersResultApi(int Created, int Updated, List<int> SkippedNumbers, string Message);
 
@@ -358,10 +361,21 @@ public class StoriesApiClient(HttpClient http)
         return await res.Content.ReadFromJsonAsync<OrderQuoteApi>();
     }
 
-    // Tạo đơn mua truyện (bấm "Thanh toán"). Đang có đơn chờ thanh toán → API trả lại đơn đó. Thành công → Id = mã đơn.
-    public async Task<ApiResult> CreateStoryOrderAsync(int storyId, string? token)
+    // Báo giá có áp voucher: GET api/orders/quote/story/{id}?voucherId=. Voucher không hợp lệ → Error = lý do từ API.
+    public async Task<(OrderQuoteApi? Quote, string? Error)> QuoteStoryWithVoucherAsync(int storyId, int voucherId, string? token)
     {
-        using var req = Build(HttpMethod.Post, "api/orders", token, new { orderType = "Story", storyId });
+        using var req = Build(HttpMethod.Get, $"api/orders/quote/story/{storyId}?voucherId={voucherId}", token);
+        using var res = await http.SendAsync(req);
+        if (res.IsSuccessStatusCode) return (await res.Content.ReadFromJsonAsync<OrderQuoteApi>(), null);
+        var result = await ToResultAsync(res, "");
+        return (null, result.Message);
+    }
+
+    // Tạo đơn mua truyện (bấm "Thanh toán"). Đang có đơn chờ thanh toán → API trả lại đơn đó. Thành công → Id = mã đơn.
+    public async Task<ApiResult> CreateStoryOrderAsync(int storyId, string? token, int? voucherId = null)
+    {
+        // Chỉ gửi voucherId (không gửi giá): backend tự kiểm tra chủ sở hữu, hạn dùng, trạng thái và tính giảm
+        using var req = Build(HttpMethod.Post, "api/orders", token, new { orderType = "Story", storyId, voucherId });
         using var res = await http.SendAsync(req);
         var result = await ToResultAsync(res, "Đã tạo đơn hàng.");
         if (!result.Ok) return result;
