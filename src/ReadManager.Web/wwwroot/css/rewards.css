@@ -1,0 +1,79 @@
+/* Ví xu & chuỗi đọc + chọn voucher khi mua truyện */
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+.rw{padding-top:28px;padding-bottom:48px}
+.rw .pf-card{scroll-margin-top:84px}
+.rw-head{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap;margin-bottom:18px}
+.rw-head h1{margin:0 0 4px;font-size:26px}
+.rw-nav{display:flex;gap:8px;flex-wrap:wrap}
+.rw-nav a{padding:6px 14px;border:1px solid var(--border);border-radius:99px;font-size:13px;font-weight:600;color:var(--text);background:var(--surface)}
+.rw-nav a:hover{border-color:var(--brass);color:var(--brass-2)}
+
+.rw-wallet{display:grid;grid-template-columns:1fr 1fr 1.4fr;gap:16px;align-items:center}
+.rw-stat{display:flex;flex-direction:column;gap:2px}
+.rw-stat span{font-size:12.5px;color:var(--muted)}
+.rw-stat b{font-family:var(--font-display);font-size:28px;color:var(--brass-2)}
+.rw-buy button[disabled],.rw-offer button[disabled]{opacity:.5;cursor:not-allowed}
+
+.rw-streak{display:flex;gap:18px;align-items:center;margin-bottom:18px}
+.rw-flame{font-size:54px;line-height:1;filter:drop-shadow(0 3px 8px rgba(245,130,32,.45))}
+.rw-flame-dark{filter:hue-rotate(-25deg) saturate(1.6) brightness(.75) drop-shadow(0 3px 8px rgba(140,47,57,.55))}
+.rw-streak-num{font-family:var(--font-display);font-size:34px;font-weight:700;line-height:1.1}
+.rw-streak-num small{font-size:14px;font-weight:500;color:var(--muted);font-family:var(--font-body)}
+.rw-equip{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+
+.rw-week{list-style:none;display:grid;grid-template-columns:repeat(7,1fr);gap:8px;padding:0;margin:0 0 18px}
+.rw-week li{display:flex;flex-direction:column;align-items:center;gap:6px;font-size:12px;color:var(--muted)}
+.rw-dot{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;border:2px dashed var(--border);font-weight:700;color:#fff}
+.rw-week li.is-read .rw-dot{background:linear-gradient(135deg,#f59e0b,#ea580c);border:2px solid transparent}
+.rw-week li.is-today .rw-dot{border-style:solid;border-color:var(--brass)}
+.rw-week li.is-today{color:var(--text);font-weight:700}
+
+.rw-next{margin-bottom:16px;font-size:13.5px}
+.rw-bar{height:10px;border-radius:99px;background:var(--surface-2);overflow:hidden;margin-top:6px;border:1px solid var(--border)}
+.rw-bar i{display:block;height:100%;background:linear-gradient(90deg,#f59e0b,#ea580c);border-radius:99px;transition:width .4s}
+.rw-restore{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:16px}
+
+.rw-sub{font-size:15px;margin:22px 0 10px}
+.rw-miles{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px}
+.rw-mile{border:1px solid var(--border);border-radius:12px;padding:14px;background:var(--surface-2);opacity:.78}
+.rw-mile.is-reached{opacity:1;border-color:var(--brass);background:var(--surface)}
+.rw-mile-days{font-family:var(--font-display);font-size:22px;font-weight:700}
+.rw-mile-days small{font-size:12px;font-weight:500;color:var(--muted);font-family:var(--font-body)}
+.rw-mile-name{font-size:13px;font-weight:600;margin-bottom:6px}
+.rw-mile ul{list-style:none;margin:0;padding:0;font-size:12.5px;line-height:1.7}
+.rw-mile li.is-locked{color:var(--muted)}
+.rw-coupons{display:flex;gap:10px;flex-wrap:wrap;align-items:stretch}
+.rw-coupon{display:flex;flex-direction:column;gap:2px;padding:12px 16px;border:1px dashed var(--brass);border-radius:10px;background:var(--surface)}
+.rw-coupon span{font-size:13px;color:var(--crimson);font-weight:600}
+.rw-coupon small{color:var(--muted)}
+
+.rw-offers{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px}
+.rw-offer{display:flex;flex-direction:column;gap:6px;padding:16px;border:1px solid var(--border);border-radius:12px;background:var(--surface)}
+.rw-offer .btn{margin-top:auto;align-self:flex-start}
+.rw-offer-disc{font-family:var(--font-display);font-size:20px;font-weight:700;color:var(--crimson)}
+.rw-plus{color:var(--sage);font-weight:700}
+.rw-minus{color:var(--crimson);font-weight:700}
+.rw-pager{display:flex;align-items:center;justify-content:center;gap:14px;margin-top:14px}
+
+/* Chọn voucher ở trang Mua trọn bộ */
+.vc-box{margin:0 0 16px;padding:14px;border:1px solid var(--border);border-radius:12px;background:var(--surface-2)}
+.vc-box h4{margin:0 0 8px;font-size:14px}
+.vc-list{display:flex;flex-direction:column;gap:8px}
+.vc-opt{display:flex;gap:10px;align-items:flex-start;padding:10px 12px;border:1px solid var(--border);border-radius:10px;background:var(--surface);cursor:pointer}
+.vc-opt:has(input:checked){border-color:var(--brass);box-shadow:0 0 0 2px rgba(180,135,60,.25)}
+.vc-opt.is-disabled{opacity:.55;cursor:not-allowed}
+.vc-opt input{margin-top:4px}
+.vc-opt b{display:block;font-size:14px}
+.vc-opt small{display:block;color:var(--muted);font-size:12px}
+.vc-sum{margin:0 0 16px;padding:14px 16px;border:1px solid var(--border);border-radius:12px;background:var(--surface)}
+.vc-row{display:flex;justify-content:space-between;gap:12px;padding:4px 0;font-size:14px}
+.vc-row.is-discount{color:var(--sage);font-weight:600}
+.vc-row.is-total{border-top:1px solid var(--border);margin-top:6px;padding-top:10px;font-size:17px;font-weight:700}
+.vc-row.is-total b{font-family:var(--font-display);font-size:26px;color:var(--crimson)}
+.vc-row s{color:var(--muted)}
+
+@media (max-width:720px){
+  .rw-wallet{grid-template-columns:1fr 1fr}
+  .rw-buy{grid-column:1 / -1}
+  .rw-streak{flex-direction:column;align-items:flex-start}
+}

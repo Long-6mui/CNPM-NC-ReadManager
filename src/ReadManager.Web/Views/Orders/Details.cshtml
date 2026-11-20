@@ -32,6 +32,11 @@
                     {
                         <tr><td style="color:var(--muted);">Thời hạn gói</td><td>@Model.DurationMonths tháng</td></tr>
                     }
+                    @if (Model.DiscountAmount > 0)
+                    {
+                        <tr><td style="color:var(--muted);">Giá gốc</td><td><s>@((Model.OriginalAmount ?? Model.Amount + Model.DiscountAmount).ToString("N0"))₫</s></td></tr>
+                        <tr><td style="color:var(--muted);">@(string.IsNullOrEmpty(Model.VoucherName) ? "Giảm giá" : "Voucher: " + Model.VoucherName)</td><td style="color:var(--sage); font-weight:600;">−@Model.DiscountAmount.ToString("N0")₫</td></tr>
+                    }
                     <tr><td style="color:var(--muted);">Số tiền thanh toán</td>
                         <td><b style="font-size:20px; color:var(--brass);">@Model.Amount.ToString("N0")₫</b></td></tr>
                     <tr><td style="color:var(--muted);">Trạng thái</td>

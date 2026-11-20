@@ -1,0 +1,254 @@
+@model ReadManager.Web.ViewModels.RewardsVm
+@using ReadManager.Web.Services
+@{
+    ViewData["Title"] = "Ví xu & chuỗi đọc";
+    var streak = Model.Streak;
+    var canSpend = Model.Coins ?? 0;
+    string Disc(string type, decimal value, decimal? max) => type == "Percent"
+        ? $"Giảm {value:0.##}%" + (max is > 0 ? $" (tối đa {max:N0}₫)" : "")
+        : $"Giảm {value:N0}₫";
+    string Local(DateTime utc) => StoriesApiClient.ToLocal(utc)?.ToString("HH:mm dd/MM/yyyy") ?? "—";
+    string LocalDay(DateTime utc) => StoriesApiClient.ToLocal(utc)?.ToString("dd/MM/yyyy") ?? "—";
+    (string badge, string label) VoucherState(VoucherApi v) => v.Status switch
+    {
+        "Available" when v.ExpiresAt <= DateTime.UtcNow => ("badge-gray", "Hết hạn"),
+        "Available" => ("badge-green", "Có thể dùng"),
+        "Reserved" => ("badge-gold", "Đang giữ cho đơn chờ thanh toán"),
+        "Used" => ("badge-gray", "Đã dùng"),
+        "Expired" => ("badge-gray", "Hết hạn"),
+        _ => ("badge-gray", v.Status)
+    };
+    string TypeLabel(string t) => t switch
+    {
+        "ChapterReward" => "Đọc hết chương",
+        "StreakReward" => "Thưởng chuỗi đọc",
+        "FreezeCard" => "Đổi thẻ bảo vệ chuỗi",
+        "Voucher" => "Đổi voucher",
+        "AdminGrant" => "Quản trị viên cộng",
+        "Refund" => "Hoàn xu",
+        _ => t
+    };
+    var nextPercent = streak is { NextMilestoneDays: > 0 } s0 ? Math.Min(100, s0.CurrentStreak * 100 / s0.NextMilestoneDays) : 100;
+    var availableVouchers = Model.Vouchers.Where(v => v.Status == "Available" && v.ExpiresAt > DateTime.UtcNow).ToList();
+}
+<div class="container rw">
+    <div class="rw-head">
+        <div>
+            <h1>Ví xu &amp; chuỗi đọc</h1>
+            <p class="hint">Đọc mỗi ngày để giữ chuỗi, nhận xu và đổi lấy thẻ bảo vệ chuỗi hoặc voucher mua truyện.</p>
+        </div>
+        <nav class="rw-nav" aria-label="Mục trong trang">
+            <a href="#wallet">Số dư xu</a><a href="#streak">Chuỗi đọc</a><a href="#vouchers">Voucher</a><a href="#history">Lịch sử xu</a>
+        </nav>
+    </div>
+
+    @* ===== Số dư xu + thẻ bảo vệ ===== *@
+    <section class="pf-card" id="wallet">
+        <div class="rw-wallet">
+            <div class="rw-stat"><span>Số dư xu</span>
+                <b>@(Model.Coins is int c ? $"{c:N0} xu" : "—")</b></div>
+            <div class="rw-stat"><span>Thẻ bảo vệ chuỗi</span><b>@Model.FreezeCards / 5</b></div>
+            <form asp-action="BuyFreezeCard" method="post" class="rw-buy">
+                <input type="hidden" name="requestId" value="@Guid.NewGuid()" />
+                @{
+                    var cannotBuy = Model.Coins is null || canSpend < 50 || Model.FreezeCards >= 5;
+                }
+                <button class="btn btn-outline" type="submit" disabled="@cannotBuy">Đổi 50 xu lấy 1 thẻ bảo vệ</button>
+                @if (Model.Coins is null) { <p class="hint">Chưa tải được số dư nên chưa thể đổi.</p> }
+                else if (Model.FreezeCards >= 5) { <p class="hint">Bạn đã có tối đa 5 thẻ.</p> }
+                else if (canSpend < 50) { <p class="hint">Cần thêm @(50 - canSpend) xu để đổi thẻ.</p> }
+            </form>
+        </div>
+        @if (Model.WalletError is string we) { <div class="banner banner-warn" role="alert" style="margin-top:12px">@we</div> }
+        @if (TempData["CardMessage"] is string cardMessage) { <div class="banner banner-info" role="status" style="margin-top:12px">@cardMessage</div> }
+        <p class="hint" style="margin-top:12px">Đọc hết một chương ở lần đọc đủ 60 giây nhận +10 xu. Mỗi ngày duy trì chuỗi nhận thêm 5 xu.</p>
+    </section>
+
+    @* ===== Chuỗi đọc ===== *@
+    <section class="pf-card" id="streak">
+        <h2 class="pf-title">Chuỗi đọc</h2>
+        @if (TempData["StreakMessage"] is string streakMessage) { <div class="banner banner-info" role="status" style="margin-bottom:14px">@streakMessage</div> }
+        @if (streak is null)
+        {
+            <div class="banner banner-warn" role="alert">@(Model.StreakError ?? "Chưa tải được chuỗi đọc.")</div>
+        }
+        else
+        {
+            <div class="rw-streak">
+                <div class="rw-flame @(streak.IconTier == "darkred" ? "rw-flame-dark" : "")" aria-hidden="true">🔥</div>
+                <div>
+                    <div class="rw-streak-num">@streak.CurrentStreak <small>ngày liên tiếp</small></div>
+                    <div class="hint">Kỷ lục: @streak.LongestStreak ngày · @(streak.ReadToday ? "Hôm nay bạn đã đọc ✔" : "Hôm nay bạn chưa đọc — đọc một chương để giữ chuỗi")</div>
+                    @if (!string.IsNullOrEmpty(streak.SelectedTitle) || !string.IsNullOrEmpty(streak.SelectedFrame))
+                    {
+                        <div class="rw-equip">
+                            @if (!string.IsNullOrEmpty(streak.SelectedTitle)) { <span class="badge badge-gold">🏷 @streak.SelectedTitle</span> }
+                            @if (!string.IsNullOrEmpty(streak.SelectedFrame)) { <span class="badge badge-gray">🖼 @streak.SelectedFrame</span> }
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <ol class="rw-week" aria-label="7 ngày gần nhất">
+                @foreach (var d in streak.Last7Days)
+                {
+                    <li class="@(d.Read ? "is-read" : "") @(d.IsToday ? "is-today" : "")">
+                        <span class="rw-dot" aria-hidden="true">@(d.Read ? "✔" : "")</span>
+                        <span>@d.Label</span>
+                        <span class="sr-only">@(d.Read ? "đã đọc" : "chưa đọc")@(d.IsToday ? ", hôm nay" : "")</span>
+                    </li>
+                }
+            </ol>
+
+            @if (streak.NextMilestoneDays > 0)
+            {
+                <div class="rw-next">
+                    <div class="flexbar"><span>Mốc tiếp theo: <b>@streak.NextMilestoneName</b></span><span>@streak.CurrentStreak / @streak.NextMilestoneDays ngày</span></div>
+                    <div class="rw-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="@nextPercent"><i style="width:@(nextPercent)%"></i></div>
+                </div>
+            }
+            else { <p class="hint">Bạn đã đạt tất cả các mốc chuỗi. 🎉</p> }
+
+            @if (streak.CanRestore)
+            {
+                <div class="banner banner-warn rw-restore">
+                    <div>
+                        Chuỗi <b>@streak.BrokenStreak ngày</b> vừa bị mất.
+                        Bạn còn @streak.RestoresLeft lượt khôi phục@(streak.RestoreDeadline is DateTime dl ? $", hạn đến {Local(dl)}" : "").
+                    </div>
+                    <form asp-action="RestoreStreak" method="post"><button class="btn btn-brass btn-sm" type="submit">Khôi phục chuỗi</button></form>
+                </div>
+            }
+            else if (streak.RestoresLeft == 0)
+            {
+                <p class="hint">Bạn đã dùng hết 5 lượt khôi phục chuỗi.</p>
+            }
+
+            <h3 class="rw-sub">Các mốc thưởng</h3>
+            <div class="rw-miles">
+                @foreach (var m in streak.Milestones)
+                {
+                    <div class="rw-mile @(m.Reached ? "is-reached" : "")">
+                        <div class="rw-mile-days">@m.Days<small> ngày</small></div>
+                        <div class="rw-mile-name">@m.Name</div>
+                        <ul>
+                            @foreach (var r in m.Rewards) { <li class="@(r.Unlocked ? "" : "is-locked")">@(r.Unlocked ? "✔" : "🔒") @r.Name</li> }
+                        </ul>
+                    </div>
+                }
+            </div>
+
+            @if (Model.Coupons.Count > 0)
+            {
+                <h3 class="rw-sub">Mã giảm giá khi mua gói đọc</h3>
+                <div class="rw-coupons">
+                    @foreach (var cp in Model.Coupons)
+                    {
+                        <div class="rw-coupon"><b>@cp.Name</b><span>Giảm @cp.Percent%@(cp.DurationMonths.Count > 0 ? $" · gói {string.Join("/", cp.DurationMonths)} tháng" : "")</span><small>Hạn dùng: @LocalDay(cp.ExpiresAt)</small></div>
+                    }
+                    <a class="btn btn-outline btn-sm" asp-controller="Plans" asp-action="Index">Dùng khi mua gói →</a>
+                </div>
+            }
+        }
+    </section>
+
+    @* ===== Voucher mua truyện ===== *@
+    <section class="pf-card" id="vouchers">
+        <h2 class="pf-title">Voucher mua truyện</h2>
+        @if (TempData["VoucherMessage"] is string voucherMessage) { <div class="banner banner-info" role="status" style="margin-bottom:14px">@voucherMessage</div> }
+        @if (Model.VouchersUnavailable)
+        {
+            <div class="banner banner-info">Chức năng voucher chưa được bật trên API. Khi Backend hoàn thành, danh sách voucher sẽ hiện ở đây.</div>
+        }
+        else
+        {
+            @if (Model.VoucherError is string ve) { <div class="banner banner-warn" role="alert" style="margin-bottom:14px">@ve</div> }
+            <h3 class="rw-sub" style="margin-top:0">Đổi xu lấy voucher</h3>
+            @if (Model.Offers.Count == 0) { <p class="pf-empty">Hiện chưa có voucher nào để đổi.</p> }
+            <div class="rw-offers">
+                @foreach (var o in Model.Offers)
+                {
+                    var enough = Model.Coins is int have && have >= o.CoinCost;
+                    <form asp-action="RedeemVoucher" method="post" class="rw-offer">
+                        <input type="hidden" name="offerId" value="@o.OfferId" />
+                        <input type="hidden" name="requestId" value="@Guid.NewGuid()" />
+                        <b>@o.Name</b>
+                        <span class="rw-offer-disc">@Disc(o.DiscountType, o.Value, o.MaxDiscount)</span>
+                        <span class="hint">@(o.MinOrderAmount is > 0 ? $"Đơn từ {o.MinOrderAmount:N0}₫ · " : "")Dùng trong @o.ValidDays ngày sau khi đổi</span>
+                        @if (!string.IsNullOrEmpty(o.Description)) { <span class="hint">@o.Description</span> }
+                        <button class="btn btn-brass btn-sm" type="submit" disabled="@(!enough)">Đổi @o.CoinCost.ToString("N0") xu</button>
+                        @if (!enough && Model.Coins is int have2) { <span class="hint">Thiếu @((o.CoinCost - have2).ToString("N0")) xu</span> }
+                    </form>
+                }
+            </div>
+
+            <h3 class="rw-sub">Voucher của tôi</h3>
+            @if (Model.Vouchers.Count == 0) { <p class="pf-empty">Bạn chưa có voucher nào.</p> }
+            else
+            {
+                <div class="table-wrap">
+                    <table class="data">
+                        <thead><tr><th>Voucher</th><th>Ưu đãi</th><th>Hạn dùng</th><th>Trạng thái</th></tr></thead>
+                        <tbody>
+                            @foreach (var v in Model.Vouchers)
+                            {
+                                var (vb, vl) = VoucherState(v);
+                                <tr>
+                                    <td><b>@v.Name</b></td>
+                                    <td>@Disc(v.DiscountType, v.Value, v.MaxDiscount)@(v.MinOrderAmount is > 0 ? $" · đơn từ {v.MinOrderAmount:N0}₫" : "")</td>
+                                    <td>@LocalDay(v.ExpiresAt)</td>
+                                    <td><span class="badge @vb">@vl</span></td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+                @if (availableVouchers.Count > 0)
+                {
+                    <p class="hint" style="margin-top:10px">Chọn voucher ở trang “Mua trọn bộ” của truyện để được giảm giá.</p>
+                }
+            }
+        }
+    </section>
+
+    @* ===== Lịch sử cộng/trừ xu ===== *@
+    <section class="pf-card" id="history">
+        <h2 class="pf-title">Lịch sử cộng/trừ xu</h2>
+        @if (Model.HistoryUnavailable)
+        {
+            <div class="banner banner-info">API lịch sử xu chưa được bật. Khi Backend hoàn thành, các giao dịch cộng/trừ xu sẽ hiện ở đây.</div>
+        }
+        else if (Model.HistoryError is string he)
+        {
+            <div class="banner banner-warn" role="alert">@he</div>
+        }
+        else if (Model.History is null || Model.History.Items.Count == 0)
+        {
+            <p class="pf-empty">Chưa có giao dịch xu nào.</p>
+        }
+        else
+        {
+            <div class="table-wrap">
+                <table class="data">
+                    <thead><tr><th>Thời gian</th><th>Nội dung</th><th style="text-align:right">Xu</th><th style="text-align:right">Số dư sau</th></tr></thead>
+                    <tbody>
+                        @foreach (var t in Model.History.Items)
+                        {
+                            <tr>
+                                <td>@Local(t.CreatedAt)</td>
+                                <td><b>@TypeLabel(t.Type)</b>@if (!string.IsNullOrEmpty(t.Description)) { <div class="hint">@t.Description</div> }</td>
+                                <td style="text-align:right" class="@(t.Amount >= 0 ? "rw-plus" : "rw-minus")">@(t.Amount >= 0 ? "+" : "")@t.Amount.ToString("N0")</td>
+                                <td style="text-align:right">@(t.BalanceAfter is int ba ? ba.ToString("N0") : "—")</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+            <div class="rw-pager">
+                @if (Model.History.Page > 1) { <a class="btn btn-outline btn-sm" asp-action="Rewards" asp-route-historyPage="@(Model.History.Page - 1)" asp-fragment="history">← Trang trước</a> }
+                <span class="hint">Trang @Model.History.Page</span>
+                @if ((long)Model.History.Page * Model.History.PageSize < Model.History.TotalCount) { <a class="btn btn-outline btn-sm" asp-action="Rewards" asp-route-historyPage="@(Model.History.Page + 1)" asp-fragment="history">Trang sau →</a> }
+            </div>
+        }
+    </section>
+</div>

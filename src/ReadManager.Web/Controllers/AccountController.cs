@@ -21,7 +21,77 @@ public class AccountController(AuthApiClient api, DemoMemberStore members) : Con
         {
             TempData["CardMessage"] = "Chưa xác nhận được giao dịch. Hãy kiểm tra số dư trước khi đổi tiếp.";
         }
-        return RedirectToAction(nameof(Profile));
+        return RedirectToAction(nameof(Rewards), null, null, "wallet");
+    }
+
+    // Ví xu & chuỗi đọc: số dư, chuỗi, thẻ bảo vệ, coupon gói, voucher mua truyện, lịch sử cộng/trừ xu
+    [Authorize]
+    public async Task<IActionResult> Rewards([FromServices] ReadingProgressApiClient reader, [FromServices] RewardsApiClient rewards, int historyPage = 1)
+    {
+        var token = await HttpContext.GetTokenAsync("access_token");
+        var vm = new RewardsVm();
+
+        var streakTask = rewards.StreakAsync(token);
+        var couponTask = rewards.CouponsAsync(token);
+        var historyTask = rewards.CoinHistoryAsync(historyPage, token);
+        var offerTask = rewards.VoucherOffersAsync(token);
+        var voucherTask = rewards.MyVouchersAsync(null, token);
+
+        try
+        {
+            var wallet = await reader.Balance(token);
+            vm.Coins = wallet.Coins;
+            vm.FreezeCards = wallet.FreezeCards;
+        }
+        catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException)
+        {
+            vm.WalletError = "Chưa tải được số dư xu. Vui lòng tải lại trang.";
+        }
+
+        var streak = await streakTask;
+        if (streak.Ok) { vm.Streak = streak.Data; vm.FreezeCards = streak.Data!.FreezeCards; }
+        else vm.StreakError = streak.Message;
+
+        var coupons = await couponTask;
+        if (coupons.Ok) vm.Coupons = coupons.Data ?? [];
+
+        var history = await historyTask;
+        if (history.Ok) vm.History = history.Data;
+        else if (history.NotAvailable) vm.HistoryUnavailable = true;
+        else vm.HistoryError = history.Message;
+
+        var offers = await offerTask;
+        var vouchers = await voucherTask;
+        if (offers.Ok) vm.Offers = offers.Data ?? [];
+        if (vouchers.Ok) vm.Vouchers = vouchers.Data ?? [];
+        if (offers.NotAvailable && vouchers.NotAvailable) vm.VouchersUnavailable = true;
+        else if (!offers.Ok && !offers.NotAvailable) vm.VoucherError = offers.Message;
+        else if (!vouchers.Ok && !vouchers.NotAvailable) vm.VoucherError = vouchers.Message;
+
+        return View(vm);
+    }
+
+    // Khôi phục chuỗi vừa mất (tối đa 5 lần trong 72 giờ — API kiểm tra điều kiện)
+    [Authorize, HttpPost, ValidateAntiForgeryToken]
+    public async Task<IActionResult> RestoreStreak([FromServices] RewardsApiClient rewards)
+    {
+        var result = await rewards.RestoreStreakAsync(await HttpContext.GetTokenAsync("access_token"));
+        TempData["StreakMessage"] = result.Ok
+            ? $"Đã khôi phục chuỗi. Chuỗi hiện tại: {result.Data?.CurrentStreak} ngày."
+            : result.Message;
+        return RedirectToAction(nameof(Rewards), null, null, "streak");
+    }
+
+    // Đổi xu lấy voucher. requestId sinh sẵn trong form: gửi lại cùng yêu cầu thì API không trừ xu lần hai.
+    [Authorize, HttpPost, ValidateAntiForgeryToken]
+    public async Task<IActionResult> RedeemVoucher(int offerId, Guid requestId, [FromServices] RewardsApiClient rewards)
+    {
+        if (requestId == Guid.Empty) { TempData["VoucherMessage"] = "Yêu cầu không hợp lệ."; return RedirectToAction(nameof(Rewards), null, null, "vouchers"); }
+        var result = await rewards.RedeemVoucherAsync(offerId, requestId, await HttpContext.GetTokenAsync("access_token"));
+        TempData["VoucherMessage"] = result.Ok
+            ? $"Đã đổi voucher “{result.Data?.Name}”. Bạn có thể chọn voucher này khi mua truyện."
+            : result.Message;
+        return RedirectToAction(nameof(Rewards), null, null, "vouchers");
     }
 
     // Trang thông tin tài khoản (cần đăng nhập)

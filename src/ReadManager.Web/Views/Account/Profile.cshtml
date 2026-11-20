@@ -21,11 +21,7 @@
             <div><span>Email</span><b>@email</b></div>
             <div><span>ID thành viên</span><b>#@id</b></div>
         </div>
-        <form asp-action="BuyFreezeCard" method="post">
-            <input type="hidden" name="requestId" value="@Guid.NewGuid()" />
-            <button class="btn btn-outline" type="submit">Đổi 50 xu lấy 1 thẻ bảo vệ chuỗi</button>
-        </form>
-        @if (TempData["CardMessage"] is string cardMessage) { <p role="status">@cardMessage</p> }
+        <a class="btn btn-outline" style="width:100%" asp-action="Rewards">Ví xu, chuỗi đọc &amp; voucher</a>
         @if (isAdmin)
         {
             <a class="btn btn-brass" style="margin-top:16px;width:100%" asp-area="Admin" asp-controller="Stories" asp-action="Index">Vào trang quản trị</a>
