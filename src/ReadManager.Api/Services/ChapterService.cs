@@ -48,14 +48,14 @@ public class ChapterService : IChapterService
     private readonly IEntitlementService? _entitlementService;
 
     // Sprint 5 — chuỗi đọc sách (tùy chọn: các bài test cũ không truyền vẫn chạy bình thường)
-    private readonly IStreakService? _streak;
+
 
     public ChapterService(AppDbContext db, INotificationService notifications, IEntitlementService? entitlementService = null, IStreakService? streak = null)
     {
         _db = db;
         _notifications = notifications;
         _entitlementService = entitlementService;
-        _streak = streak;
+
     }
 
     //  PHẦN 1: ĐỌC DỮ LIỆU
@@ -175,13 +175,6 @@ public class ChapterService : IChapterService
         if (!isAdmin && !hideContent)
         {
             await RecordReadAsync(chapter.StoryId, chapter.ChapterId, readerId);
-
-            // Sprint 5 — đã đăng nhập → tính vào chuỗi đọc (lỗi chuỗi không được làm hỏng việc đọc chương)
-            if (_streak is not null && readerId.HasValue)
-            {
-                try { await _streak.RecordReadAsync(readerId.Value); }
-                catch (Exception) { /* bỏ qua */ }
-            }
         }
 
         // 3. Tìm chương TRƯỚC và chương SAU để làm nút chuyển chương.

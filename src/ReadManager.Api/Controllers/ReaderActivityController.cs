@@ -12,7 +12,7 @@ using ReadManager.Api.Services;
 namespace ReadManager.Api.Controllers;
 
 [ApiController, Authorize, Route("api/reader")]
-public class ReaderActivityController(AppDbContext db, IEntitlementService rights, IDataProtectionProvider protection) : ControllerBase
+public class ReaderActivityController(AppDbContext db, IEntitlementService rights, IDataProtectionProvider protection, IStreakService streak) : ControllerBase
 {
     private int UserId => int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
     private readonly IDataProtector tickets = protection.CreateProtector("reader.chapter-session.v1");
@@ -52,13 +52,20 @@ public class ReaderActivityController(AppDbContext db, IEntitlementService right
 
     private const int FreezeCardPrice = 50;
 
-    private async Task<int> BalanceAsync()
+    private Task<long> BalanceAsync() => CoinLedger.BalanceAsync(db, UserId);
+
+    [HttpGet("coins/history")]
+    public async Task<IActionResult> History(int page = 1, int pageSize = 20)
     {
-        var chapterCoins = 10 * await db.ChapterRewards.CountAsync(r => r.UserId == UserId);
-        var streakCoins = await db.UserStreaks.Where(s => s.UserId == UserId)
-            .Select(s => s.EarnedStreakCoins).SingleOrDefaultAsync();
-        var spent = await db.FreezeCardPurchases.Where(p => p.UserId == UserId).SumAsync(p => p.Cost);
-        return chapterCoins + streakCoins - spent;
+        if (page < 1 || pageSize < 1 || pageSize > 100 || page > 1000000)
+            return BadRequest(new { message = "Phân trang không hợp lệ." });
+        var query = db.CoinTransactions.AsNoTracking().Where(t => t.UserId == UserId);
+        var totalCount = await query.CountAsync();
+        var items = await query.OrderByDescending(t => t.CoinTransactionId)
+            .Skip((page - 1) * pageSize).Take(pageSize)
+            .Select(t => new { t.CoinTransactionId, t.Amount, t.BalanceAfter, t.Kind, t.Description, t.CreatedAt })
+            .ToListAsync();
+        return Ok(new { items, totalCount, page, pageSize });
     }
 
     [HttpPost("freeze-cards/{requestId:guid}")]
@@ -82,6 +89,7 @@ public class ReaderActivityController(AppDbContext db, IEntitlementService right
         var added = await db.UserStreaks.Where(s => s.UserId == UserId && s.FreezeCards < StreakCatalog.MaxFreezeCards)
             .ExecuteUpdateAsync(update => update.SetProperty(s => s.FreezeCards, s => s.FreezeCards + 1));
         if (added == 0) return Conflict(new { message = "Bạn đã có đủ 5 thẻ bảo vệ chuỗi." });
+        await CoinLedger.AddAsync(db, UserId, -FreezeCardPrice, $"freeze:{requestId}", "FreezeCardPurchase", "Đổi thẻ bảo vệ chuỗi");
         db.FreezeCardPurchases.Add(new FreezeCardPurchase { UserId = UserId, RequestId = requestId, Cost = FreezeCardPrice });
         await db.SaveChangesAsync();
         await transaction.CommitAsync();
@@ -137,6 +145,7 @@ public class ReaderActivityController(AppDbContext db, IEntitlementService right
     [HttpPost("chapters/{id:int}/finish")]
     public async Task<IActionResult> Finish(int id, ClaimReward request)
     {
+        if (string.IsNullOrWhiteSpace(request.Ticket)) return BadRequest();
         string[] parts;
         try { parts = tickets.Unprotect(request.Ticket).Split(':'); }
         catch (CryptographicException) { return BadRequest(); }
@@ -145,8 +154,25 @@ public class ReaderActivityController(AppDbContext db, IEntitlementService right
         var elapsed = DateTimeOffset.UtcNow.ToUnixTimeSeconds() - issued;
         if (elapsed is < 60 or > 86400 || request.Percent is < 99 or > 100) return BadRequest();
         if (!await CanRewardAsync(id)) return Forbid();
-        db.ChapterRewards.Add(new ChapterReward { UserId = UserId, ChapterId = id });
-        var granted = await SaveOnceAsync();
-        return Ok(new { granted });
+        // Tickets may be replayed, but only on their Vietnam calendar day.
+        // A fresh session is required for tomorrow's daily streak.
+        var today = StreakService.TodayVn(DateTime.UtcNow);
+        if (StreakService.TodayVn(DateTimeOffset.FromUnixTimeSeconds(issued).UtcDateTime) != today)
+            return BadRequest(new { message = "Phiên đọc đã sang ngày mới. Hãy mở lại chương." });
+        await using var tx = await db.Database.BeginTransactionAsync();
+        await db.Users.FromSqlInterpolated($"SELECT * FROM Users WHERE UserId = {UserId} FOR UPDATE")
+            .AsNoTracking().ToListAsync();
+        var before = await BalanceAsync();
+        var granted = !await db.ChapterRewards.AnyAsync(r => r.UserId == UserId && r.ChapterId == id);
+        if (granted)
+        {
+            db.ChapterRewards.Add(new ChapterReward { UserId = UserId, ChapterId = id });
+            await CoinLedger.AddAsync(db, UserId, 10, $"chapter:{id}", "ChapterReward", $"Đọc hoàn thành chương #{id}");
+        }
+        await streak.RecordReadAsync(UserId);
+        var coins = await BalanceAsync();
+        var currentStreak = await db.UserStreaks.Where(s => s.UserId == UserId).Select(s => s.CurrentStreak).SingleAsync();
+        await tx.CommitAsync();
+        return Ok(new { granted, coinsAdded = coins - before, coins, currentStreak });
     }
 }

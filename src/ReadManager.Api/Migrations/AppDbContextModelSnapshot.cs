@@ -157,6 +157,51 @@ namespace ReadManager.Api.Migrations
                     b.ToTable("ChapterRewards");
                 });
 
+            modelBuilder.Entity("ReadManager.Api.Entities.CoinTransaction", b =>
+                {
+                    b.Property<long>("CoinTransactionId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<long>("CoinTransactionId"));
+
+                    b.Property<int>("Amount")
+                        .HasColumnType("int");
+
+                    b.Property<long>("BalanceAfter")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(250)
+                        .HasColumnType("varchar(250)");
+
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("varchar(40)");
+
+                    b.Property<string>("SourceKey")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.HasKey("CoinTransactionId");
+
+                    b.HasIndex("UserId", "CoinTransactionId");
+
+                    b.HasIndex("UserId", "SourceKey")
+                        .IsUnique();
+
+                    b.ToTable("CoinTransactions");
+                });
+
             modelBuilder.Entity("ReadManager.Api.Entities.Comment", b =>
                 {
                     b.Property<int>("CommentId")
@@ -544,6 +589,19 @@ namespace ReadManager.Api.Migrations
                     b.HasIndex("StoryId");
 
                     b.ToTable("PlanVersionStories", (string)null);
+                });
+
+            modelBuilder.Entity("ReadManager.Api.Entities.QualifiedReadingDay", b =>
+                {
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.Property<DateOnly>("ReadDate")
+                        .HasColumnType("date");
+
+                    b.HasKey("UserId", "ReadDate");
+
+                    b.ToTable("QualifiedReadingDays");
                 });
 
             modelBuilder.Entity("ReadManager.Api.Entities.ReaderFavorite", b =>
@@ -1167,6 +1225,17 @@ namespace ReadManager.Api.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("ReadManager.Api.Entities.CoinTransaction", b =>
+                {
+                    b.HasOne("ReadManager.Api.Entities.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("ReadManager.Api.Entities.Comment", b =>
                 {
                     b.HasOne("ReadManager.Api.Entities.Chapter", "Chapter")
@@ -1310,6 +1379,17 @@ namespace ReadManager.Api.Migrations
                     b.Navigation("PlanVersion");
 
                     b.Navigation("Story");
+                });
+
+            modelBuilder.Entity("ReadManager.Api.Entities.QualifiedReadingDay", b =>
+                {
+                    b.HasOne("ReadManager.Api.Entities.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("ReadManager.Api.Entities.ReaderFavorite", b =>

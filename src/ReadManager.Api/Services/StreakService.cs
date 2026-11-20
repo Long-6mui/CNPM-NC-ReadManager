@@ -8,7 +8,7 @@ namespace ReadManager.Api.Services;
 // SPRINT 5 — CHUỖI ĐỌC SÁCH
 public interface IStreakService
 {
-    // ChapterService gọi mỗi khi người dùng mở đọc 1 chương → cập nhật chuỗi, trao thưởng.
+    // Called only after a validated reading completion.
     Task RecordReadAsync(int userId);
     Task<bool> GrantAsync(int adminId, Guid requestId, string email, int coins, int days);
 
@@ -39,6 +39,19 @@ public class StreakService : IStreakService
 
     public StreakService(AppDbContext db) => _db = db;
 
+    private async Task<T> LockedAsync<T>(int userId, Func<Task<T>> action)
+    {
+        if (_db.Database.CurrentTransaction is not null) return await action();
+        await using var tx = await _db.Database.BeginTransactionAsync();
+        await _db.Users.FromSqlInterpolated($"SELECT * FROM Users WHERE UserId = {userId} FOR UPDATE")
+            .AsNoTracking().ToListAsync();
+        var tracked = _db.UserStreaks.Local.FirstOrDefault(s => s.UserId == userId);
+        if (tracked is not null) await _db.Entry(tracked).ReloadAsync();
+        var result = await action();
+        await tx.CommitAsync();
+        return result;
+    }
+
     public async Task<bool> GrantAsync(int adminId, Guid requestId, string email, int coins, int days)
     {
         await using var tx = await _db.Database.BeginTransactionAsync();
@@ -50,6 +63,8 @@ public class StreakService : IStreakService
         var now = DateTime.UtcNow;
         var st = await GetOrCreateAsync(userId);
         st.EarnedStreakCoins = checked(st.EarnedStreakCoins + coins);
+        if (coins > 0)
+            await CoinLedger.AddAsync(_db, userId, coins, $"admin:{requestId}", "AdminGrant", "Quản trị viên cộng xu");
         if (days > 0)
         {
             var today = TodayVn(now);
@@ -134,31 +149,34 @@ public class StreakService : IStreakService
     }
 
     // ================= GHI NHẬN ĐỌC =================
-    public async Task RecordReadAsync(int userId)
+    public Task RecordReadAsync(int userId) => LockedAsync(userId, async () =>
     {
         var now = DateTime.UtcNow;
         var today = TodayVn(now);
+        if (await _db.QualifiedReadingDays.AnyAsync(d => d.UserId == userId && d.ReadDate == today)) return false;
         var st = await GetOrCreateAsync(userId);
-
-        if (st.LastReadDate == today && st.CurrentStreak > 0) return;   // hôm nay đã tính rồi
-
-        Evaluate(st, today);
-
-        st.CurrentStreak = st.CurrentStreak <= 0 ? 1 : st.CurrentStreak + 1;
-        if (st.CurrentStreak >= 2) st.EarnedStreakCoins += 5;
-        st.LastReadDate = today;
-        if (st.CurrentStreak > st.LongestStreak) st.LongestStreak = st.CurrentStreak;
-        st.UpdatedAt = now;
-
-        await GrantMilestonesAsync(st);
-
-        try { await _db.SaveChangesAsync(); }
-        catch (DbUpdateException)
+        // Preserve an existing same-day legacy streak without awarding again.
+        if (st.LastReadDate == today && st.CurrentStreak > 0)
         {
-            // 2 request cùng tạo dòng trạng thái lần đầu → bỏ qua, lần đọc sau sẽ cập nhật
-            _db.ChangeTracker.Clear();
+            _db.QualifiedReadingDays.Add(new QualifiedReadingDay { UserId = userId, ReadDate = today });
+            await _db.SaveChangesAsync();
+            return false;
         }
-    }
+        Evaluate(st, today);
+        st.CurrentStreak = checked(st.CurrentStreak + 1);
+        st.LastReadDate = today;
+        st.LongestStreak = Math.Max(st.LongestStreak, st.CurrentStreak);
+        st.UpdatedAt = now;
+        _db.QualifiedReadingDays.Add(new QualifiedReadingDay { UserId = userId, ReadDate = today });
+        if (st.CurrentStreak >= 2)
+        {
+            st.EarnedStreakCoins = checked(st.EarnedStreakCoins + 5);
+            await CoinLedger.AddAsync(_db, userId, 5, $"streak:{today:yyyy-MM-dd}", "StreakReward", "Thưởng duy trì chuỗi đọc");
+        }
+        await GrantMilestonesAsync(st);
+        await _db.SaveChangesAsync();
+        return true;
+    });
 
     // ================= TRAO THƯỞNG THEO MỐC =================
     // Mỗi mốc chỉ nhận 1 lần duy nhất (kể cả khi mất chuỗi rồi cày lại).
@@ -208,7 +226,9 @@ public class StreakService : IStreakService
     }
 
     // ================= KHÔI PHỤC =================
-    public async Task<StreakDto> RestoreAsync(int userId)
+    public Task<StreakDto> RestoreAsync(int userId) => LockedAsync(userId, () => RestoreCoreAsync(userId));
+
+    private async Task<StreakDto> RestoreCoreAsync(int userId)
     {
         var now = DateTime.UtcNow;
         var today = TodayVn(now);
@@ -245,7 +265,9 @@ public class StreakService : IStreakService
     }
 
     // ================= ĐỔI DANH HIỆU / KHUNG =================
-    public async Task<StreakDto> UpdateAppearanceAsync(int userId, UpdateAppearanceDto dto)
+    public Task<StreakDto> UpdateAppearanceAsync(int userId, UpdateAppearanceDto dto) => LockedAsync(userId, () => UpdateAppearanceCoreAsync(userId, dto));
+
+    private async Task<StreakDto> UpdateAppearanceCoreAsync(int userId, UpdateAppearanceDto dto)
     {
         var st = await GetOrCreateAsync(userId);
         var rewards = await _db.StreakRewards.AsNoTracking().Where(r => r.UserId == userId).ToListAsync();
@@ -272,7 +294,9 @@ public class StreakService : IStreakService
     }
 
     // ================= XEM TRẠNG THÁI =================
-    public async Task<StreakDto> GetAsync(int userId)
+    public Task<StreakDto> GetAsync(int userId) => LockedAsync(userId, () => GetCoreAsync(userId));
+
+    private async Task<StreakDto> GetCoreAsync(int userId)
     {
         var now = DateTime.UtcNow;
         var today = TodayVn(now);
@@ -280,7 +304,7 @@ public class StreakService : IStreakService
         Evaluate(st, today);                 // phát hiện đứt chuỗi ngay khi người dùng mở màn hình
         if (_db.ChangeTracker.HasChanges())
         {
-            try { await _db.SaveChangesAsync(); } catch (DbUpdateException) { _db.ChangeTracker.Clear(); st = await GetOrCreateAsync(userId); }
+            await _db.SaveChangesAsync();
         }
 
         var rewards = await _db.StreakRewards.AsNoTracking().Where(r => r.UserId == userId).ToListAsync();
@@ -289,11 +313,9 @@ public class StreakService : IStreakService
 
         // 7 ngày gần nhất
         var from = today.AddDays(-6);
-        var fromUtc = StartOfDayUtc(from);
-        var readAts = await _db.ChapterReads.AsNoTracking()
-            .Where(r => r.UserId == userId && r.ReadAt >= fromUtc)
-            .Select(r => r.ReadAt).ToListAsync();
-        var readDays = readAts.Select(TodayVn).ToHashSet();
+        var readDays = (await _db.QualifiedReadingDays.AsNoTracking()
+            .Where(d => d.UserId == userId && d.ReadDate >= from)
+            .Select(d => d.ReadDate).ToListAsync()).ToHashSet();
         var days = new List<StreakDayDto>();
         for (var i = 0; i < 7; i++)
         {
@@ -434,28 +456,34 @@ public class StreakService : IStreakService
 
         // Chỉ xét người đang có chuỗi (đọc trong 3 ngày gần đây)
         var minDate = today.AddDays(-3);
-        var streaks = await _db.UserStreaks
+        var streaks = await _db.UserStreaks.AsNoTracking()
             .Where(s => s.CurrentStreak > 0 && s.LastReadDate != null && s.LastReadDate >= minDate)
             .Take(2000)
             .ToListAsync();
 
-        foreach (var st in streaks)
+        foreach (var candidate in streaks)
         {
-            var before = _db.StreakNotices.Local.Count;
-            Evaluate(st, today);                      // đứt chuỗi → tạo thông báo "Broken"
-
-            // Sắp mất chuỗi: chưa đọc hôm nay, đã tối, chuỗi đủ dài, hôm nay chưa nhắc
-            if (st.CurrentStreak >= WarnMinStreak
-                && st.LastReadDate == today.AddDays(-1)
-                && HourVn(now) >= WarnFromHourVn
-                && st.LastWarnDate != today)
+            await LockedAsync(candidate.UserId, async () =>
             {
-                st.LastWarnDate = today;
-                var cover = st.FreezeCards > 0 ? $" (Bạn còn {st.FreezeCards} Thẻ bảo vệ sẽ tự dùng nếu lỡ 1 ngày.)" : "";
-                AddNotice(st.UserId, "AtRisk",
-                    $"🔥 Chuỗi {st.CurrentStreak} ngày của bạn sắp mất! Hãy đọc ít nhất 1 chương trước 24h hôm nay.{cover}");
-            }
-            created += _db.StreakNotices.Local.Count - before;
+                var st = await GetOrCreateAsync(candidate.UserId);
+                var before = _db.StreakNotices.Local.Count;
+                Evaluate(st, today);                      // đứt chuỗi → tạo thông báo "Broken"
+
+                // Sắp mất chuỗi: chưa đọc hôm nay, đã tối, chuỗi đủ dài, hôm nay chưa nhắc
+                if (st.CurrentStreak >= WarnMinStreak
+                    && st.LastReadDate == today.AddDays(-1)
+                    && HourVn(now) >= WarnFromHourVn
+                    && st.LastWarnDate != today)
+                {
+                    st.LastWarnDate = today;
+                    var cover = st.FreezeCards > 0 ? $" (Bạn còn {st.FreezeCards} Thẻ bảo vệ sẽ tự dùng nếu lỡ 1 ngày.)" : "";
+                    AddNotice(st.UserId, "AtRisk",
+                        $"🔥 Chuỗi {st.CurrentStreak} ngày của bạn sắp mất! Hãy đọc ít nhất 1 chương trước 24h hôm nay.{cover}");
+                }
+                created += _db.StreakNotices.Local.Count - before;
+                await _db.SaveChangesAsync();
+                return true;
+            });
         }
 
         if (_db.ChangeTracker.HasChanges()) await _db.SaveChangesAsync();

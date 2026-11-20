@@ -32,9 +32,9 @@
                     return;
                 }
                 try {
-                    const { granted } = await post(status.dataset.finish, { ticket, percent: 100 });
+                    const { coinsAdded } = await post(status.dataset.finish, { ticket, percent: 100 });
                     done = true;
-                    if (granted) status.textContent = '+10 xu';
+                    status.textContent = coinsAdded > 0 ? '+' + coinsAdded + ' xu' : 'Đã ghi nhận đọc hôm nay.';
                 } catch { status.textContent = 'Chưa ghi nhận được xu. Hãy tải lại để thử lại.'; }
             }
             timer = setTimeout(finish, 60000);

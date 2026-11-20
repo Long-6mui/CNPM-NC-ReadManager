@@ -74,8 +74,8 @@ public partial class ChapterReaderPage : ContentPage
             session.Token.ThrowIfCancellationRequested();
             var percent = ReaderScroll.ContentSize.Height <= ReaderScroll.Height + 1 ? 100 : Position();
             var outcome = await _reader.Finish(chapterId, ticket.Ticket, percent);
-            if (outcome?.Granted == true && !session.IsCancellationRequested)
-                _viewModel.ProgressMessage = "+10 xu";
+            if (outcome is not null && !session.IsCancellationRequested)
+                _viewModel.ProgressMessage = outcome.CoinsAdded > 0 ? $"+{outcome.CoinsAdded} xu" : "Đã ghi nhận đọc hôm nay.";
         }
         catch (OperationCanceledException) when (session.IsCancellationRequested) { }
         catch (Exception ex) { if (_active && !session.IsCancellationRequested) _viewModel.ProgressMessage = $"Chưa ghi nhận xu: {ex.Message}"; }

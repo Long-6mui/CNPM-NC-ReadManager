@@ -55,9 +55,9 @@ Guid requestId, string email, int coins, int days, string? token)
         return coins > 0 ? $"Đã cộng {coins} xu cho {email}." : $"Đã cộng {days} ngày chuỗi cho {email}.";
     }
     private record PurchaseError(string Message);
-    public record CoinBalance(int Coins, int FreezeCards = 0);
+    public record CoinBalance(long Coins, int FreezeCards = 0);
     public record ChapterTicket(string Ticket);
-    public record CoinReward(bool Granted);
+    public record CoinReward(bool Granted, long CoinsAdded = 0, long Coins = 0, int CurrentStreak = 0);
 
     private async Task<T> ReaderRequest<T>(HttpMethod method, string route, string? token, object? body = null)
     {

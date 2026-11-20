@@ -3,9 +3,9 @@ using ReadManager.Mobile.Services.Auth;
 
 namespace ReadManager.Mobile.Services;
 
-public record ReaderProfile(int Coins, bool Prompted, int[] Genres);
+public record ReaderProfile(long Coins, bool Prompted, int[] Genres);
 public record RankedStory(int StoryId, string Title, int Hearts);
-public record RewardResult(bool Granted);
+public record RewardResult(bool Granted, long CoinsAdded = 0, long Coins = 0, int CurrentStreak = 0);
 public record ReadingTicket(string Ticket);
 
 public class ReaderActivityService(ApiClient api, ILibraryService library, IAuthService auth)

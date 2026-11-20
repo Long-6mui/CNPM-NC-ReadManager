@@ -15,7 +15,7 @@
         <h1>@name</h1>
         <span class="pf-badge">@(isAdmin ? "Quản trị viên" : "Thành viên")</span>
         <div class="pf-info">
-            <div><span>Số dư xu</span><b>@(ViewBag.Coins is int coins ? $"{coins:N0} xu" : "Chưa tải được số dư")</b></div>
+            <div><span>Số dư xu</span><b>@(ViewBag.Coins is long coins ? $"{coins:N0} xu" : "Chưa tải được số dư")</b></div>
             @if (ViewBag.FreezeCards is int cards) { <div><span>Thẻ bảo vệ chuỗi</span><b>@cards / 5</b></div> }
             <div><span>Tên thành viên</span><b>@name</b></div>
             <div><span>Email</span><b>@email</b></div>

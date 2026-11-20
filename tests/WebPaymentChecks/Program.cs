@@ -20,7 +20,7 @@ int count=0;
 void Check(bool ok,string message) { if(!ok)throw new Exception("FAIL: "+message); Console.WriteLine("PASS: "+message);count++; }
 try
 {
-    await db.Database.MigrateAsync();
+    await ReadingRewardsChecks.MigrateLegacyAsync(db);
     var password="Test_"+Guid.NewGuid().ToString("N");
     foreach(var name in new[]{"admin","alice","bob"})
     {
@@ -34,12 +34,16 @@ try
     var streak = await db.UserStreaks.SingleAsync(row => row.UserId == admin.UserId);
     Check(streak.EarnedStreakCoins == 0, "First reading day starts a streak");
     var today = ReadManager.Api.Services.StreakService.TodayVn(DateTime.UtcNow);
+    await db.QualifiedReadingDays.Where(d => d.UserId == admin.UserId).ExecuteDeleteAsync();
+    foreach (var day in db.QualifiedReadingDays.Local.ToArray()) db.Entry(day).State = EntityState.Detached;
     streak.LastReadDate = today.AddDays(-1);
     await db.SaveChangesAsync();
     await streakService.RecordReadAsync(admin.UserId);
     await streakService.RecordReadAsync(admin.UserId);
     await db.Entry(streak).ReloadAsync();
     Check(streak.CurrentStreak == 2 && streak.EarnedStreakCoins == 5, "Continuing a streak earns five coins once per day");
+    await db.QualifiedReadingDays.Where(d => d.UserId == admin.UserId).ExecuteDeleteAsync();
+    foreach (var day in db.QualifiedReadingDays.Local.ToArray()) db.Entry(day).State = EntityState.Detached;
     streak.LastReadDate = today.AddDays(-3);
     await db.SaveChangesAsync();
     await streakService.RecordReadAsync(admin.UserId);
@@ -82,12 +86,12 @@ try
         "Admin credits wallet and streak separately, repeated request credits once");
     var purchaseKey = Guid.NewGuid();
     Check((await wallet.BuyFreezeCardAsync(purchaseKey, adminToken)).Contains("cần 50"), "Insufficient coins keep inventory unchanged");
-    streak.EarnedStreakCoins = 50;
+    await wallet.GrantAsync(Guid.NewGuid(), admin.Email, 45, 0, adminToken);
     await db.SaveChangesAsync();
     await Task.WhenAll(wallet.BuyFreezeCardAsync(purchaseKey, adminToken), wallet.BuyFreezeCardAsync(purchaseKey, adminToken));
     await db.Entry(streak).ReloadAsync();
     Check(streak.FreezeCards == 1 && (await wallet.Balance(adminToken)).Coins == 0, "Concurrent retry spends 50 coins and grants one card exactly once");
-    streak.EarnedStreakCoins = 100;
+    await wallet.GrantAsync(Guid.NewGuid(), admin.Email, 50, 0, adminToken);
     streak.FreezeCards = 5;
     await db.SaveChangesAsync();
     Check((await wallet.BuyFreezeCardAsync(Guid.NewGuid(), adminToken)).Contains("đủ 5") && (await wallet.Balance(adminToken)).Coins == 50, "Full inventory preserves balance");
@@ -226,6 +230,7 @@ try
     Check((await payments.RegrantAsync(orderId,adminToken)).Data!.Granted,"Admin regrants through API");
     Check((await payments.RegrantAsync(orderId,adminToken)).Data!.AlreadyGranted,"regrant is idempotent");
     Check((await db.Payments.CountAsync(x=>x.OrderId==orderId))==1,"recovery creates no extra payment");
+    await ReadingRewardsChecks.RunAsync(http, db, adminToken, password, Check);
     Console.WriteLine($"ALL {count} WEB PAYMENT CHECKS PASSED");
 }
 finally
