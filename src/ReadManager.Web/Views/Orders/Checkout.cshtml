@@ -1,4 +1,5 @@
 @model CheckoutVm
+@using ReadManager.Web.Services
 @{
     ViewData["Title"] = "Mua trọn bộ — " + Model.Story.Title;
     var story = Model.Story;
@@ -24,7 +25,7 @@
             <h3>@story.Title</h3>
             <div class="hint" style="font-size:13.5px;">@(string.IsNullOrEmpty(story.Author) ? "Khuyết danh" : story.Author) · @Model.TotalChapters chương đã ra</div>
 
-            <div class="checkout-price">@Model.Quote.Amount.ToString("N0")₫</div>
+            @if (!Model.HasDiscount) { <div class="checkout-price">@Model.Quote.Amount.ToString("N0")₫</div> }
 
             <ul class="checkout-benefits">
                 <li>✔ Đọc <b>vĩnh viễn</b> tất cả chương của truyện, kể cả các chương ra sau này</li>
@@ -36,12 +37,56 @@
             {
                 <div class="banner banner-info" style="margin-bottom:16px;">
                     Bạn đang có một đơn hàng chờ thanh toán cho truyện này — bấm <b>“Thanh toán”</b> để tiếp tục đơn đó.
+                    Voucher (nếu có) đã được giữ cho đơn này.
+                </div>
+            }
+            else if (!Model.VouchersUnavailable)
+            {
+                @if (Model.VoucherError is string voucherError) { <div class="banner banner-warn" role="alert" style="margin-bottom:12px;">@voucherError</div> }
+                <form method="get" asp-action="Checkout" class="vc-box">
+                    <input type="hidden" name="storyId" value="@story.Id" />
+                    <h4>🎟 Voucher giảm giá</h4>
+                    @if (Model.Vouchers.Count == 0)
+                    {
+                        <p class="hint" style="margin:0;">Bạn chưa có voucher nào dùng được. <a asp-controller="Account" asp-action="Rewards" asp-fragment="vouchers">Đổi xu lấy voucher →</a></p>
+                    }
+                    else
+                    {
+                        <div class="vc-list">
+                            <label class="vc-opt">
+                                <input type="radio" name="voucherId" value="" @(Model.SelectedVoucherId is null ? "checked" : "") onchange="this.form.submit()" />
+                                <span><b>Không dùng voucher</b></span>
+                            </label>
+                            @foreach (var v in Model.Vouchers)
+                            {
+                                var tooSmall = v.MinOrderAmount is > 0 && Model.OriginalAmount < v.MinOrderAmount;
+                                <label class="vc-opt @(tooSmall ? "is-disabled" : "")">
+                                    <input type="radio" name="voucherId" value="@v.VoucherId" @(Model.SelectedVoucherId == v.VoucherId ? "checked" : "") @(tooSmall ? "disabled" : "") onchange="this.form.submit()" />
+                                    <span>
+                                        <b>@v.Name — @(v.DiscountType == "Percent" ? $"giảm {v.Value:0.##}%" : $"giảm {v.Value:N0}₫")</b>
+                                        <small>@(v.DiscountType == "Percent" && v.MaxDiscount is > 0 ? $"Tối đa {v.MaxDiscount:N0}₫ · " : "")@(v.MinOrderAmount is > 0 ? $"Đơn từ {v.MinOrderAmount:N0}₫ · " : "")Hạn dùng đến @(StoriesApiClient.ToLocal(v.ExpiresAt)?.ToString("dd/MM/yyyy"))</small>
+                                    </span>
+                                </label>
+                            }
+                        </div>
+                        <noscript><button class="btn btn-outline btn-sm" type="submit" style="margin-top:10px;">Áp dụng voucher</button></noscript>
+                    }
+                </form>
+            }
+
+            @if (Model.HasDiscount)
+            {
+                <div class="vc-sum" aria-live="polite">
+                    <div class="vc-row"><span>Giá gốc</span><s>@Model.OriginalAmount.ToString("N0")₫</s></div>
+                    <div class="vc-row is-discount"><span>Giảm giá (voucher)</span><span>−@Model.DiscountAmount.ToString("N0")₫</span></div>
+                    <div class="vc-row is-total"><span>Tổng thanh toán</span><b>@Model.Quote.Amount.ToString("N0")₫</b></div>
                 </div>
             }
 
             <div class="checkout-actions">
                 <form asp-action="Pay" method="post">
                     <input type="hidden" name="storyId" value="@story.Id" />
+                    @if (Model.SelectedVoucherId.HasValue) { <input type="hidden" name="voucherId" value="@Model.SelectedVoucherId" /> }
                     <button type="submit" class="btn btn-brass">💳 Thanh toán @Model.Quote.Amount.ToString("N0")₫</button>
                 </form>
                 <a class="btn btn-outline" asp-controller="Stories" asp-action="Details" asp-route-id="@story.Id">← Quay lại truyện</a>

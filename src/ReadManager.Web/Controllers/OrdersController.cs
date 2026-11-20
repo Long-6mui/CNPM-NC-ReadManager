@@ -12,17 +12,18 @@ namespace ReadManager.Web.Controllers;
 //   GET  /Orders/Details/12          → xem đơn: món hàng, số tiền, trạng thái
 // Hủy đơn / xác nhận thanh toán: phần Thanh toán (BE4 — feature/s2-payments) làm.
 [Authorize]
-public class OrdersController(StoriesApiClient api, PaymentsApiClient payments, IWebHostEnvironment environment) : Controller
+public class OrdersController(StoriesApiClient api, PaymentsApiClient payments, RewardsApiClient rewards, IWebHostEnvironment environment) : Controller
 {
     private const string ApiDown = "Không kết nối được API. Hãy chạy ReadManager.Api rồi thử lại.";
     private Task<string?> Token() => HttpContext.GetTokenAsync("access_token");
 
-    public async Task<IActionResult> Checkout(int storyId)
+    public async Task<IActionResult> Checkout(int storyId, int? voucherId = null)
     {
         try
         {
+            var token = await Token();
             var detail = await api.GetStoryAsync(storyId);
-            var quote = await api.QuoteStoryAsync(storyId, await Token());
+            var quote = await api.QuoteStoryAsync(storyId, token);
             if (detail is null || quote is null)
             {
                 TempData["Toast"] = "Không tìm thấy truyện.";
@@ -36,12 +37,35 @@ public class OrdersController(StoriesApiClient api, PaymentsApiClient payments, 
                 return RedirectToAction("Details", "Stories", new { id = storyId });
             }
 
-            return View(new CheckoutVm
+            var vm = new CheckoutVm
             {
                 Story = StoriesApiClient.ToStory(detail),
                 TotalChapters = detail.PublishedChapterCount,
                 Quote = quote
-            });
+            };
+
+            // Voucher chỉ hiện khi API có; lỗi/chưa có API thì vẫn mua được với giá gốc.
+            // Đã có đơn chờ thanh toán → đơn đó giữ nguyên ưu đãi cũ, không cho chọn lại.
+            if (!quote.PendingOrderId.HasValue)
+            {
+                var mine = await rewards.MyVouchersAsync("Available", token);
+                if (mine.Ok) vm.Vouchers = (mine.Data ?? []).Where(v => v.Status == "Available" && v.ExpiresAt > DateTime.UtcNow).ToList();
+                else if (mine.NotAvailable) vm.VouchersUnavailable = true;
+                else vm.VoucherError = mine.Message;
+
+                if (voucherId.HasValue && vm.Vouchers.Any(v => v.VoucherId == voucherId))
+                {
+                    var (withVoucher, error) = await api.QuoteStoryWithVoucherAsync(storyId, voucherId.Value, token);
+                    if (withVoucher is { CanBuy: true })
+                    {
+                        vm.Quote = withVoucher;
+                        vm.SelectedVoucherId = voucherId;
+                    }
+                    else vm.VoucherError = error ?? "Voucher này không áp dụng được cho truyện.";
+                }
+                else if (voucherId.HasValue) vm.VoucherError = "Voucher không còn dùng được (đã dùng, hết hạn hoặc không thuộc tài khoản của bạn).";
+            }
+            return View(vm);
         }
         catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException)
         {
@@ -51,11 +75,11 @@ public class OrdersController(StoriesApiClient api, PaymentsApiClient payments, 
     }
 
     [HttpPost, ValidateAntiForgeryToken]
-    public async Task<IActionResult> Pay(int storyId)
+    public async Task<IActionResult> Pay(int storyId, int? voucherId = null)
     {
         try
         {
-            var result = await api.CreateStoryOrderAsync(storyId, await Token());
+            var result = await api.CreateStoryOrderAsync(storyId, await Token(), voucherId);
             if (result.Ok && result.Id.HasValue)
                 return RedirectToAction(nameof(Details), new { id = result.Id });
 
