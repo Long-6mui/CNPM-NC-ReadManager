@@ -18,6 +18,13 @@ namespace ReadManager.Mobile
                 {
                     fonts.AddFont("OpenSans-Regular.ttf", "OpenSansRegular");
                     fonts.AddFont("OpenSans-Semibold.ttf", "OpenSansSemibold");
+
+                    // Be Vietnam Pro — phông chữ của web (Views/Shared/_Layout.cshtml)
+                    fonts.AddFont("BeVietnamPro-Regular.ttf", "BeVietnamRegular");
+                    fonts.AddFont("BeVietnamPro-Medium.ttf", "BeVietnamMedium");
+                    fonts.AddFont("BeVietnamPro-SemiBold.ttf", "BeVietnamSemiBold");
+                    fonts.AddFont("BeVietnamPro-Bold.ttf", "BeVietnamBold");
+                    fonts.AddFont("BeVietnamPro-ExtraBold.ttf", "BeVietnamExtraBold");
                 });
 
 #if DEBUG

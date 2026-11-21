@@ -31,7 +31,7 @@
                         <Grid ColumnDefinitions="68,*" ColumnSpacing="12">
                             <Border HeightRequest="100" StrokeThickness="1" Stroke="{StaticResource WebBorder}" VerticalOptions="Start">
                                 <Border.StrokeShape>
-                                    <RoundRectangle CornerRadius="4" />
+                                    <RoundRectangle CornerRadius="12" />
                                 </Border.StrokeShape>
                                 <Border.GestureRecognizers>
                                     <TapGestureRecognizer
@@ -41,12 +41,12 @@
                                 <Grid>
                                     <Grid.Background>
                                         <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
-                                            <GradientStop Color="#3B4E63" Offset="0.0" />
-                                            <GradientStop Color="#22303F" Offset="1.0" />
+                                            <GradientStop Color="#3F3A55" Offset="0.0" />
+                                            <GradientStop Color="#1E1B2E" Offset="1.0" />
                                         </LinearGradientBrush>
                                     </Grid.Background>
                                     <Label Text="{Binding Title}" IsVisible="{Binding HasNoCover}"
-                                           FontFamily="{StaticResource SerifFont}" FontSize="9.5" FontAttributes="Bold"
+                                           FontFamily="{StaticResource SerifFont}" FontSize="9.5"
                                            TextColor="White" HorizontalTextAlignment="Center"
                                            VerticalOptions="Center" Margin="4" />
                                     <Image Source="{Binding CoverUrl}" IsVisible="{Binding HasCover}" Aspect="AspectFill" />

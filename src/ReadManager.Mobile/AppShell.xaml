@@ -5,13 +5,13 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
     xmlns:views="clr-namespace:ReadManager.Mobile.Views"
     Shell.BackgroundColor="White"
-    Shell.ForegroundColor="#0B1F4B"
-    Shell.TitleColor="#0B1F4B"
+    Shell.ForegroundColor="#14101F"
+    Shell.TitleColor="#14101F"
     Shell.NavBarHasShadow="False"
     Shell.TabBarBackgroundColor="White"
-    Shell.TabBarForegroundColor="#1D4ED8"
-    Shell.TabBarTitleColor="#1D4ED8"
-    Shell.TabBarUnselectedColor="#5B6B88"
+    Shell.TabBarForegroundColor="#E11D48"
+    Shell.TabBarTitleColor="#E11D48"
+    Shell.TabBarUnselectedColor="#52525B"
     FlyoutBehavior="Disabled"
     Title="Chữ &amp; Đêm">
 

@@ -26,8 +26,8 @@
                 <Grid Padding="20,24,20,28" ColumnDefinitions="120,*" ColumnSpacing="16" RowDefinitions="Auto,Auto">
                     <Grid.Background>
                         <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-                            <GradientStop Color="#0B1F4B" Offset="0.0" />
-                            <GradientStop Color="#07142F" Offset="1.0" />
+                            <GradientStop Color="#14101F" Offset="0.0" />
+                            <GradientStop Color="#0A0D17" Offset="1.0" />
                         </LinearGradientBrush>
                     </Grid.Background>
 
@@ -35,26 +35,29 @@
                     <Border Grid.Column="0" Grid.Row="0" HeightRequest="180" StrokeThickness="1"
                             Stroke="#29FFFFFF" VerticalOptions="Start">
                         <Border.StrokeShape>
-                            <RoundRectangle CornerRadius="4" />
+                            <RoundRectangle CornerRadius="12" />
                         </Border.StrokeShape>
+                        <Border.Shadow>
+                            <Shadow Brush="#000000" Offset="0,12" Radius="20" Opacity="0.55" />
+                        </Border.Shadow>
                         <Grid>
                             <Grid.Background>
                                 <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
-                                    <GradientStop Color="#3B4E63" Offset="0.0" />
-                                    <GradientStop Color="#22303F" Offset="1.0" />
+                                    <GradientStop Color="#3F3A55" Offset="0.0" />
+                                    <GradientStop Color="#1E1B2E" Offset="1.0" />
                                 </LinearGradientBrush>
                             </Grid.Background>
                             <Label Text="{Binding Story.Title}" IsVisible="{Binding Story.HasNoCover}"
-                                   FontFamily="{StaticResource SerifFont}" FontSize="14" FontAttributes="Bold"
+                                   FontFamily="{StaticResource SerifFont}" FontSize="14"
                                    TextColor="White" HorizontalTextAlignment="Center"
                                    VerticalOptions="Center" Margin="8" />
                             <Image Source="{Binding Story.CoverUrl}" IsVisible="{Binding Story.HasCover}" Aspect="AspectFill" />
                             <Border HorizontalOptions="Start" VerticalOptions="Start" Margin="7"
                                     Padding="7,3" StrokeThickness="0" BackgroundColor="{Binding Story.AccessColor}">
                                 <Border.StrokeShape>
-                                    <RoundRectangle CornerRadius="3" />
+                                    <RoundRectangle CornerRadius="8" />
                                 </Border.StrokeShape>
-                                <Label Text="{Binding Story.AccessLabel}" TextColor="White" FontSize="10" FontAttributes="Bold" />
+                                <Label Text="{Binding Story.AccessLabel}" TextColor="White" FontSize="10" FontFamily="BeVietnamBold" />
                             </Border>
                         </Grid>
                     </Border>
@@ -62,8 +65,8 @@
                     <!-- Tiêu đề + tác giả -->
                     <VerticalStackLayout Grid.Column="1" Grid.Row="0" Spacing="6">
                         <Label Text="{Binding Story.Title}" TextColor="White"
-                               FontFamily="{StaticResource SerifFont}" FontSize="24" FontAttributes="Bold" />
-                        <Label Text="{Binding Story.AuthorText}" TextColor="#4F83FF" FontSize="14" FontAttributes="Bold" />
+                               FontFamily="{StaticResource SerifFont}" FontSize="24" />
+                        <Label Text="{Binding Story.AuthorText}" TextColor="#FB7185" FontSize="14" FontFamily="BeVietnamBold" />
                         <FlexLayout Wrap="Wrap" Margin="0,6,0,0"
                                     BindableLayout.ItemsSource="{Binding Story.Tags}">
                             <BindableLayout.ItemTemplate>
@@ -73,7 +76,7 @@
                                         <Border.StrokeShape>
                                             <RoundRectangle CornerRadius="14" />
                                         </Border.StrokeShape>
-                                        <Label Text="{Binding .}" TextColor="#E4EAF8" FontSize="11.5" />
+                                        <Label Text="{Binding .}" TextColor="#EEEBE4" FontSize="11.5" />
                                     </Border>
                                 </DataTemplate>
                             </BindableLayout.ItemTemplate>
@@ -82,7 +85,7 @@
 
                     <!-- Mô tả + nút + thống kê (chiếm cả hàng dưới) -->
                     <VerticalStackLayout Grid.Row="1" Grid.ColumnSpan="2" Spacing="14" Margin="0,16,0,0">
-                        <Label Text="{Binding Story.Synopsis}" TextColor="#C3D2F5" FontSize="14" />
+                        <Label Text="{Binding Story.Synopsis}" TextColor="#CBD5E1" FontSize="14" />
 
                         <!-- Nút hành động: xem chương + yêu thích (Tủ sách) -->
                         <HorizontalStackLayout Spacing="10">
@@ -96,39 +99,44 @@
                         <HorizontalStackLayout Spacing="10">
                             <Button Text="{Binding FollowText}" Style="{StaticResource BtnLight}"
                                     Command="{Binding ToggleFollowCommand}" />
-                            <Label Text="{Binding FollowerText}" TextColor="#9DB0D6" FontSize="12.5" VerticalOptions="Center" />
+                            <Label Text="{Binding FollowerText}" TextColor="#A1A1AA" FontSize="12.5" VerticalOptions="Center" />
                         </HorizontalStackLayout>
 
                         <!-- Mua trọn bộ (PB21) / đã sở hữu -->
                         <Button Text="{Binding BuyText}" Style="{StaticResource BtnAmber}"
                                 Command="{Binding BuyCommand}" IsVisible="{Binding ShowBuy}" />
-                        <Label Text="✔ Bạn đã sở hữu truyện này" TextColor="#7DDBA3" FontAttributes="Bold" FontSize="14"
+                        <Label Text="✔ Bạn đã sở hữu truyện này" TextColor="#7DDBA3" FontFamily="BeVietnamBold" FontSize="14"
                                IsVisible="{Binding ShowOwned}" />
 
-                        <HorizontalStackLayout Spacing="26" Margin="0,6,0,0">
-                            <VerticalStackLayout Spacing="2">
+                        <Border BackgroundColor="#14FFFFFF" Stroke="#1FFFFFFF" StrokeThickness="1" Padding="10,12">
+                            <Border.StrokeShape>
+                                <RoundRectangle CornerRadius="14" />
+                            </Border.StrokeShape>
+                            <Grid ColumnDefinitions="*,*,*" ColumnSpacing="8" Margin="0,6,0,0">
+                            <VerticalStackLayout Spacing="2" Grid.Column="0" HorizontalOptions="Center">
                                 <Label Text="{Binding Story.PublishedChapterCount}" TextColor="White"
-                                       FontFamily="{StaticResource SerifFont}" FontSize="19" FontAttributes="Bold" />
-                                <Label Text="Chương" TextColor="#9DB0D6" FontSize="11.5" />
+                                       FontFamily="{StaticResource SerifFont}" FontSize="19" />
+                                <Label Text="Chương" TextColor="#A1A1AA" FontSize="11.5" />
                             </VerticalStackLayout>
-                            <VerticalStackLayout Spacing="2">
+                            <VerticalStackLayout Spacing="2" Grid.Column="1" HorizontalOptions="Center">
                                 <Label Text="{Binding Story.PriceText}" TextColor="White"
-                                       FontFamily="{StaticResource SerifFont}" FontSize="19" FontAttributes="Bold" />
-                                <Label Text="{Binding Story.PriceCaption}" TextColor="#9DB0D6" FontSize="11.5" />
+                                       FontFamily="{StaticResource SerifFont}" FontSize="19" />
+                                <Label Text="{Binding Story.PriceCaption}" TextColor="#A1A1AA" FontSize="11.5" />
                             </VerticalStackLayout>
-                            <VerticalStackLayout Spacing="2">
+                            <VerticalStackLayout Spacing="2" Grid.Column="2" HorizontalOptions="Center">
                                 <Label Text="{Binding Story.FreeChaptersText}" TextColor="White"
-                                       FontFamily="{StaticResource SerifFont}" FontSize="19" FontAttributes="Bold" />
-                                <Label Text="Chương đọc miễn phí" TextColor="#9DB0D6" FontSize="11.5" />
+                                       FontFamily="{StaticResource SerifFont}" FontSize="19" />
+                                <Label Text="Chương đọc miễn phí" TextColor="#A1A1AA" FontSize="11.5" />
                             </VerticalStackLayout>
-                        </HorizontalStackLayout>
+                        </Grid>
+                        </Border>
                     </VerticalStackLayout>
                 </Grid>
 
                 <!-- Danh sách chương -->
                 <VerticalStackLayout Padding="16,24,16,0" Spacing="12">
                     <Label Text="Danh sách chương" Style="{StaticResource LblH2}" FontSize="18" />
-                    <Button Text="Xem danh sách chương" Command="{Binding OpenChaptersCommand}" />
+                    <Button Text="Xem danh sách chương" Style="{StaticResource BtnBrass}" Command="{Binding OpenChaptersCommand}" />
                     <Button Text="💬 Bình luận" Style="{StaticResource BtnOutlineSm}" HeightRequest="44"
                             Command="{Binding OpenCommentsCommand}" />
                     <Button Text="⚑ Báo cáo truyện này" Style="{StaticResource BtnLink}" HorizontalOptions="Start"
@@ -139,20 +147,20 @@
                 <VerticalStackLayout Padding="16,16,16,32">
                     <Border Style="{StaticResource Panel}">
                         <VerticalStackLayout Spacing="10">
-                            <Label Text="Giới thiệu" FontSize="15" FontAttributes="Bold" TextColor="{StaticResource WebText}" />
+                            <Label Text="Giới thiệu" FontSize="15" FontFamily="BeVietnamBold" TextColor="{StaticResource WebText}" />
                             <Label Text="{Binding Story.Synopsis}" FontSize="13.5" TextColor="{StaticResource WebMuted}" />
                             <BoxView HeightRequest="1" Color="{StaticResource WebBorder}" Margin="0,4" />
                             <Grid ColumnDefinitions="*,Auto">
                                 <Label Text="Tác giả" FontSize="13" TextColor="{StaticResource WebMuted}" />
-                                <Label Grid.Column="1" Text="{Binding Story.AuthorText}" FontSize="13" FontAttributes="Bold" TextColor="{StaticResource WebText}" />
+                                <Label Grid.Column="1" Text="{Binding Story.AuthorText}" FontSize="13" FontFamily="BeVietnamBold" TextColor="{StaticResource WebText}" />
                             </Grid>
                             <Grid ColumnDefinitions="*,Auto">
                                 <Label Text="Tình trạng" FontSize="13" TextColor="{StaticResource WebMuted}" />
-                                <Label Grid.Column="1" Text="{Binding Story.StatusLabel}" FontSize="13" FontAttributes="Bold" TextColor="{StaticResource WebText}" />
+                                <Label Grid.Column="1" Text="{Binding Story.StatusLabel}" FontSize="13" FontFamily="BeVietnamBold" TextColor="{StaticResource WebText}" />
                             </Grid>
                             <Grid ColumnDefinitions="*,Auto">
                                 <Label Text="Cập nhật" FontSize="13" TextColor="{StaticResource WebMuted}" />
-                                <Label Grid.Column="1" Text="{Binding Story.UpdatedText}" FontSize="13" FontAttributes="Bold" TextColor="{StaticResource WebText}" />
+                                <Label Grid.Column="1" Text="{Binding Story.UpdatedText}" FontSize="13" FontFamily="BeVietnamBold" TextColor="{StaticResource WebText}" />
                             </Grid>
                         </VerticalStackLayout>
                     </Border>

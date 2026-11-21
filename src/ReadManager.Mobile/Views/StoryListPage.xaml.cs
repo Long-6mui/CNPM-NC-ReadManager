@@ -14,12 +14,27 @@ public partial class StoryListPage : ContentPage
         InitializeComponent();
         _viewModel = viewModel;
         BindingContext = viewModel;
+
+        // Hero "sách bay": lấy tối đa 5 truyện mới cập nhật; bấm sách -> mở truyện, bấm "Khám phá" -> sang thư viện
+        _viewModel.Updated.CollectionChanged += (_, _) => RefreshHero();
+        Hero.StoryTapped += (_, story) => _viewModel.GoToDetailCommand.Execute(story);
+        Hero.BrowseTapped += (_, _) => _viewModel.GoToBrowseCommand.Execute(null);
+    }
+
+    private void RefreshHero() => Dispatcher.Dispatch(() => Hero.SetStories(_viewModel.Updated));
+
+    protected override void OnDisappearing()
+    {
+        base.OnDisappearing();
+        Hero.Stop();
     }
 
     protected override void OnAppearing()
     {
         base.OnAppearing();
         _viewModel.LoadCommand.Execute(null);
+        RefreshHero();
+        Hero.Start();
         _ = RefreshBellAsync();
         _ = RefreshFlameAsync();
         _ = LoadRecommendationsAsync();

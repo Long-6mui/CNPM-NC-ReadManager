@@ -15,5 +15,5 @@ public class ChapterSummary
 
     // Chỉ để hiển thị trong danh sách chương
     public string AccessText => IsLocked ? "🔒 Trả phí" : (AccessLevel == "Paid" ? "Đã mở khóa" : "Miễn phí");
-    public Color AccessColor => IsLocked ? Color.FromArgb("#E5484D") : (AccessLevel == "Paid" ? Color.FromArgb("#12A150") : Color.FromArgb("#5B6B88"));
+    public Color AccessColor => IsLocked ? Color.FromArgb("#DC2626") : (AccessLevel == "Paid" ? Color.FromArgb("#12A150") : Color.FromArgb("#52525B"));
 }

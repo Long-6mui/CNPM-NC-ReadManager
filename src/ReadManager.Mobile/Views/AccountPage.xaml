@@ -19,7 +19,7 @@
                             CommandParameter="{Binding .}" />
                     </Grid.GestureRecognizers>
                     <VerticalStackLayout Grid.Column="0" Padding="0,10" Spacing="2">
-                        <Label Text="{Binding Title}" FontSize="14" FontAttributes="Bold" TextColor="{StaticResource WebText}"
+                        <Label Text="{Binding Title}" FontSize="14" FontFamily="BeVietnamBold" TextColor="{StaticResource WebText}"
                                LineBreakMode="TailTruncation" MaxLines="1" />
                         <Label Text="{Binding MetaText}" Style="{StaticResource LblCardMeta}" />
                     </VerticalStackLayout>
@@ -47,15 +47,15 @@
 
             <!-- ============ ĐÃ ĐĂNG NHẬP ============ -->
             <VerticalStackLayout IsVisible="{Binding IsLoggedIn}" Spacing="14">
-                <Label Text="{Binding CoinText}" FontAttributes="Bold" />
-                <Button Text="Sở thích đọc" Command="{Binding EditGenresCommand}" />
+                <Label Text="{Binding CoinText}" FontFamily="BeVietnamBold" />
+                <Button Text="Sở thích đọc" Style="{StaticResource BtnOutlineSm}" HeightRequest="44" Command="{Binding EditGenresCommand}" />
 
                 <!-- Tài khoản bị hạn chế / khóa (Sprint 3 — dữ liệu từ Backend 2) -->
                 <Border Padding="14" StrokeThickness="0" BackgroundColor="#FDECEC" IsVisible="{Binding HasStatusBanner}">
                     <Border.StrokeShape>
                         <RoundRectangle CornerRadius="8" />
                     </Border.StrokeShape>
-                    <Label Text="{Binding StatusBanner}" TextColor="{StaticResource WebCrimson}" FontSize="13.5" FontAttributes="Bold" />
+                    <Label Text="{Binding StatusBanner}" TextColor="{StaticResource WebCrimson}" FontSize="13.5" FontFamily="BeVietnamBold" />
                 </Border>
 
                 <!-- Thông báo + theo dõi (Sprint 3) -->
@@ -80,7 +80,7 @@
                             </Border.StrokeShape>
                             <Grid>
                                 <Label Text="{Binding Initial}" IsVisible="{Binding HasNoAvatar}"
-                                       TextColor="White" FontSize="36" FontAttributes="Bold"
+                                       TextColor="White" FontSize="36"
                                        FontFamily="{StaticResource SerifFont}"
                                        HorizontalOptions="Center" VerticalOptions="Center" />
                                 <Image Source="{Binding AvatarSource}" IsVisible="{Binding HasAvatar}" Aspect="AspectFill" />
@@ -99,24 +99,24 @@
                             <Border.StrokeShape>
                                 <RoundRectangle CornerRadius="12" />
                             </Border.StrokeShape>
-                            <Label Text="{Binding RoleText}" FontSize="12" FontAttributes="Bold" TextColor="{StaticResource WebRoyal2}" />
+                            <Label Text="{Binding RoleText}" FontSize="12" FontFamily="BeVietnamBold" TextColor="{StaticResource WebRoyal2}" />
                         </Border>
 
                         <BoxView HeightRequest="1" Color="{StaticResource WebBorder}" Margin="0,6" />
 
                         <Grid ColumnDefinitions="Auto,*" ColumnSpacing="12">
                             <Label Text="Tên thành viên" FontSize="13" TextColor="{StaticResource WebMuted}" />
-                            <Label Grid.Column="1" Text="{Binding DisplayName}" FontSize="13" FontAttributes="Bold"
+                            <Label Grid.Column="1" Text="{Binding DisplayName}" FontSize="13" FontFamily="BeVietnamBold"
                                    TextColor="{StaticResource WebText}" HorizontalTextAlignment="End" LineBreakMode="TailTruncation" />
                         </Grid>
                         <Grid ColumnDefinitions="Auto,*" ColumnSpacing="12">
                             <Label Text="Email" FontSize="13" TextColor="{StaticResource WebMuted}" />
-                            <Label Grid.Column="1" Text="{Binding Email}" FontSize="13" FontAttributes="Bold"
+                            <Label Grid.Column="1" Text="{Binding Email}" FontSize="13" FontFamily="BeVietnamBold"
                                    TextColor="{StaticResource WebText}" HorizontalTextAlignment="End" LineBreakMode="TailTruncation" />
                         </Grid>
                         <Grid ColumnDefinitions="Auto,*" ColumnSpacing="12">
                             <Label Text="ID thành viên" FontSize="13" TextColor="{StaticResource WebMuted}" />
-                            <Label Grid.Column="1" Text="{Binding UserIdText}" FontSize="13" FontAttributes="Bold"
+                            <Label Grid.Column="1" Text="{Binding UserIdText}" FontSize="13" FontFamily="BeVietnamBold"
                                    TextColor="{StaticResource WebText}" HorizontalTextAlignment="End" />
                         </Grid>
                     </VerticalStackLayout>
@@ -129,7 +129,7 @@
 
                         <Border Style="{StaticResource Panel}" Padding="14" BackgroundColor="{StaticResource WebBg}">
                             <VerticalStackLayout Spacing="6">
-                                <Label Text="Gói đọc theo tháng" FontSize="15" FontAttributes="Bold" TextColor="{StaticResource WebText}" />
+                                <Label Text="Gói đọc theo tháng" FontSize="15" FontFamily="BeVietnamBold" TextColor="{StaticResource WebText}" />
                                 <Label Text="• Đọc các truyện nằm trong gói" Style="{StaticResource LblMuted}" />
                                 <Label Text="• Gia hạn sớm hoặc muộn đều được cộng dồn" Style="{StaticResource LblMuted}" />
                                 <Button Text="Xem các gói đọc" Style="{StaticResource BtnBrassSm}" Margin="0,6,0,0"
@@ -139,7 +139,7 @@
 
                         <Border Style="{StaticResource Panel}" Padding="14" BackgroundColor="{StaticResource WebBg}">
                             <VerticalStackLayout Spacing="6">
-                                <Label Text="Mua riêng từng truyện" FontSize="15" FontAttributes="Bold" TextColor="{StaticResource WebText}" />
+                                <Label Text="Mua riêng từng truyện" FontSize="15" FontFamily="BeVietnamBold" TextColor="{StaticResource WebText}" />
                                 <Label Text="• Mua quyền đọc một truyện" Style="{StaticResource LblMuted}" />
                                 <Label Text="• Độc lập với gói theo tháng" Style="{StaticResource LblMuted}" />
                                 <Button Text="Tìm truyện trả phí" Style="{StaticResource BtnOutlineSm}" Margin="0,6,0,0"

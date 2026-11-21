@@ -126,8 +126,8 @@ public class Order
     {
         "Pending" => Color.FromArgb("#B7791F"),
         "Paid" => Color.FromArgb("#12A150"),
-        "Failed" => Color.FromArgb("#E5484D"),
-        _ => Color.FromArgb("#5B6B88")
+        "Failed" => Color.FromArgb("#DC2626"),
+        _ => Color.FromArgb("#52525B")
     };
 }
 
