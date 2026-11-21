@@ -254,6 +254,9 @@ public class PaymentService : IPaymentService
                 order.UpdatedAt = now;
             }
 
+            if (order.VoucherId.HasValue)
+                await VoucherService.MarkUsedAsync(_db, order.VoucherId.Value, order.PaidAt ?? now);
+
             if (grant)
             {
                 await _grants.AddGrantAsync(order, now);
@@ -314,6 +317,10 @@ public class PaymentService : IPaymentService
         evt.ProcessingStatus = EvtProcessed;
         evt.ProcessedAt = now;
         await _db.SaveChangesAsync();
+
+        if (order.VoucherId.HasValue && order.Status != OrderService.Paid)
+            await VoucherService.ReleaseUnusedVouchersAsync(_db, [order.VoucherId.Value], now);
+
         await tx.CommitAsync();
 
         return Result(cancelled ? PaymentCallbackOutcome.Cancelled : PaymentCallbackOutcome.Failed, orderId,
@@ -466,6 +473,9 @@ public class PaymentService : IPaymentService
             order.PaidAt = paidAt;
             order.UpdatedAt = now;
         }
+
+        if (order.VoucherId.HasValue)
+            await VoucherService.MarkUsedAsync(_db, order.VoucherId.Value, paidAt);
 
         // Không gọi cổng thanh toán → không thu thêm tiền. Đơn đã có quyền thì không thêm gì.
         var created = await _grants.AddGrantAsync(order, paidAt);

@@ -52,10 +52,13 @@ public class AppDbContext : DbContext
     public DbSet<StreakReward> StreakRewards => Set<StreakReward>();
     public DbSet<Coupon> Coupons => Set<Coupon>();
     public DbSet<StreakNotice> StreakNotices => Set<StreakNotice>();
+    public DbSet<VoucherOffer> VoucherOffers => Set<VoucherOffer>();
+    public DbSet<Voucher> Vouchers => Set<Voucher>();
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
         PaymentModelConfiguration.Configure(modelBuilder);
+        VoucherModelConfiguration.Configure(modelBuilder);
         modelBuilder.HasCharSet("utf8mb4");
         modelBuilder.UseCollation("utf8mb4_unicode_ci");
 
@@ -310,7 +313,10 @@ public class AppDbContext : DbContext
             entity.HasOne(x => x.Story).WithMany().HasForeignKey(x => x.StoryId).OnDelete(DeleteBehavior.Restrict);
             entity.Property(x => x.OriginalAmount).HasPrecision(12, 2);
             entity.Property(x => x.DiscountAmount).HasPrecision(12, 2).HasDefaultValue(0m);
+            entity.Property(x => x.VoucherName).HasMaxLength(120);
+            entity.HasIndex(x => x.VoucherId);
             entity.HasOne<Coupon>().WithMany().HasForeignKey(x => x.CouponId).OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne(x => x.Voucher).WithMany().HasForeignKey(x => x.VoucherId).OnDelete(DeleteBehavior.Restrict);
         });
 
         // ===== SPRINT 5: CHUỖI ĐỌC =====

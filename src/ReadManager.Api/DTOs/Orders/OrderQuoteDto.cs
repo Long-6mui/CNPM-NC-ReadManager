@@ -16,4 +16,9 @@ public class OrderQuoteDto
     public bool AlreadyOwned { get; set; }       // đã mua truyện này rồi
     public int? PendingOrderId { get; set; }     // đang có đơn chờ thanh toán → mở lại đơn đó
     public string? Message { get; set; }         // lý do không mua được (vd: "Truyện miễn phí")
+
+    // Sprint 5 — báo giá khi áp dụng voucher mua truyện
+    public decimal? OriginalAmount { get; set; }
+    public decimal DiscountAmount { get; set; }
+    public int? VoucherId { get; set; }
 }

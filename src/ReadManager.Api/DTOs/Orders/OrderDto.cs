@@ -14,9 +14,11 @@ public class OrderDto
 
     public string ItemName { get; set; } = string.Empty;
     public decimal Amount { get; set; }               // số tiền phải trả (đã trừ giảm giá)
-    public decimal? OriginalAmount { get; set; }      // Sprint 5 — giá gốc nếu có dùng coupon
+    public decimal? OriginalAmount { get; set; }      // Sprint 5 — giá gốc nếu có dùng coupon / voucher
     public decimal DiscountAmount { get; set; }       // Sprint 5 — số tiền được giảm
     public int? CouponId { get; set; }
+    public int? VoucherId { get; set; }
+    public string? VoucherName { get; set; }
     public int? DurationMonths { get; set; }
 
     public string Status { get; set; } = string.Empty;      // Pending | Paid | Failed | Cancelled | Expired
