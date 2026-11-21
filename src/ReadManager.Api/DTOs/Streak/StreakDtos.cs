@@ -14,6 +14,8 @@ public class StreakRewardItemDto
     public string Code { get; set; } = string.Empty;
     public string Name { get; set; } = string.Empty;
     public bool Unlocked { get; set; }                 // false = hiển thị mờ
+    public int Milestone { get; set; }                 // số ngày chuỗi để mở khóa (0 = đồ người mới)
+    public bool Starter { get; set; }                  // true = khung / danh hiệu cho người mới
 }
 
 public class StreakMilestoneDto

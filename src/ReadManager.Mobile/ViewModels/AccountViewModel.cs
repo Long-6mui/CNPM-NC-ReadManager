@@ -47,10 +47,79 @@ public partial class AccountViewModel : BaseViewModel
     public bool HasNoAvatar => !HasAvatar;
     [RelayCommand] private Task EditGenresAsync() => Shell.Current.GoToAsync(nameof(Views.ReaderGenresPage));
 
-    public AccountViewModel(IAuthService authService, ICommunityService community)
+    // ----- Khung avatar & danh hiệu (đổi ngay tại trang Tài khoản) -----
+    private readonly IStreakService _streak;
+    public System.Collections.ObjectModel.ObservableCollection<CosmeticItem> Frames { get; } = new();
+    public System.Collections.ObjectModel.ObservableCollection<CosmeticItem> Titles { get; } = new();
+    [ObservableProperty] private string? selectedFrame;
+    [ObservableProperty] private string? selectedTitle;
+    [ObservableProperty] private string cosmeticSummary = string.Empty;
+    private int _longestStreak;
+
+    // Trang nảy avatar khi vừa đổi khung / danh hiệu
+    public event EventHandler? CosmeticChanged;
+
+    public AccountViewModel(IAuthService authService, ICommunityService community, IStreakService streak)
     {
         _authService = authService;
         _community = community;
+        _streak = streak;
+    }
+
+    private async Task LoadCosmeticsAsync()
+    {
+        try
+        {
+            ApplyStreak(await _streak.GetAsync());
+        }
+        catch { /* chưa có API chuỗi / mất mạng: ẩn phần chọn */ }
+    }
+
+    private void ApplyStreak(StreakInfo info)
+    {
+        _longestStreak = info.LongestStreak;
+        SelectedFrame = info.SelectedFrame;
+        SelectedTitle = info.SelectedTitle;
+
+        Frames.Clear();
+        foreach (var r in info.Collection.Where(r => r.Kind == "Frame").OrderBy(r => Cosmetics.FrameOrder(r.Code)))
+            Frames.Add(new CosmeticItem { Kind = "Frame", Code = r.Code, Name = r.Name, Unlocked = r.Unlocked,
+                Milestone = r.Milestone, Starter = r.Starter, IsSelected = r.Code == info.SelectedFrame });
+        Titles.Clear();
+        foreach (var r in info.Collection.Where(r => r.Kind == "Title").OrderBy(r => Cosmetics.TitleOrder(r.Name)))
+            Titles.Add(new CosmeticItem { Kind = "Title", Code = r.Code, Name = r.Name, Unlocked = r.Unlocked,
+                Milestone = r.Milestone, Starter = r.Starter, IsSelected = r.Name == info.SelectedTitle });
+
+        var open = Frames.Count(f => f.Unlocked) + Titles.Count(t => t.Unlocked);
+        CosmeticSummary = $"Đã mở {open}/{Frames.Count + Titles.Count} · chuỗi dài nhất {info.LongestStreak} ngày";
+    }
+
+    // Bấm một khung / danh hiệu: chưa mở -> báo cần chuỗi bao nhiêu ngày; đang dùng -> bỏ đeo; còn lại -> đeo
+    [RelayCommand]
+    private async Task PickCosmeticAsync(CosmeticItem? item)
+    {
+        if (item is null) return;
+        if (item.Locked)
+        {
+            var go = await Shell.Current.DisplayAlert("🔒 Chưa mở khóa",
+                $"Giữ chuỗi đọc {item.Milestone} ngày liên tiếp để mở khóa “{item.Name}”.\nChuỗi dài nhất của bạn: {_longestStreak} ngày.",
+                "Xem chuỗi", "Đóng");
+            if (go) await Shell.Current.GoToAsync(nameof(Views.StreakPage));
+            return;
+        }
+
+        var isFrame = item.Kind == "Frame";
+        var newFrame = isFrame ? (item.IsSelected ? null : item.Code) : SelectedFrame;
+        var newTitle = isFrame ? SelectedTitle : (item.IsSelected ? null : item.Name);
+        try
+        {
+            ApplyStreak(await _streak.EquipAsync(newTitle, newFrame));
+            CosmeticChanged?.Invoke(this, EventArgs.Empty);
+        }
+        catch (Exception ex)
+        {
+            await Shell.Current.DisplayAlert("Chưa đổi được", ex.Message, "OK");
+        }
     }
 
     partial void OnHasAvatarChanged(bool value) => OnPropertyChanged(nameof(HasNoAvatar));
@@ -73,6 +142,7 @@ public partial class AccountViewModel : BaseViewModel
         Initial = string.IsNullOrWhiteSpace(name) ? "?" : name.Trim()[..1].ToUpperInvariant();
 
         LoadAvatar(user.UserId);
+        await LoadCosmeticsAsync();
 
         var restricted = user.IsRestricted || SessionFlags.AccountRestricted;
         StatusBanner = user.IsRestricted

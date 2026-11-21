@@ -186,7 +186,7 @@
 
         <!-- Header tối, cùng màu với hero "sách bay" -->
         <ctl:AppHeader x:Name="Header" Grid.Row="0" IsHero="True" ShowBrand="True" Greeting="True"
-                       Title="Chữ &amp; Đêm" Subtitle="Đọc truyện mỗi đêm" />
+                       Title="FOLIO" Subtitle="Đọc truyện mỗi ngày" />
 
         <RefreshView Grid.Row="1" IsRefreshing="{Binding IsRefreshing}" Command="{Binding RefreshCommand}"
                      RefreshColor="{DynamicResource WebRoyal}">

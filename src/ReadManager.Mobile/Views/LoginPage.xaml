@@ -40,7 +40,7 @@
                         <Label Text="Đ" TextColor="White" FontFamily="BeVietnamExtraBold" FontSize="28"
                                HorizontalOptions="Center" VerticalOptions="Center" />
                     </Border>
-                    <Label Text="Chữ &amp; Đêm" TextColor="White" FontFamily="BeVietnamExtraBold" FontSize="26"
+                    <Label Text="FOLIO" TextColor="White" FontFamily="BeVietnamExtraBold" FontSize="26"
                            HorizontalTextAlignment="Center" />
                     <Label Text="Thư viện đọc truyện trực tuyến" TextColor="#A1A1AA" FontSize="13"
                            HorizontalTextAlignment="Center" />
@@ -52,7 +52,7 @@
             <Border Style="{StaticResource Panel}">
                 <VerticalStackLayout Spacing="14">
                     <Label Text="Đăng nhập" Style="{StaticResource LblH2}" />
-                    <Label Text="Chào mừng bạn quay lại Chữ &amp; Đêm." Style="{StaticResource LblMuted}" Margin="0,-8,0,4" />
+                    <Label Text="Chào mừng bạn quay lại FOLIO." Style="{StaticResource LblMuted}" Margin="0,-8,0,4" />
 
                     <VerticalStackLayout Spacing="6">
                         <Label Text="Email" Style="{StaticResource LblFieldName}" />

@@ -272,10 +272,13 @@ public class StreakService : IStreakService
         var st = await GetOrCreateAsync(userId);
         var rewards = await _db.StreakRewards.AsNoTracking().Where(r => r.UserId == userId).ToListAsync();
 
+        var owned = rewards.Select(r => (r.Kind, r.Code, r.Name)).ToList();
+
+        // Đồ người mới dùng ngay; đồ theo chuỗi cần chuỗi dài nhất >= mốc (StreakCatalog.IsUnlocked)
         if (string.IsNullOrWhiteSpace(dto.Title)) st.SelectedTitle = null;
         else
         {
-            if (!rewards.Any(r => r.Kind == "Title" && r.Name == dto.Title))
+            if (!StreakCatalog.IsUnlocked("Title", dto.Title, st.LongestStreak, owned))
                 throw new ArgumentException("Bạn chưa mở khóa danh hiệu này.");
             st.SelectedTitle = dto.Title;
         }
@@ -283,7 +286,7 @@ public class StreakService : IStreakService
         if (string.IsNullOrWhiteSpace(dto.Frame)) st.SelectedFrame = null;
         else
         {
-            if (!rewards.Any(r => r.Kind == "Frame" && r.Code == dto.Frame))
+            if (!StreakCatalog.IsUnlocked("Frame", dto.Frame, st.LongestStreak, owned))
                 throw new ArgumentException("Bạn chưa mở khóa khung avatar này.");
             st.SelectedFrame = dto.Frame;
         }
@@ -364,11 +367,18 @@ public class StreakService : IStreakService
                 Reached = reached.Contains(m.Days),
                 Rewards = DescribeRewards(m, reached.Contains(m.Days))
             }).ToList(),
-            Collection = StreakCatalog.CollectionItems().Select(x => new StreakRewardItemDto
-            {
-                Kind = x.Def.Kind, Code = x.Def.Code, Name = x.Def.Name,
-                Unlocked = has.Contains(x.Def.Kind + ":" + x.Def.Code)
-            }).ToList()
+            // Bộ sưu tập: đồ người mới (luôn mở) + huy hiệu / danh hiệu / khung theo mốc chuỗi
+            Collection = StreakCatalog.StarterItems.Select(d => new StreakRewardItemDto
+                {
+                    Kind = d.Kind, Code = d.Code, Name = d.Name, Unlocked = true, Milestone = 0, Starter = true
+                })
+                .Concat(StreakCatalog.CollectionItems().Select(x => new StreakRewardItemDto
+                {
+                    Kind = x.Def.Kind, Code = x.Def.Code, Name = x.Def.Name, Milestone = x.Milestone,
+                    Unlocked = has.Contains(x.Def.Kind + ":" + x.Def.Code)
+                               || (x.Def.Kind is "Title" or "Frame" && st.LongestStreak >= x.Milestone)
+                }))
+                .ToList()
         };
     }
 

@@ -3,6 +3,8 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:vm="clr-namespace:ReadManager.Mobile.ViewModels"
              xmlns:models="clr-namespace:ReadManager.Mobile.Models"
+             xmlns:ctl="clr-namespace:ReadManager.Mobile.Views.Controls"
+             xmlns:fx="clr-namespace:ReadManager.Mobile.Behaviors"
              x:DataType="vm:StreakViewModel"
              x:Class="ReadManager.Mobile.Views.StreakPage"
              Title="Chuỗi đọc sách"
@@ -36,7 +38,7 @@
                     <!-- ============ HERO: CHUỖI HIỆN TẠI ============ -->
                     <Border StrokeThickness="0">
                         <Border.StrokeShape>
-                            <RoundRectangle CornerRadius="8" />
+                            <RoundRectangle CornerRadius="20" />
                         </Border.StrokeShape>
                         <Border.Background>
                             <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
@@ -66,16 +68,13 @@
                                 </Label>
                             </VerticalStackLayout>
 
-                            <!-- Avatar xem trước với khung đang đeo -->
-                            <Border x:Name="AvatarPreview" Grid.Column="1" WidthRequest="64" HeightRequest="64"
-                                    StrokeThickness="{Binding Info.SelectedFrameThickness}"
-                                    Stroke="{Binding Info.SelectedFrameColor}"
-                                    BackgroundColor="#22FFFFFF" VerticalOptions="Center">
-                                <Border.StrokeShape>
-                                    <RoundRectangle CornerRadius="32" />
-                                </Border.StrokeShape>
-                                <Label Text="📖" FontSize="28" HorizontalOptions="Center" VerticalOptions="Center" />
-                            </Border>
+                            <!-- Avatar + khung + danh hiệu đang đeo (đổi ở trang Tài khoản) -->
+                            <VerticalStackLayout Grid.Column="1" Spacing="6" VerticalOptions="Center" HorizontalOptions="End">
+                                <ctl:AvatarView Diameter="74" Animated="True" HorizontalOptions="Center"
+                                                FrameCode="{Binding Info.SelectedFrame}" Source="{Binding AvatarSource}"
+                                                Initial="{Binding UserInitial}" />
+                                <ctl:TitleBadge Title="{Binding Info.SelectedTitle}" Small="True" HorizontalOptions="Center" />
+                            </VerticalStackLayout>
                         </Grid>
                     </Border>
 
@@ -119,69 +118,76 @@
 
                     <Button Text="Đọc truyện ngay" Style="{StaticResource BtnBrass}" Command="{Binding GoToBrowseCommand}" />
 
-                    <!-- ============ MỐC & PHẦN THƯỞNG ============ -->
-                    <Label Text="Các mốc thưởng" Style="{StaticResource LblH2}" FontSize="19" />
-                    <VerticalStackLayout Spacing="10" BindableLayout.ItemsSource="{Binding Info.Milestones}">
+                    <!-- ============ MỐC THƯỞNG: GIỮ CHUỖI ĐỦ N NGÀY -> NHẬN GÌ ============ -->
+                    <VerticalStackLayout Spacing="4" Margin="0,8,0,0">
+                        <Label Text="🎁 Mốc thưởng chuỗi" Style="{StaticResource LblH2}" FontSize="19" />
+                        <Label Text="Đọc ít nhất 1 chương mỗi ngày. Chuỗi chạm đúng số ngày của mốc là nhận thưởng ngay (mỗi mốc nhận 1 lần). Khung và danh hiệu nhận được sẽ mở khóa ở trang Tài khoản."
+                               Style="{StaticResource LblMuted}" FontSize="13" />
+                    </VerticalStackLayout>
+
+                    <VerticalStackLayout Spacing="12" BindableLayout.ItemsSource="{Binding Info.Milestones}">
                         <BindableLayout.ItemTemplate>
                             <DataTemplate x:DataType="models:StreakMilestone">
-                                <Border Style="{StaticResource Panel}" Opacity="{Binding ItemOpacity}">
-                                    <VerticalStackLayout Spacing="6">
-                                        <Label FontFamily="BeVietnamBold" FontSize="15" TextColor="{DynamicResource WebText}">
-                                            <Label.FormattedText>
-                                                <FormattedString>
-                                                    <Span Text="{Binding Mark}" />
-                                                    <Span Text="  " />
-                                                    <Span Text="{Binding Header}" />
-                                                </FormattedString>
-                                            </Label.FormattedText>
-                                        </Label>
-                                        <VerticalStackLayout Spacing="3" BindableLayout.ItemsSource="{Binding Rewards}">
-                                            <BindableLayout.ItemTemplate>
-                                                <DataTemplate x:DataType="models:StreakRewardItem">
-                                                    <Label Text="{Binding Display}" FontSize="13.5" TextColor="{DynamicResource WebText}" />
-                                                </DataTemplate>
-                                            </BindableLayout.ItemTemplate>
+                                <Border Style="{StaticResource Panel}" Padding="14" fx:Motion.Reveal="True">
+                                    <Grid ColumnDefinitions="64,*" ColumnSpacing="14">
+                                        <!-- Số ngày của mốc -->
+                                        <Border Grid.Column="0" WidthRequest="64" HeightRequest="64" StrokeThickness="3"
+                                                Stroke="{Binding DayColor}" VerticalOptions="Start" BackgroundColor="{DynamicResource WebSurface2}">
+                                            <Border.StrokeShape>
+                                                <RoundRectangle CornerRadius="32" />
+                                            </Border.StrokeShape>
+                                            <VerticalStackLayout VerticalOptions="Center" Spacing="-4">
+                                                <Label Text="{Binding Days}" FontFamily="BeVietnamExtraBold" FontSize="21"
+                                                       TextColor="{Binding DayColor}" HorizontalTextAlignment="Center" />
+                                                <Label Text="ngày" FontSize="10.5" TextColor="{DynamicResource WebMuted}" HorizontalTextAlignment="Center" />
+                                            </VerticalStackLayout>
+                                        </Border>
+
+                                        <VerticalStackLayout Grid.Column="1" Spacing="6">
+                                            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="6">
+                                                <Label Text="{Binding Name}" FontFamily="BeVietnamExtraBold" FontSize="16"
+                                                       TextColor="{DynamicResource WebText}" />
+                                                <Label Grid.Column="1" Text="{Binding Mark}" FontSize="16" />
+                                            </Grid>
+                                            <Label Text="{Binding GoalText}" FontSize="12.5" TextColor="{DynamicResource WebMuted}" />
+                                            <ProgressBar Progress="{Binding Progress}" ProgressColor="#F97316" HeightRequest="5" />
+                                            <Label Text="{Binding StateText}" FontSize="12.5" FontFamily="BeVietnamBold" TextColor="{Binding StateColor}" />
+
+                                            <!-- Khung + danh hiệu của mốc (xem trước; chưa đạt thì xám + khóa) -->
+                                            <FlexLayout Wrap="Wrap" AlignItems="Center" BindableLayout.ItemsSource="{Binding Cosmetics}">
+                                                <BindableLayout.ItemTemplate>
+                                                    <DataTemplate x:DataType="models:StreakRewardItem">
+                                                        <Grid Margin="0,4,10,4">
+                                                            <HorizontalStackLayout Spacing="6" IsVisible="{Binding IsFrame}">
+                                                                <ctl:AvatarView Diameter="40" FrameCode="{Binding Code}" Locked="{Binding Locked}"
+                                                                                Initial="{Binding Source={RelativeSource AncestorType={x:Type vm:StreakViewModel}}, Path=UserInitial}" />
+                                                                <Label Text="{Binding Name}" FontSize="12.5" FontFamily="BeVietnamSemiBold"
+                                                                       TextColor="{DynamicResource WebText}" VerticalOptions="Center" />
+                                                            </HorizontalStackLayout>
+                                                            <!-- bọc ngoài vì TitleBadge tự bật / tắt IsVisible theo Title -->
+                                                            <ContentView IsVisible="{Binding IsTitle}">
+                                                                <ctl:TitleBadge Title="{Binding Name}" Locked="{Binding Locked}" />
+                                                            </ContentView>
+                                                        </Grid>
+                                                    </DataTemplate>
+                                                </BindableLayout.ItemTemplate>
+                                            </FlexLayout>
+
+                                            <!-- Phần thưởng khác: thẻ bảo vệ, mã giảm giá, huy hiệu... -->
+                                            <VerticalStackLayout Spacing="2" BindableLayout.ItemsSource="{Binding Others}">
+                                                <BindableLayout.ItemTemplate>
+                                                    <DataTemplate x:DataType="models:StreakRewardItem">
+                                                        <Label Text="{Binding Display}" FontSize="12.5" TextColor="{DynamicResource WebText}"
+                                                               Opacity="{Binding ItemOpacity}" />
+                                                    </DataTemplate>
+                                                </BindableLayout.ItemTemplate>
+                                            </VerticalStackLayout>
                                         </VerticalStackLayout>
-                                    </VerticalStackLayout>
+                                    </Grid>
                                 </Border>
                             </DataTemplate>
                         </BindableLayout.ItemTemplate>
                     </VerticalStackLayout>
-
-                    <!-- ============ BỘ SƯU TẬP ============ -->
-                    <Label Text="Bộ sưu tập" Style="{StaticResource LblH2}" FontSize="19" />
-                    <Border Style="{StaticResource Panel}">
-                        <VerticalStackLayout Spacing="8">
-                            <Label Text="{Binding Info.TitleText}" FontSize="13.5" TextColor="{DynamicResource WebText}" FontFamily="BeVietnamBold" />
-                            <Label Text="{Binding Info.FrameText}" FontSize="13.5" TextColor="{DynamicResource WebText}" FontFamily="BeVietnamBold" />
-                            <Grid ColumnDefinitions="*,*" ColumnSpacing="8">
-                                <Button Grid.Column="0" Text="Bỏ danh hiệu" Style="{StaticResource BtnOutlineSm}"
-                                        Command="{Binding UnequipTitleCommand}" />
-                                <Button Grid.Column="1" Text="Bỏ khung" Style="{StaticResource BtnOutlineSm}"
-                                        Command="{Binding UnequipFrameCommand}" />
-                            </Grid>
-                            <BoxView HeightRequest="1" Color="{DynamicResource WebBorder}" />
-                            <VerticalStackLayout Spacing="8" BindableLayout.ItemsSource="{Binding Collection}">
-                                <BindableLayout.ItemTemplate>
-                                    <DataTemplate x:DataType="models:StreakRewardItem">
-                                        <Grid ColumnDefinitions="*,Auto" Opacity="{Binding ItemOpacity}">
-                                            <VerticalStackLayout Grid.Column="0" Spacing="1" VerticalOptions="Center">
-                                                <Label Text="{Binding Display}" FontSize="14" TextColor="{DynamicResource WebText}" />
-                                                <Label Text="{Binding StateText}" Style="{StaticResource LblCardMeta}" />
-                                            </VerticalStackLayout>
-                                            <Button Grid.Column="1" Text="Đeo" Style="{StaticResource BtnBrassSm}"
-                                                    IsVisible="{Binding CanEquip}"
-                                                    Command="{Binding Source={RelativeSource AncestorType={x:Type vm:StreakViewModel}}, Path=EquipCommand}"
-                                                    CommandParameter="{Binding .}" />
-                                        </Grid>
-                                    </DataTemplate>
-                                </BindableLayout.ItemTemplate>
-                            </VerticalStackLayout>
-                        </VerticalStackLayout>
-                    </Border>
-
-                    <Button Text="🎟 Dùng mã giảm giá — xem các gói đọc" Style="{StaticResource BtnOutlineSm}" HeightRequest="44"
-                            Command="{Binding GoToPlansCommand}" />
 
                     <!-- ============ THÔNG BÁO VỀ CHUỖI ============ -->
                     <Grid ColumnDefinitions="*,Auto">
