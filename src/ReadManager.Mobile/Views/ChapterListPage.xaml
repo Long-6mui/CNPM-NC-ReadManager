@@ -11,34 +11,49 @@
         <BackButtonBehavior IconOverride="ic_back.png" />
     </Shell.BackButtonBehavior>
 
-    <Grid RowDefinitions="Auto,*" Padding="16">
+    <Grid RowDefinitions="Auto,*" Padding="16,12,16,0">
 
-        <VerticalStackLayout Grid.Row="0"><Label Text="{Binding ErrorMessage}" TextColor="Red" />
-        <ActivityIndicator IsRunning="{Binding IsBusy}" IsVisible="{Binding IsBusy}" /></VerticalStackLayout>
+        <VerticalStackLayout Grid.Row="0">
+            <Label Text="{Binding ErrorMessage}" TextColor="{StaticResource WebCrimson}"
+                   IsVisible="{Binding ErrorMessage, Converter={StaticResource StringToBoolConverter}}" />
+            <ActivityIndicator IsRunning="{Binding IsBusy}" IsVisible="{Binding IsBusy}" Color="{StaticResource WebRoyal}" />
+        </VerticalStackLayout>
 
-        <CollectionView Grid.Row="1" ItemsSource="{Binding Chapters}">
-            <CollectionView.EmptyView><Label Text="Chưa có chương công khai." /></CollectionView.EmptyView>
+        <CollectionView Grid.Row="1" ItemsSource="{Binding Chapters}" SelectionMode="None">
+            <CollectionView.ItemsLayout>
+                <LinearItemsLayout Orientation="Vertical" ItemSpacing="8" />
+            </CollectionView.ItemsLayout>
+            <CollectionView.Footer>
+                <BoxView HeightRequest="20" Color="Transparent" />
+            </CollectionView.Footer>
+            <CollectionView.EmptyView>
+                <Label Text="Chưa có chương công khai." Style="{StaticResource LblMuted}"
+                       HorizontalTextAlignment="Center" Margin="0,40" />
+            </CollectionView.EmptyView>
             <CollectionView.ItemTemplate>
                 <DataTemplate x:DataType="models:ChapterSummary">
-                    <Grid Padding="0,10" ColumnDefinitions="*,Auto">
-                        <Grid.GestureRecognizers>
-                            <TapGestureRecognizer
-                                Command="{Binding Source={RelativeSource AncestorType={x:Type vm:ChapterListViewModel}}, Path=OpenChapterCommand}"
-                                CommandParameter="{Binding .}" />
-                        </Grid.GestureRecognizers>
+                    <Border Style="{StaticResource Panel}" Padding="14,12">
+                        <Border.StrokeShape>
+                            <RoundRectangle CornerRadius="12" />
+                        </Border.StrokeShape>
+                        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
+                            <Grid.GestureRecognizers>
+                                <TapGestureRecognizer
+                                    Command="{Binding Source={RelativeSource AncestorType={x:Type vm:ChapterListViewModel}}, Path=OpenChapterCommand}"
+                                    CommandParameter="{Binding .}" />
+                            </Grid.GestureRecognizers>
 
-                        <VerticalStackLayout Grid.Column="0">
-                            <Label Text="{Binding ChapterNumber, StringFormat='Chương {0}'}" FontAttributes="Bold" FontSize="15" />
-                            <Label Text="{Binding Title}" FontSize="13" TextColor="Gray" />
-                        </VerticalStackLayout>
+                            <VerticalStackLayout Grid.Column="0" Spacing="2">
+                                <Label Text="{Binding ChapterNumber, StringFormat='Chương {0}'}" FontFamily="BeVietnamBold"
+                                       FontSize="15" TextColor="{StaticResource WebText}" />
+                                <Label Text="{Binding Title}" FontSize="13" TextColor="{StaticResource WebMuted}"
+                                       LineBreakMode="TailTruncation" MaxLines="1" />
+                            </VerticalStackLayout>
 
-                        <Label Grid.Column="1"
-                               Text="{Binding AccessText}"
-                               FontSize="12"
-                               FontAttributes="Bold"
-                               TextColor="{Binding AccessColor}"
-                               VerticalOptions="Center" />
-                    </Grid>
+                            <Label Grid.Column="1" Text="{Binding AccessText}" FontSize="12" FontFamily="BeVietnamBold"
+                                   TextColor="{Binding AccessColor}" VerticalOptions="Center" />
+                        </Grid>
+                    </Border>
                 </DataTemplate>
             </CollectionView.ItemTemplate>
         </CollectionView>

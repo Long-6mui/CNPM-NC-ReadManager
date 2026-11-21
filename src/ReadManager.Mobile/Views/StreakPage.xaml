@@ -18,7 +18,7 @@
 
                 <Label Text="{Binding ErrorMessage}" TextColor="{StaticResource WebCrimson}"
                        IsVisible="{Binding ErrorMessage, Converter={StaticResource StringToBoolConverter}}" />
-                <Label Text="{Binding Message}" TextColor="{StaticResource WebSage}" FontAttributes="Bold"
+                <Label Text="{Binding Message}" TextColor="{StaticResource WebSage}" FontFamily="BeVietnamBold"
                        IsVisible="{Binding Message, Converter={StaticResource StringToBoolConverter}}" />
 
                 <!-- ============ CHƯA ĐĂNG NHẬP ============ -->
@@ -40,20 +40,20 @@
                         </Border.StrokeShape>
                         <Border.Background>
                             <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
-                                <GradientStop Color="#0B1F4B" Offset="0.0" />
-                                <GradientStop Color="#12347D" Offset="1.0" />
+                                <GradientStop Color="#14101F" Offset="0.0" />
+                                <GradientStop Color="#2A1B3D" Offset="1.0" />
                             </LinearGradientBrush>
                         </Border.Background>
                         <Grid Padding="20" ColumnDefinitions="*,Auto" ColumnSpacing="12">
                             <VerticalStackLayout Grid.Column="0" Spacing="4">
                                 <HorizontalStackLayout Spacing="8">
                                     <Label Text="🔥" FontSize="44" TextColor="{Binding Info.FlameColor}" VerticalOptions="Center" />
-                                    <Label Text="{Binding Info.CurrentStreak}" FontSize="46" FontAttributes="Bold"
+                                    <Label Text="{Binding Info.CurrentStreak}" FontSize="46"
                                            TextColor="White" FontFamily="{StaticResource SerifFont}" VerticalOptions="Center" />
-                                    <Label Text="ngày" FontSize="16" TextColor="#C3D2F5" VerticalOptions="End" Margin="0,0,0,10" />
+                                    <Label Text="ngày" FontSize="16" TextColor="#CBD5E1" VerticalOptions="End" Margin="0,0,0,10" />
                                 </HorizontalStackLayout>
-                                <Label Text="{Binding Info.StatusText}" TextColor="#C3D2F5" FontSize="13.5" />
-                                <Label TextColor="{StaticResource WebAmber}" FontSize="13" FontAttributes="Bold">
+                                <Label Text="{Binding Info.StatusText}" TextColor="#CBD5E1" FontSize="13.5" />
+                                <Label TextColor="{StaticResource WebAmber}" FontSize="13" FontFamily="BeVietnamBold">
                                     <Label.FormattedText>
                                         <FormattedString>
                                             <Span Text="Dài nhất: " />
@@ -126,7 +126,7 @@
                             <DataTemplate x:DataType="models:StreakMilestone">
                                 <Border Style="{StaticResource Panel}" Opacity="{Binding ItemOpacity}">
                                     <VerticalStackLayout Spacing="6">
-                                        <Label FontAttributes="Bold" FontSize="15" TextColor="{StaticResource WebText}">
+                                        <Label FontFamily="BeVietnamBold" FontSize="15" TextColor="{StaticResource WebText}">
                                             <Label.FormattedText>
                                                 <FormattedString>
                                                     <Span Text="{Binding Mark}" />
@@ -152,8 +152,8 @@
                     <Label Text="Bộ sưu tập" Style="{StaticResource LblH2}" FontSize="19" />
                     <Border Style="{StaticResource Panel}">
                         <VerticalStackLayout Spacing="8">
-                            <Label Text="{Binding Info.TitleText}" FontSize="13.5" TextColor="{StaticResource WebText}" FontAttributes="Bold" />
-                            <Label Text="{Binding Info.FrameText}" FontSize="13.5" TextColor="{StaticResource WebText}" FontAttributes="Bold" />
+                            <Label Text="{Binding Info.TitleText}" FontSize="13.5" TextColor="{StaticResource WebText}" FontFamily="BeVietnamBold" />
+                            <Label Text="{Binding Info.FrameText}" FontSize="13.5" TextColor="{StaticResource WebText}" FontFamily="BeVietnamBold" />
                             <Grid ColumnDefinitions="*,*" ColumnSpacing="8">
                                 <Button Grid.Column="0" Text="Bỏ danh hiệu" Style="{StaticResource BtnOutlineSm}"
                                         Command="{Binding UnequipTitleCommand}" />
@@ -214,7 +214,7 @@
                             <DataTemplate x:DataType="models:StreakRankItem">
                                 <Border Style="{StaticResource Panel}" Padding="12">
                                     <VerticalStackLayout Spacing="2">
-                                        <Label Text="{Binding Line1}" FontSize="14" FontAttributes="Bold" TextColor="{StaticResource WebText}" />
+                                        <Label Text="{Binding Line1}" FontSize="14" FontFamily="BeVietnamBold" TextColor="{StaticResource WebText}" />
                                         <Label Text="{Binding Line2}" Style="{StaticResource LblCardMeta}" />
                                     </VerticalStackLayout>
                                 </Border>

@@ -28,22 +28,22 @@
                 <Border.StrokeShape>
                     <RoundRectangle CornerRadius="8" />
                 </Border.StrokeShape>
-                <Label Text="{Binding AlertMessage}" TextColor="#8A5A00" FontSize="13.5" FontAttributes="Bold" />
+                <Label Text="{Binding AlertMessage}" TextColor="#8A5A00" FontSize="13.5" FontFamily="BeVietnamBold" />
             </Border>
 
             <!-- Gói đang dùng -->
             <Border Style="{StaticResource Panel}" IsVisible="{Binding HasMyPlans}">
                 <VerticalStackLayout Spacing="8">
-                    <Label Text="Gói của tôi" FontSize="15" FontAttributes="Bold" TextColor="{StaticResource WebText}" />
+                    <Label Text="Gói của tôi" FontSize="15" FontFamily="BeVietnamBold" TextColor="{StaticResource WebText}" />
                     <VerticalStackLayout BindableLayout.ItemsSource="{Binding MyPlans}" Spacing="8">
                         <BindableLayout.ItemTemplate>
                             <DataTemplate x:DataType="models:PlanEntitlement">
                                 <Grid ColumnDefinitions="*,Auto">
                                     <VerticalStackLayout Spacing="2">
-                                        <Label Text="{Binding PlanName}" FontSize="14" FontAttributes="Bold" TextColor="{StaticResource WebText}" />
+                                        <Label Text="{Binding PlanName}" FontSize="14" FontFamily="BeVietnamBold" TextColor="{StaticResource WebText}" />
                                         <Label Text="{Binding ExpiresText}" Style="{StaticResource LblCardMeta}" />
                                     </VerticalStackLayout>
-                                    <Label Grid.Column="1" Text="{Binding RemainingText}" FontSize="12" FontAttributes="Bold"
+                                    <Label Grid.Column="1" Text="{Binding RemainingText}" FontSize="12" FontFamily="BeVietnamBold"
                                            TextColor="{StaticResource WebSage}" VerticalOptions="Center" />
                                 </Grid>
                             </DataTemplate>
@@ -59,7 +59,7 @@
                         <Border Style="{StaticResource Panel}">
                             <VerticalStackLayout Spacing="8">
                                 <Label Text="{Binding Name}" Style="{StaticResource LblH2}" FontSize="18" />
-                                <Label Text="{Binding PriceText}" FontSize="28" FontAttributes="Bold"
+                                <Label Text="{Binding PriceText}" FontSize="28"
                                        FontFamily="{StaticResource SerifFont}" TextColor="{StaticResource WebCrimson}" />
                                 <Label Text="{Binding DurationText, StringFormat='• {0}'}" Style="{StaticResource LblMuted}" />
                                 <Label Text="{Binding ScopeText, StringFormat='• {0}'}" Style="{StaticResource LblMuted}" />

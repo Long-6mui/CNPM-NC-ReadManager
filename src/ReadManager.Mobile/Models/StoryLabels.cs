@@ -15,8 +15,8 @@ public static class StoryLabels
     public static Color AccessColor(string? access) => access switch
     {
         "Free" => Color.FromArgb("#12A150"),
-        "Paid" => Color.FromArgb("#E5484D"),
-        _ => Color.FromArgb("#173FB0")
+        "Paid" => Color.FromArgb("#DC2626"),
+        _ => Color.FromArgb("#BE123C")
     };
 
     public static string Status(string? status) => status switch

@@ -11,15 +11,15 @@
     <Grid RowDefinitions="Auto,Auto,*">
 
         <!-- Ba mục: Đã xem gần đây | Yêu thích | Đã mua -->
-        <ScrollView Grid.Row="0" Orientation="Horizontal" BackgroundColor="White" HorizontalScrollBarVisibility="Never">
+        <ScrollView Grid.Row="0" Orientation="Horizontal" BackgroundColor="#F6F5F2" HorizontalScrollBarVisibility="Never">
         <HorizontalStackLayout Spacing="8" Padding="16,12">
             <Button Text="Đang đọc" Style="{StaticResource TabBtn}"
                     Command="{Binding SelectTabCommand}" CommandParameter="3">
                 <Button.Triggers>
                     <DataTrigger TargetType="Button" Binding="{Binding IsTab3}" Value="True">
-                        <Setter Property="BackgroundColor" Value="{StaticResource WebNavy}" />
+                        <Setter Property="BackgroundColor" Value="{StaticResource WebRoyal}" />
                         <Setter Property="TextColor" Value="White" />
-                        <Setter Property="BorderColor" Value="{StaticResource WebNavy}" />
+                        <Setter Property="BorderColor" Value="{StaticResource WebRoyal}" />
                     </DataTrigger>
                 </Button.Triggers>
             </Button>
@@ -27,9 +27,9 @@
                     Command="{Binding SelectTabCommand}" CommandParameter="0">
                 <Button.Triggers>
                     <DataTrigger TargetType="Button" Binding="{Binding IsTab0}" Value="True">
-                        <Setter Property="BackgroundColor" Value="{StaticResource WebNavy}" />
+                        <Setter Property="BackgroundColor" Value="{StaticResource WebRoyal}" />
                         <Setter Property="TextColor" Value="White" />
-                        <Setter Property="BorderColor" Value="{StaticResource WebNavy}" />
+                        <Setter Property="BorderColor" Value="{StaticResource WebRoyal}" />
                     </DataTrigger>
                 </Button.Triggers>
             </Button>
@@ -37,9 +37,9 @@
                     Command="{Binding SelectTabCommand}" CommandParameter="1">
                 <Button.Triggers>
                     <DataTrigger TargetType="Button" Binding="{Binding IsTab1}" Value="True">
-                        <Setter Property="BackgroundColor" Value="{StaticResource WebNavy}" />
+                        <Setter Property="BackgroundColor" Value="{StaticResource WebRoyal}" />
                         <Setter Property="TextColor" Value="White" />
-                        <Setter Property="BorderColor" Value="{StaticResource WebNavy}" />
+                        <Setter Property="BorderColor" Value="{StaticResource WebRoyal}" />
                     </DataTrigger>
                 </Button.Triggers>
             </Button>
@@ -47,9 +47,9 @@
                     Command="{Binding SelectTabCommand}" CommandParameter="2">
                 <Button.Triggers>
                     <DataTrigger TargetType="Button" Binding="{Binding IsTab2}" Value="True">
-                        <Setter Property="BackgroundColor" Value="{StaticResource WebNavy}" />
+                        <Setter Property="BackgroundColor" Value="{StaticResource WebRoyal}" />
                         <Setter Property="TextColor" Value="White" />
-                        <Setter Property="BorderColor" Value="{StaticResource WebNavy}" />
+                        <Setter Property="BorderColor" Value="{StaticResource WebRoyal}" />
                     </DataTrigger>
                 </Button.Triggers>
             </Button>
@@ -78,7 +78,7 @@
                             <Border Grid.Column="0" HeightRequest="100" StrokeThickness="1"
                                     Stroke="{StaticResource WebBorder}" VerticalOptions="Start">
                                 <Border.StrokeShape>
-                                    <RoundRectangle CornerRadius="4" />
+                                    <RoundRectangle CornerRadius="12" />
                                 </Border.StrokeShape>
                                 <Border.GestureRecognizers>
                                     <TapGestureRecognizer
@@ -88,12 +88,12 @@
                                 <Grid>
                                     <Grid.Background>
                                         <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
-                                            <GradientStop Color="#3B4E63" Offset="0.0" />
-                                            <GradientStop Color="#22303F" Offset="1.0" />
+                                            <GradientStop Color="#3F3A55" Offset="0.0" />
+                                            <GradientStop Color="#1E1B2E" Offset="1.0" />
                                         </LinearGradientBrush>
                                     </Grid.Background>
                                     <Label Text="{Binding Title}" IsVisible="{Binding HasNoCover}"
-                                           FontFamily="{StaticResource SerifFont}" FontSize="9.5" FontAttributes="Bold"
+                                           FontFamily="{StaticResource SerifFont}" FontSize="9.5"
                                            TextColor="White" HorizontalTextAlignment="Center"
                                            VerticalOptions="Center" Margin="4" />
                                     <Image Source="{Binding CoverUrl}" IsVisible="{Binding HasCover}" Aspect="AspectFill" />
@@ -166,16 +166,16 @@
                 <!-- Gói đang dùng -->
                 <Border Style="{StaticResource Panel}" IsVisible="{Binding HasMyPlans}">
                     <VerticalStackLayout Spacing="10">
-                        <Label Text="Gói đang dùng" FontSize="15" FontAttributes="Bold" TextColor="{StaticResource WebText}" />
+                        <Label Text="Gói đang dùng" FontSize="15" FontFamily="BeVietnamBold" TextColor="{StaticResource WebText}" />
                         <VerticalStackLayout BindableLayout.ItemsSource="{Binding MyPlans}" Spacing="10">
                             <BindableLayout.ItemTemplate>
                                 <DataTemplate x:DataType="models:PlanEntitlement">
                                     <Grid ColumnDefinitions="*,Auto">
                                         <VerticalStackLayout Spacing="2">
-                                            <Label Text="{Binding PlanName}" FontSize="14" FontAttributes="Bold" TextColor="{StaticResource WebText}" />
+                                            <Label Text="{Binding PlanName}" FontSize="14" FontFamily="BeVietnamBold" TextColor="{StaticResource WebText}" />
                                             <Label Text="{Binding ExpiresText}" Style="{StaticResource LblCardMeta}" />
                                         </VerticalStackLayout>
-                                        <Label Grid.Column="1" Text="{Binding RemainingText}" FontSize="12" FontAttributes="Bold"
+                                        <Label Grid.Column="1" Text="{Binding RemainingText}" FontSize="12" FontFamily="BeVietnamBold"
                                                TextColor="{StaticResource WebSage}" VerticalOptions="Center" />
                                     </Grid>
                                 </DataTemplate>
@@ -187,7 +187,7 @@
                 <!-- Truyện đã mua trọn bộ -->
                 <Border Style="{StaticResource Panel}" IsVisible="{Binding HasOwnedStories}">
                     <VerticalStackLayout Spacing="10">
-                        <Label Text="Truyện đã mua trọn bộ" FontSize="15" FontAttributes="Bold" TextColor="{StaticResource WebText}" />
+                        <Label Text="Truyện đã mua trọn bộ" FontSize="15" FontFamily="BeVietnamBold" TextColor="{StaticResource WebText}" />
                         <VerticalStackLayout BindableLayout.ItemsSource="{Binding OwnedStories}" Spacing="10">
                             <BindableLayout.ItemTemplate>
                                 <DataTemplate x:DataType="models:OwnedStory">
@@ -198,7 +198,7 @@
                                                 CommandParameter="{Binding .}" />
                                         </Grid.GestureRecognizers>
                                         <VerticalStackLayout Spacing="2">
-                                            <Label Text="{Binding Title}" FontSize="14" FontAttributes="Bold" TextColor="{StaticResource WebText}"
+                                            <Label Text="{Binding Title}" FontSize="14" FontFamily="BeVietnamBold" TextColor="{StaticResource WebText}"
                                                    LineBreakMode="TailTruncation" MaxLines="1" />
                                             <Label Text="{Binding PurchasedText}" Style="{StaticResource LblCardMeta}" />
                                         </VerticalStackLayout>

@@ -45,7 +45,7 @@
                                      Color="{StaticResource WebAmber}" IsVisible="{Binding IsUnread}" />
                             <VerticalStackLayout Grid.Column="1" Spacing="3">
                                 <Label Text="{Binding Message}" FontSize="14" TextColor="{StaticResource WebText}" />
-                                <Label Text="{Binding TargetText}" FontSize="12" FontAttributes="Bold" TextColor="{StaticResource WebRoyal}" />
+                                <Label Text="{Binding TargetText}" FontSize="12" FontFamily="BeVietnamBold" TextColor="{StaticResource WebRoyal}" />
                                 <Label Text="{Binding TimeText}" Style="{StaticResource LblCardMeta}" />
                             </VerticalStackLayout>
                         </Grid>

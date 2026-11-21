@@ -12,7 +12,42 @@
     </Shell.BackButtonBehavior>
 
     <ScrollView>
-        <VerticalStackLayout Padding="20,28" Spacing="14">
+        <VerticalStackLayout Spacing="0">
+
+            <!-- Đầu trang thương hiệu (nền tối + logo đỏ như thanh trên của web) -->
+            <Grid Padding="24,40,24,64">
+                <Grid.Background>
+                    <RadialGradientBrush Center="0.8,0.2" Radius="1.2">
+                        <GradientStop Color="#2A1B3D" Offset="0.0" />
+                        <GradientStop Color="#0A0D17" Offset="0.7" />
+                        <GradientStop Color="#06080D" Offset="1.0" />
+                    </RadialGradientBrush>
+                </Grid.Background>
+                <VerticalStackLayout Spacing="10" HorizontalOptions="Center">
+                    <Border WidthRequest="56" HeightRequest="56" StrokeThickness="0" HorizontalOptions="Center">
+                        <Border.StrokeShape>
+                            <RoundRectangle CornerRadius="16" />
+                        </Border.StrokeShape>
+                        <Border.Background>
+                            <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                <GradientStop Color="#E11D48" Offset="0.0" />
+                                <GradientStop Color="#9F1239" Offset="1.0" />
+                            </LinearGradientBrush>
+                        </Border.Background>
+                        <Border.Shadow>
+                            <Shadow Brush="#E11D48" Offset="0,8" Radius="18" Opacity="0.45" />
+                        </Border.Shadow>
+                        <Label Text="Đ" TextColor="White" FontFamily="BeVietnamExtraBold" FontSize="28"
+                               HorizontalOptions="Center" VerticalOptions="Center" />
+                    </Border>
+                    <Label Text="Chữ &amp; Đêm" TextColor="White" FontFamily="BeVietnamExtraBold" FontSize="26"
+                           HorizontalTextAlignment="Center" />
+                    <Label Text="Thư viện đọc truyện trực tuyến" TextColor="#A1A1AA" FontSize="13"
+                           HorizontalTextAlignment="Center" />
+                </VerticalStackLayout>
+            </Grid>
+
+            <VerticalStackLayout Padding="20,0,20,28" Spacing="14" Margin="0,-40,0,0">
 
             <Border Style="{StaticResource Panel}">
                 <VerticalStackLayout Spacing="14">
@@ -59,6 +94,7 @@
             <Button Text="← Về trang chủ" Style="{StaticResource BtnLink}"
                     Command="{Binding GoHomeCommand}" HorizontalOptions="Center" />
 
+            </VerticalStackLayout>
         </VerticalStackLayout>
     </ScrollView>
 </ContentPage>

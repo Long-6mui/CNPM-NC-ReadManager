@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentView xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="ReadManager.Mobile.Views.Controls.FloatingHeroView">
+
+    <!-- HERO "SÁCH BAY" — giống hero 3D của web (marvel-3d-theme.css):
+         nền tối + hào quang, sách bìa cứng ở giữa tự đổi, các bìa truyện vệ tinh bay lơ lửng tự động. -->
+    <Grid RowDefinitions="310,Auto" RowSpacing="0" Padding="0,0,0,58" IsClippedToBounds="True">
+        <Grid.Background>
+            <RadialGradientBrush Center="0.7,0.3" Radius="1.15">
+                <GradientStop Color="#231A3F" Offset="0.0" />
+                <GradientStop Color="#0A0D17" Offset="0.55" />
+                <GradientStop Color="#06080D" Offset="1.0" />
+            </RadialGradientBrush>
+        </Grid.Background>
+
+        <!-- Hào quang (nebula) trôi nhẹ -->
+        <Ellipse x:Name="Nebula" Grid.Row="0" WidthRequest="280" HeightRequest="280"
+                 HorizontalOptions="End" VerticalOptions="Start" Margin="0,0,-70,0" InputTransparent="True">
+            <Ellipse.Fill>
+                <RadialGradientBrush Center="0.5,0.5" Radius="0.5">
+                    <GradientStop Color="#55E11D48" Offset="0.0" />
+                    <GradientStop Color="#286366F1" Offset="0.55" />
+                    <GradientStop Color="#00000000" Offset="1.0" />
+                </RadialGradientBrush>
+            </Ellipse.Fill>
+        </Ellipse>
+        <Ellipse x:Name="Nebula2" Grid.Row="0" WidthRequest="220" HeightRequest="220"
+                 HorizontalOptions="Start" VerticalOptions="End" Margin="-80,0,0,-30" InputTransparent="True">
+            <Ellipse.Fill>
+                <RadialGradientBrush Center="0.5,0.5" Radius="0.5">
+                    <GradientStop Color="#406366F1" Offset="0.0" />
+                    <GradientStop Color="#00000000" Offset="1.0" />
+                </RadialGradientBrush>
+            </Ellipse.Fill>
+        </Ellipse>
+
+        <!-- Sàn sân khấu: vệt sáng đỏ mờ ở đáy -->
+        <BoxView Grid.Row="0" HeightRequest="80" VerticalOptions="End" InputTransparent="True">
+            <BoxView.Background>
+                <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                    <GradientStop Color="#00E11D48" Offset="0.0" />
+                    <GradientStop Color="#26E11D48" Offset="1.0" />
+                </LinearGradientBrush>
+            </BoxView.Background>
+        </BoxView>
+
+        <!-- Sân khấu: thẻ vệ tinh + sách chính được tạo bằng code -->
+        <AbsoluteLayout x:Name="Stage" Grid.Row="0" />
+
+        <!-- Chữ -->
+        <VerticalStackLayout x:Name="TextPanel" Grid.Row="1" Padding="22,6,22,0" Spacing="9">
+            <Border x:Name="PillBorder" HorizontalOptions="Start" Padding="12,5" StrokeThickness="1"
+                    Stroke="#2AFFFFFF" BackgroundColor="#14FFFFFF">
+                <Border.StrokeShape>
+                    <RoundRectangle CornerRadius="14" />
+                </Border.StrokeShape>
+                <HorizontalStackLayout Spacing="7">
+                    <Ellipse WidthRequest="6" HeightRequest="6" Fill="#FB7185" VerticalOptions="Center" />
+                    <Label x:Name="PillLabel" TextColor="#F1F5F9" FontSize="12" FontAttributes="Bold" />
+                </HorizontalStackLayout>
+            </Border>
+
+            <Label x:Name="TitleLabel" TextColor="White" FontFamily="{StaticResource SerifFont}"
+                   FontSize="28" FontAttributes="Bold" MaxLines="2" LineBreakMode="TailTruncation" />
+            <Label x:Name="MetaLabel" TextColor="#FBBF24" FontSize="12.5" FontAttributes="Bold" LineBreakMode="TailTruncation" MaxLines="1" />
+            <Label x:Name="BlurbLabel" TextColor="#B7C0D6" FontSize="13.5" MaxLines="3" LineBreakMode="TailTruncation" />
+
+            <HorizontalStackLayout Spacing="10" Margin="0,6,0,0">
+                <Button x:Name="ReadBtn" Text="Đọc ngay  →" BackgroundColor="#E11D48" TextColor="White"
+                        FontAttributes="Bold" CornerRadius="10" Padding="22,0" HeightRequest="44" Clicked="OnReadClicked" />
+                <Button x:Name="BrowseBtn" Text="Khám phá thư viện" BackgroundColor="Transparent" TextColor="White"
+                        BorderColor="#55FFFFFF" BorderWidth="1" CornerRadius="10" Padding="16,0" HeightRequest="44"
+                        Clicked="OnBrowseClicked" />
+            </HorizontalStackLayout>
+
+            <HorizontalStackLayout x:Name="DotsRow" Spacing="6" Margin="0,8,0,0" />
+        </VerticalStackLayout>
+    </Grid>
+</ContentView>

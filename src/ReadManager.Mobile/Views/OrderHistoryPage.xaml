@@ -24,9 +24,9 @@
                                 CommandParameter="{Binding Key}">
                             <Button.Triggers>
                                 <DataTrigger TargetType="Button" Binding="{Binding IsSelected}" Value="True">
-                                    <Setter Property="BackgroundColor" Value="{StaticResource WebNavy}" />
+                                    <Setter Property="BackgroundColor" Value="{StaticResource WebRoyal}" />
                                     <Setter Property="TextColor" Value="White" />
-                                    <Setter Property="BorderColor" Value="{StaticResource WebNavy}" />
+                                    <Setter Property="BorderColor" Value="{StaticResource WebRoyal}" />
                                 </DataTrigger>
                             </Button.Triggers>
                         </Button>
@@ -58,7 +58,7 @@
                                 CommandParameter="{Binding .}" />
                         </Border.GestureRecognizers>
                         <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto,Auto" RowSpacing="3" ColumnSpacing="8">
-                            <Label Grid.ColumnSpan="2" Text="{Binding TypeLabel}" FontSize="11.5" FontAttributes="Bold"
+                            <Label Grid.ColumnSpan="2" Text="{Binding TypeLabel}" FontSize="11.5" FontFamily="BeVietnamBold"
                                    TextColor="{StaticResource WebMuted}" />
                             <Label Grid.Row="1" Text="{Binding ItemName}" Style="{StaticResource LblCardTitle}" FontSize="15" />
                             <Border Grid.Row="1" Grid.Column="1" Padding="9,3" StrokeThickness="0"
@@ -66,7 +66,7 @@
                                 <Border.StrokeShape>
                                     <RoundRectangle CornerRadius="10" />
                                 </Border.StrokeShape>
-                                <Label Text="{Binding StatusLabel}" FontSize="11" FontAttributes="Bold" TextColor="White" />
+                                <Label Text="{Binding StatusLabel}" FontSize="11" FontFamily="BeVietnamBold" TextColor="White" />
                             </Border>
                             <Label Grid.Row="2" Grid.ColumnSpan="2" Text="{Binding ListLine}" Style="{StaticResource LblCardMeta}" />
                         </Grid>
