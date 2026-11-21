@@ -70,10 +70,12 @@
 
                             <!-- Avatar + khung + danh hiệu đang đeo (đổi ở trang Tài khoản) -->
                             <VerticalStackLayout Grid.Column="1" Spacing="6" VerticalOptions="Center" HorizontalOptions="End">
-                                <ctl:AvatarView Diameter="74" Animated="True" HorizontalOptions="Center"
+                                <ctl:AvatarView x:Name="AvatarPreview" Diameter="74" Animated="True" HorizontalOptions="Center"
+                                                
                                                 FrameCode="{Binding Info.SelectedFrame}" Source="{Binding AvatarSource}"
                                                 Initial="{Binding UserInitial}" />
                                 <ctl:TitleBadge Title="{Binding Info.SelectedTitle}" Small="True" HorizontalOptions="Center" />
+                                
                             </VerticalStackLayout>
                         </Grid>
                     </Border>
