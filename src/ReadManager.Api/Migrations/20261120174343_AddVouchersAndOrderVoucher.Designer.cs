@@ -12,8 +12,8 @@ using ReadManager.Api.Data;
 namespace ReadManager.Api.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20261119034626_Mainmoi")]
-    partial class Mainmoi
+    [Migration("20261120174343_AddVouchersAndOrderVoucher")]
+    partial class AddVouchersAndOrderVoucher
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -158,6 +158,51 @@ namespace ReadManager.Api.Migrations
                     b.HasIndex("ChapterId");
 
                     b.ToTable("ChapterRewards");
+                });
+
+            modelBuilder.Entity("ReadManager.Api.Entities.CoinTransaction", b =>
+                {
+                    b.Property<long>("CoinTransactionId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<long>("CoinTransactionId"));
+
+                    b.Property<int>("Amount")
+                        .HasColumnType("int");
+
+                    b.Property<long>("BalanceAfter")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(250)
+                        .HasColumnType("varchar(250)");
+
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("varchar(40)");
+
+                    b.Property<string>("SourceKey")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.HasKey("CoinTransactionId");
+
+                    b.HasIndex("UserId", "CoinTransactionId");
+
+                    b.HasIndex("UserId", "SourceKey")
+                        .IsUnique();
+
+                    b.ToTable("CoinTransactions");
                 });
 
             modelBuilder.Entity("ReadManager.Api.Entities.Comment", b =>
@@ -392,6 +437,13 @@ namespace ReadManager.Api.Migrations
                     b.Property<int>("UserId")
                         .HasColumnType("int");
 
+                    b.Property<int?>("VoucherId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("VoucherName")
+                        .HasMaxLength(120)
+                        .HasColumnType("varchar(120)");
+
                     b.HasKey("OrderId");
 
                     b.HasIndex("CouponId");
@@ -399,6 +451,8 @@ namespace ReadManager.Api.Migrations
                     b.HasIndex("PlanVersionId");
 
                     b.HasIndex("StoryId");
+
+                    b.HasIndex("VoucherId");
 
                     b.HasIndex("Status", "CreatedAt");
 
@@ -547,6 +601,19 @@ namespace ReadManager.Api.Migrations
                     b.HasIndex("StoryId");
 
                     b.ToTable("PlanVersionStories", (string)null);
+                });
+
+            modelBuilder.Entity("ReadManager.Api.Entities.QualifiedReadingDay", b =>
+                {
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.Property<DateOnly>("ReadDate")
+                        .HasColumnType("date");
+
+                    b.HasKey("UserId", "ReadDate");
+
+                    b.ToTable("QualifiedReadingDays");
                 });
 
             modelBuilder.Entity("ReadManager.Api.Entities.ReaderFavorite", b =>
@@ -1114,6 +1181,211 @@ namespace ReadManager.Api.Migrations
                         });
                 });
 
+            modelBuilder.Entity("ReadManager.Api.Entities.Voucher", b =>
+                {
+                    b.Property<int>("VoucherId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("VoucherId"));
+
+                    b.Property<int>("CoinCost")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("DiscountType")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)");
+
+                    b.Property<DateTime>("ExpiresAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<decimal?>("MaxDiscount")
+                        .HasPrecision(12, 2)
+                        .HasColumnType("decimal(12,2)");
+
+                    b.Property<decimal?>("MinOrderAmount")
+                        .HasPrecision(12, 2)
+                        .HasColumnType("decimal(12,2)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("varchar(120)");
+
+                    b.Property<int>("OfferId")
+                        .HasColumnType("int");
+
+                    b.Property<Guid>("RequestId")
+                        .HasColumnType("char(36)")
+                        .UseCollation("ascii_general_ci");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)")
+                        .HasDefaultValue("Available");
+
+                    b.Property<DateTime?>("UsedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("Value")
+                        .HasPrecision(12, 2)
+                        .HasColumnType("decimal(12,2)");
+
+                    b.HasKey("VoucherId");
+
+                    b.HasIndex("OfferId");
+
+                    b.HasIndex("UserId", "RequestId")
+                        .IsUnique();
+
+                    b.HasIndex("UserId", "Status", "ExpiresAt");
+
+                    b.ToTable("Vouchers", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_Vouchers_DiscountType", "`DiscountType` IN ('Percent', 'Amount')");
+
+                            t.HasCheckConstraint("CK_Vouchers_Status", "`Status` IN ('Available', 'Reserved', 'Used', 'Expired')");
+
+                            t.HasCheckConstraint("CK_Vouchers_Value", "`Value` > 0");
+                        });
+                });
+
+            modelBuilder.Entity("ReadManager.Api.Entities.VoucherOffer", b =>
+                {
+                    b.Property<int>("OfferId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("OfferId"));
+
+                    b.Property<int>("CoinCost")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(500)
+                        .HasColumnType("varchar(500)");
+
+                    b.Property<string>("DiscountType")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)");
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("tinyint(1)")
+                        .HasDefaultValue(true);
+
+                    b.Property<decimal?>("MaxDiscount")
+                        .HasPrecision(12, 2)
+                        .HasColumnType("decimal(12,2)");
+
+                    b.Property<decimal?>("MinOrderAmount")
+                        .HasPrecision(12, 2)
+                        .HasColumnType("decimal(12,2)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("varchar(120)");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("int");
+
+                    b.Property<int>("ValidDays")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("Value")
+                        .HasPrecision(12, 2)
+                        .HasColumnType("decimal(12,2)");
+
+                    b.HasKey("OfferId");
+
+                    b.HasIndex("IsActive", "SortOrder");
+
+                    b.ToTable("VoucherOffers", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_VoucherOffers_CoinCost", "`CoinCost` > 0");
+
+                            t.HasCheckConstraint("CK_VoucherOffers_DiscountType", "`DiscountType` IN ('Percent', 'Amount')");
+
+                            t.HasCheckConstraint("CK_VoucherOffers_ValidDays", "`ValidDays` > 0");
+
+                            t.HasCheckConstraint("CK_VoucherOffers_Value", "`Value` > 0");
+                        });
+
+                    b.HasData(
+                        new
+                        {
+                            OfferId = 1,
+                            CoinCost = 30,
+                            CreatedAt = new DateTime(2026, 11, 20, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Áp dụng cho đơn mua trọn bộ truyện từ 20.000₫",
+                            DiscountType = "Percent",
+                            IsActive = true,
+                            MaxDiscount = 15000m,
+                            MinOrderAmount = 20000m,
+                            Name = "Giảm 10% đơn truyện",
+                            SortOrder = 1,
+                            ValidDays = 30,
+                            Value = 10m
+                        },
+                        new
+                        {
+                            OfferId = 2,
+                            CoinCost = 60,
+                            CreatedAt = new DateTime(2026, 11, 20, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Giảm tối đa 30.000₫ cho đơn mua truyện từ 30.000₫",
+                            DiscountType = "Percent",
+                            IsActive = true,
+                            MaxDiscount = 30000m,
+                            MinOrderAmount = 30000m,
+                            Name = "Giảm 20% đơn truyện",
+                            SortOrder = 2,
+                            ValidDays = 30,
+                            Value = 20m
+                        },
+                        new
+                        {
+                            OfferId = 3,
+                            CoinCost = 40,
+                            CreatedAt = new DateTime(2026, 11, 20, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Áp dụng cho đơn mua trọn bộ truyện từ 25.000₫",
+                            DiscountType = "Amount",
+                            IsActive = true,
+                            MinOrderAmount = 25000m,
+                            Name = "Giảm 10.000₫ mua truyện",
+                            SortOrder = 3,
+                            ValidDays = 30,
+                            Value = 10000m
+                        },
+                        new
+                        {
+                            OfferId = 4,
+                            CoinCost = 90,
+                            CreatedAt = new DateTime(2026, 11, 20, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Áp dụng cho đơn mua trọn bộ truyện từ 45.000₫",
+                            DiscountType = "Amount",
+                            IsActive = true,
+                            MinOrderAmount = 45000m,
+                            Name = "Giảm 25.000₫ truyện VIP",
+                            SortOrder = 4,
+                            ValidDays = 30,
+                            Value = 25000m
+                        });
+                });
+
             modelBuilder.Entity("ReadManager.Api.Entities.Chapter", b =>
                 {
                     b.HasOne("ReadManager.Api.Entities.Story", "Story")
@@ -1166,6 +1438,17 @@ namespace ReadManager.Api.Migrations
                         .IsRequired();
 
                     b.Navigation("Chapter");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("ReadManager.Api.Entities.CoinTransaction", b =>
+                {
+                    b.HasOne("ReadManager.Api.Entities.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.Navigation("User");
                 });
@@ -1267,11 +1550,18 @@ namespace ReadManager.Api.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("ReadManager.Api.Entities.Voucher", "Voucher")
+                        .WithMany()
+                        .HasForeignKey("VoucherId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.Navigation("PlanVersion");
 
                     b.Navigation("Story");
 
                     b.Navigation("User");
+
+                    b.Navigation("Voucher");
                 });
 
             modelBuilder.Entity("ReadManager.Api.Entities.Payment", b =>
@@ -1313,6 +1603,17 @@ namespace ReadManager.Api.Migrations
                     b.Navigation("PlanVersion");
 
                     b.Navigation("Story");
+                });
+
+            modelBuilder.Entity("ReadManager.Api.Entities.QualifiedReadingDay", b =>
+                {
+                    b.HasOne("ReadManager.Api.Entities.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("ReadManager.Api.Entities.ReaderFavorite", b =>
@@ -1504,6 +1805,25 @@ namespace ReadManager.Api.Migrations
                         .IsRequired();
 
                     b.Navigation("Order");
+                });
+
+            modelBuilder.Entity("ReadManager.Api.Entities.Voucher", b =>
+                {
+                    b.HasOne("ReadManager.Api.Entities.VoucherOffer", "Offer")
+                        .WithMany()
+                        .HasForeignKey("OfferId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("ReadManager.Api.Entities.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Offer");
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("ReadManager.Api.Entities.ReadingPlan", b =>

@@ -19,4 +19,7 @@ public class CreateOrderDto
 
     // Sprint 5 — dùng mã giảm giá từ chuỗi đọc (chỉ áp dụng khi mua GÓI). Xem api/me/coupons.
     public int? CouponId { get; set; }
+
+    // Sprint 5 — dùng voucher đổi bằng xu (chỉ áp dụng khi mua TRUYỆN). Xem api/me/vouchers.
+    public int? VoucherId { get; set; }
 }
