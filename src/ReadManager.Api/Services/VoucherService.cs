@@ -195,14 +195,39 @@ public class VoucherService : IVoucherService
                 v => v.ExpiresAt > now ? VoucherStatuses.Available : VoucherStatuses.Expired));
     }
 
-    internal static async Task MarkUsedAsync(AppDbContext db, int voucherId, DateTime usedAtUtc)
+    // Đơn orderId đã thanh toán thành công → voucher của đơn chuyển sang Used.
+    //
+    // [Po — Sprint 5] CHỐNG DÙNG 1 VOUCHER CHO 2 ĐƠN khi tiền về trễ:
+    //   Đơn A giữ voucher V → A hết hạn 30 phút → V được trả lại (Available)
+    //   → người dùng tạo đơn B, giữ lại V (Reserved) → tiền của A mới về (callback trễ) → A thành Paid.
+    //   Lúc này V đã thuộc về A (tiền đã thu theo giá giảm), nên đơn B đang chờ cũng giữ V phải bị HỦY.
+    //   B chưa trả tiền nên hủy không làm mất tiền của ai. Người dùng mua lại B với giá đúng.
+    //
+    // Trả về số đơn chờ bị hủy để PaymentService ghi log.
+    internal static async Task<int> MarkUsedAsync(AppDbContext db, int orderId, int voucherId, DateTime usedAtUtc)
     {
-        var voucher = await db.Vouchers.FirstOrDefaultAsync(v => v.VoucherId == voucherId);
-        if (voucher is not null && voucher.Status != VoucherStatuses.Used)
+        // Khóa dòng voucher để không chạy song song với lúc tạo đơn mới đang giữ voucher này
+        // (dùng ToListAsync để EF không bọc câu FOR UPDATE vào subquery)
+        var voucher = (await db.Vouchers
+            .FromSqlInterpolated($"SELECT * FROM Vouchers WHERE VoucherId = {voucherId} FOR UPDATE")
+            .ToListAsync()).FirstOrDefault();
+        if (voucher is null)
+            return 0;
+
+        // Hủy các đơn CHỜ thanh toán KHÁC đang giữ cùng voucher (đơn Paid khác không đụng tới)
+        var now = DateTime.UtcNow;
+        var cancelled = await db.Orders
+            .Where(o => o.VoucherId == voucherId && o.OrderId != orderId && o.Status == OrderService.Pending)
+            .ExecuteUpdateAsync(s => s
+                .SetProperty(o => o.Status, OrderService.Cancelled)
+                .SetProperty(o => o.UpdatedAt, now));
+
+        if (voucher.Status != VoucherStatuses.Used)
         {
             voucher.Status = VoucherStatuses.Used;
             voucher.UsedAt ??= usedAtUtc;
         }
+        return cancelled;
     }
 
     private static VoucherDto ToDto(Voucher v) => new()

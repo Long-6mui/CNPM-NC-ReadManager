@@ -255,7 +255,13 @@ public class PaymentService : IPaymentService
             }
 
             if (order.VoucherId.HasValue)
-                await VoucherService.MarkUsedAsync(_db, order.VoucherId.Value, order.PaidAt ?? now);
+            {
+                // [Po] Voucher → Used; hủy đơn chờ khác đang giữ cùng voucher (tiền về trễ)
+                var cancelledOrders = await VoucherService.MarkUsedAsync(_db, order.OrderId, order.VoucherId.Value, order.PaidAt ?? now);
+                if (cancelledOrders > 0)
+                    _logger.LogWarning("Đơn {OrderId} thanh toán trễ: hủy {Count} đơn chờ khác đang giữ voucher {VoucherId}.",
+                        order.OrderId, cancelledOrders, order.VoucherId.Value);
+            }
 
             if (grant)
             {
@@ -475,7 +481,7 @@ public class PaymentService : IPaymentService
         }
 
         if (order.VoucherId.HasValue)
-            await VoucherService.MarkUsedAsync(_db, order.VoucherId.Value, paidAt);
+            await VoucherService.MarkUsedAsync(_db, order.OrderId, order.VoucherId.Value, paidAt);   // [Po] chống dùng voucher 2 lần
 
         // Không gọi cổng thanh toán → không thu thêm tiền. Đơn đã có quyền thì không thêm gì.
         var created = await _grants.AddGrantAsync(order, paidAt);
