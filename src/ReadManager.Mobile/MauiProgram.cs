@@ -66,6 +66,8 @@ namespace ReadManager.Mobile
             // Sprint 3: cộng đồng (Backend 3) + tiến độ đọc qua API; khách lưu trên máy
             builder.Services.AddTransient<ICommunityService, CommunityService>();
             builder.Services.AddTransient<IStreakService, StreakService>();   // Sprint 5
+            builder.Services.AddTransient<RankingService>();                  // bảng xếp hạng ở trang chủ
+            builder.Services.AddTransient<RecommendationService>();           // đề xuất theo sở thích
             builder.Services.AddTransient<ReportFlow>();
             builder.Services.AddTransient<LocalReadingProgressService>();
             if (ApiSettings.UseReadingProgressApi)
@@ -77,7 +79,10 @@ namespace ReadManager.Mobile
             builder.Services.AddTransient<RegisterViewModel>();
             builder.Services.AddTransient<StoryListViewModel>();
             builder.Services.AddTransient<StoryDetailViewModel>();
-            builder.Services.AddTransient<BrowseViewModel>();
+            builder.Services.AddTransient<ExploreViewModel>();      // tab Khám phá (chuỗi + xu)
+            builder.Services.AddTransient<SearchViewModel>();       // trang Tìm kiếm
+            builder.Services.AddTransient<RecommendedViewModel>();  // trang Đề xuất cho bạn
+            builder.Services.AddTransient<ReaderGenresViewModel>(); // chọn sở thích đọc
             builder.Services.AddTransient<AccountViewModel>();
             builder.Services.AddTransient<ChapterListViewModel>();
             builder.Services.AddTransient<ChapterReaderViewModel>();
@@ -95,7 +100,6 @@ namespace ReadManager.Mobile
             builder.Services.AddTransient<LoginPage>();
             builder.Services.AddTransient<ReaderActivityService>();
             builder.Services.AddTransient<ReaderGenresPage>();
-            builder.Services.AddTransient<HeartRankingPage>();
             builder.Services.AddTransient<RegisterPage>();
             builder.Services.AddTransient<StoryListPage>();
             builder.Services.AddTransient<StoryDetailPage>();
@@ -112,6 +116,8 @@ namespace ReadManager.Mobile
             builder.Services.AddTransient<FollowedStoriesPage>();
             builder.Services.AddTransient<CommentsPage>();
             builder.Services.AddTransient<StreakPage>();
+            builder.Services.AddTransient<SearchPage>();
+            builder.Services.AddTransient<RecommendedPage>();
 
             return builder.Build();
         }

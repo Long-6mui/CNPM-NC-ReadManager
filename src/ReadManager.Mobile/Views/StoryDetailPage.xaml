@@ -5,7 +5,7 @@
              x:DataType="vm:StoryDetailViewModel"
              x:Class="ReadManager.Mobile.Views.StoryDetailPage"
              Title="Chi tiết truyện"
-             BackgroundColor="{StaticResource WebBg}">
+             BackgroundColor="{DynamicResource WebBg}">
 
     <Shell.BackButtonBehavior>
         <BackButtonBehavior IconOverride="ic_back.png" />
@@ -15,9 +15,9 @@
         <VerticalStackLayout Spacing="0">
 
             <ActivityIndicator IsRunning="{Binding IsBusy}" IsVisible="{Binding IsBusy}"
-                               Color="{StaticResource WebRoyal}" Margin="0,24" />
+                               Color="{DynamicResource WebRoyal}" Margin="0,24" />
 
-            <Label Text="{Binding ErrorMessage}" TextColor="{StaticResource WebCrimson}" Padding="16,16"
+            <Label Text="{Binding ErrorMessage}" TextColor="{DynamicResource WebCrimson}" Padding="16,16"
                    IsVisible="{Binding ErrorMessage, Converter={StaticResource StringToBoolConverter}}" />
 
             <VerticalStackLayout IsVisible="{Binding Story, Converter={StaticResource StringToBoolConverter}}" Spacing="0">
@@ -140,27 +140,27 @@
                     <Button Text="💬 Bình luận" Style="{StaticResource BtnOutlineSm}" HeightRequest="44"
                             Command="{Binding OpenCommentsCommand}" />
                     <Button Text="⚑ Báo cáo truyện này" Style="{StaticResource BtnLink}" HorizontalOptions="Start"
-                            TextColor="{StaticResource WebCrimson}" Command="{Binding ReportStoryCommand}" />
+                            TextColor="{DynamicResource WebCrimson}" Command="{Binding ReportStoryCommand}" />
                 </VerticalStackLayout>
 
                 <!-- Giới thiệu (panel bên phải của web) -->
                 <VerticalStackLayout Padding="16,16,16,32">
                     <Border Style="{StaticResource Panel}">
                         <VerticalStackLayout Spacing="10">
-                            <Label Text="Giới thiệu" FontSize="15" FontFamily="BeVietnamBold" TextColor="{StaticResource WebText}" />
-                            <Label Text="{Binding Story.Synopsis}" FontSize="13.5" TextColor="{StaticResource WebMuted}" />
-                            <BoxView HeightRequest="1" Color="{StaticResource WebBorder}" Margin="0,4" />
+                            <Label Text="Giới thiệu" FontSize="15" FontFamily="BeVietnamBold" TextColor="{DynamicResource WebText}" />
+                            <Label Text="{Binding Story.Synopsis}" FontSize="13.5" TextColor="{DynamicResource WebMuted}" />
+                            <BoxView HeightRequest="1" Color="{DynamicResource WebBorder}" Margin="0,4" />
                             <Grid ColumnDefinitions="*,Auto">
-                                <Label Text="Tác giả" FontSize="13" TextColor="{StaticResource WebMuted}" />
-                                <Label Grid.Column="1" Text="{Binding Story.AuthorText}" FontSize="13" FontFamily="BeVietnamBold" TextColor="{StaticResource WebText}" />
+                                <Label Text="Tác giả" FontSize="13" TextColor="{DynamicResource WebMuted}" />
+                                <Label Grid.Column="1" Text="{Binding Story.AuthorText}" FontSize="13" FontFamily="BeVietnamBold" TextColor="{DynamicResource WebText}" />
                             </Grid>
                             <Grid ColumnDefinitions="*,Auto">
-                                <Label Text="Tình trạng" FontSize="13" TextColor="{StaticResource WebMuted}" />
-                                <Label Grid.Column="1" Text="{Binding Story.StatusLabel}" FontSize="13" FontFamily="BeVietnamBold" TextColor="{StaticResource WebText}" />
+                                <Label Text="Tình trạng" FontSize="13" TextColor="{DynamicResource WebMuted}" />
+                                <Label Grid.Column="1" Text="{Binding Story.StatusLabel}" FontSize="13" FontFamily="BeVietnamBold" TextColor="{DynamicResource WebText}" />
                             </Grid>
                             <Grid ColumnDefinitions="*,Auto">
-                                <Label Text="Cập nhật" FontSize="13" TextColor="{StaticResource WebMuted}" />
-                                <Label Grid.Column="1" Text="{Binding Story.UpdatedText}" FontSize="13" FontFamily="BeVietnamBold" TextColor="{StaticResource WebText}" />
+                                <Label Text="Cập nhật" FontSize="13" TextColor="{DynamicResource WebMuted}" />
+                                <Label Grid.Column="1" Text="{Binding Story.UpdatedText}" FontSize="13" FontFamily="BeVietnamBold" TextColor="{DynamicResource WebText}" />
                             </Grid>
                         </VerticalStackLayout>
                     </Border>

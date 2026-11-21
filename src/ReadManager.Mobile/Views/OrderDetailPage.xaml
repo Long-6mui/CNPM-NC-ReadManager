@@ -6,7 +6,7 @@
              x:DataType="vm:OrderDetailViewModel"
              x:Class="ReadManager.Mobile.Views.OrderDetailPage"
              Title="Đơn hàng"
-             BackgroundColor="{StaticResource WebBg}">
+             BackgroundColor="{DynamicResource WebBg}">
 
     <Shell.BackButtonBehavior>
         <BackButtonBehavior IconOverride="ic_back.png" />
@@ -15,8 +15,8 @@
     <ScrollView>
         <VerticalStackLayout Padding="16,16,16,32" Spacing="14">
 
-            <ActivityIndicator IsRunning="{Binding IsBusy}" IsVisible="{Binding IsBusy}" Color="{StaticResource WebRoyal}" />
-            <Label Text="{Binding ErrorMessage}" TextColor="{StaticResource WebCrimson}"
+            <ActivityIndicator IsRunning="{Binding IsBusy}" IsVisible="{Binding IsBusy}" Color="{DynamicResource WebRoyal}" />
+            <Label Text="{Binding ErrorMessage}" TextColor="{DynamicResource WebCrimson}"
                    IsVisible="{Binding ErrorMessage, Converter={StaticResource StringToBoolConverter}}" />
 
             <VerticalStackLayout IsVisible="{Binding Order, Converter={StaticResource StringToBoolConverter}}" Spacing="14">
@@ -24,25 +24,25 @@
 
                 <Border Style="{StaticResource Panel}">
                     <VerticalStackLayout Spacing="10">
-                        <Label Text="{Binding Order.TypeLabel}" FontSize="12" FontFamily="BeVietnamBold" TextColor="{StaticResource WebMuted}" />
+                        <Label Text="{Binding Order.TypeLabel}" FontSize="12" FontFamily="BeVietnamBold" TextColor="{DynamicResource WebMuted}" />
                         <Label Text="{Binding Order.ItemName}" FontSize="17"
-                               FontFamily="{StaticResource SerifFont}" TextColor="{StaticResource WebText}" />
-                        <BoxView HeightRequest="1" Color="{StaticResource WebBorder}" />
+                               FontFamily="{StaticResource SerifFont}" TextColor="{DynamicResource WebText}" />
+                        <BoxView HeightRequest="1" Color="{DynamicResource WebBorder}" />
 
                         <Grid ColumnDefinitions="Auto,*" ColumnSpacing="12" >
-                            <Label Text="Thời hạn quyền đọc" FontSize="13" TextColor="{StaticResource WebMuted}" />
+                            <Label Text="Thời hạn quyền đọc" FontSize="13" TextColor="{DynamicResource WebMuted}" />
                             <Label Grid.Column="1" Text="{Binding Order.DurationText}" FontSize="13" FontFamily="BeVietnamBold"
-                                   TextColor="{StaticResource WebText}" HorizontalTextAlignment="End" />
+                                   TextColor="{DynamicResource WebText}" HorizontalTextAlignment="End" />
                         </Grid>
                         <Grid ColumnDefinitions="Auto,*" ColumnSpacing="12">
-                            <Label Text="Số tiền" FontSize="13" TextColor="{StaticResource WebMuted}" VerticalOptions="Center" />
+                            <Label Text="Số tiền" FontSize="13" TextColor="{DynamicResource WebMuted}" VerticalOptions="Center" />
                             <Label Grid.Column="1" Text="{Binding Order.AmountText}" FontSize="22" FontFamily="BeVietnamBold"
-                                   TextColor="{StaticResource WebText}" HorizontalTextAlignment="End" />
+                                   TextColor="{DynamicResource WebText}" HorizontalTextAlignment="End" />
                         </Grid>
-                        <Label Text="{Binding Order.DiscountText}" FontSize="12.5" TextColor="{StaticResource WebSage}"
+                        <Label Text="{Binding Order.DiscountText}" FontSize="12.5" TextColor="{DynamicResource WebSage}"
                                HorizontalTextAlignment="End" IsVisible="{Binding Order.HasDiscount}" />
                         <Grid ColumnDefinitions="Auto,*" ColumnSpacing="12">
-                            <Label Text="Trạng thái" FontSize="13" TextColor="{StaticResource WebMuted}" VerticalOptions="Center" />
+                            <Label Text="Trạng thái" FontSize="13" TextColor="{DynamicResource WebMuted}" VerticalOptions="Center" />
                             <Border Grid.Column="1" HorizontalOptions="End" Padding="10,4" StrokeThickness="0"
                                     BackgroundColor="{Binding Order.StatusColor}">
                                 <Border.StrokeShape>
@@ -53,14 +53,14 @@
                         </Grid>
 
                         <Grid ColumnDefinitions="Auto,*" ColumnSpacing="12" >
-                            <Label Text="Ngày tạo" FontSize="13" TextColor="{StaticResource WebMuted}" />
+                            <Label Text="Ngày tạo" FontSize="13" TextColor="{DynamicResource WebMuted}" />
                             <Label Grid.Column="1" Text="{Binding Order.CreatedText}" FontSize="13" FontFamily="BeVietnamBold"
-                                   TextColor="{StaticResource WebText}" HorizontalTextAlignment="End" />
+                                   TextColor="{DynamicResource WebText}" HorizontalTextAlignment="End" />
                         </Grid>
                         <Grid ColumnDefinitions="Auto,*" ColumnSpacing="12" IsVisible="{Binding Order.HasPaidAt}">
-                            <Label Text="Ngày thanh toán" FontSize="13" TextColor="{StaticResource WebMuted}" />
+                            <Label Text="Ngày thanh toán" FontSize="13" TextColor="{DynamicResource WebMuted}" />
                             <Label Grid.Column="1" Text="{Binding Order.PaidText}" FontSize="13" FontFamily="BeVietnamBold"
-                                   TextColor="{StaticResource WebText}" HorizontalTextAlignment="End" />
+                                   TextColor="{DynamicResource WebText}" HorizontalTextAlignment="End" />
                         </Grid>
                         <Label Text="{Binding Order.ExpiresText}" Style="{StaticResource LblMuted}"
                                IsVisible="{Binding Order.IsPending}" />

@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:ReadManager.Mobile.ViewModels"
+             xmlns:models="clr-namespace:ReadManager.Mobile.Models"
+             xmlns:fx="clr-namespace:ReadManager.Mobile.Behaviors"
+             x:DataType="vm:RecommendedViewModel"
+             x:Class="ReadManager.Mobile.Views.RecommendedPage"
+             Title="⚡ Đề xuất cho bạn"
+             BackgroundColor="{DynamicResource WebBg}">
+
+    <Shell.BackButtonBehavior>
+        <BackButtonBehavior IconOverride="ic_back.png" />
+    </Shell.BackButtonBehavior>
+
+    <Grid RowDefinitions="Auto,Auto,*">
+
+        <!-- Lọc theo các thể loại đã chọn -->
+        <Grid Grid.Row="0" ColumnDefinitions="*,Auto" BackgroundColor="{DynamicResource WebHeader}" Padding="0,10,12,10">
+            <ScrollView Grid.Column="0" Orientation="Horizontal" HorizontalScrollBarVisibility="Never">
+                <HorizontalStackLayout Padding="16,0,8,0" Spacing="8" BindableLayout.ItemsSource="{Binding GenreChips}">
+                    <BindableLayout.ItemTemplate>
+                        <DataTemplate x:DataType="models:ChipItem">
+                            <Border Style="{StaticResource Chip}" Padding="14,7">
+                                <Border.GestureRecognizers>
+                                    <TapGestureRecognizer
+                                        Command="{Binding Source={RelativeSource AncestorType={x:Type vm:RecommendedViewModel}}, Path=SelectGenreCommand}"
+                                        CommandParameter="{Binding .}" />
+                                </Border.GestureRecognizers>
+                                <Border.Triggers>
+                                    <DataTrigger TargetType="Border" Binding="{Binding IsSelected}" Value="True">
+                                        <Setter Property="BackgroundColor" Value="{DynamicResource WebRoyal}" />
+                                        <Setter Property="Stroke" Value="{DynamicResource WebRoyal}" />
+                                    </DataTrigger>
+                                </Border.Triggers>
+                                <Label Text="{Binding Name}" Style="{StaticResource ChipText}">
+                                    <Label.Triggers>
+                                        <DataTrigger TargetType="Label" Binding="{Binding IsSelected}" Value="True">
+                                            <Setter Property="TextColor" Value="White" />
+                                        </DataTrigger>
+                                    </Label.Triggers>
+                                </Label>
+                            </Border>
+                        </DataTemplate>
+                    </BindableLayout.ItemTemplate>
+                </HorizontalStackLayout>
+            </ScrollView>
+            <Button Grid.Column="1" Text="✎ Sửa" Style="{StaticResource BtnLink}" TextColor="{DynamicResource WebRoyal}"
+                    Command="{Binding EditPreferencesCommand}" />
+        </Grid>
+
+        <Label Grid.Row="1" Text="{Binding CountText}" Style="{StaticResource LblMuted}" Padding="16,12,16,2"
+               IsVisible="{Binding CountText, Converter={StaticResource StringToBoolConverter}}" />
+
+        <RefreshView Grid.Row="2" IsRefreshing="{Binding IsRefreshing}" Command="{Binding RefreshCommand}"
+                     RefreshColor="{DynamicResource WebRoyal}">
+            <CollectionView ItemsSource="{Binding Stories}" SelectionMode="None">
+                <CollectionView.Header>
+                    <VerticalStackLayout>
+                        <Label Text="{Binding ErrorMessage}" TextColor="{DynamicResource WebCrimson}" Padding="16,8"
+                               IsVisible="{Binding ErrorMessage, Converter={StaticResource StringToBoolConverter}}" />
+                        <Border Style="{StaticResource Panel}" Margin="16,12" IsVisible="{Binding ShowNoPreferences}">
+                            <VerticalStackLayout Spacing="8">
+                                <Label Text="Bạn chưa chọn sở thích đọc" Style="{StaticResource LblH2}" FontSize="17" />
+                                <Label Text="Chọn vài thể loại yêu thích để nhận danh sách đề xuất." Style="{StaticResource LblMuted}" />
+                                <Button Text="Chọn sở thích" Style="{StaticResource BtnBrass}" Command="{Binding EditPreferencesCommand}" />
+                            </VerticalStackLayout>
+                        </Border>
+                        <Label Text="Chưa có truyện nào thuộc thể loại này." Style="{StaticResource LblMuted}"
+                               HorizontalTextAlignment="Center" Margin="0,40" IsVisible="{Binding ShowEmpty}" />
+                    </VerticalStackLayout>
+                </CollectionView.Header>
+                <CollectionView.ItemTemplate>
+                    <!-- Giống ảnh mẫu: bìa + "N CHƯƠNG" + tên + tác giả + thể loại -->
+                    <DataTemplate x:DataType="models:StorySummary">
+                        <Grid Padding="16,10" ColumnDefinitions="96,*" ColumnSpacing="14" fx:Motion.Press="True">
+                            <Grid.GestureRecognizers>
+                                <TapGestureRecognizer
+                                    Command="{Binding Source={RelativeSource AncestorType={x:Type vm:RecommendedViewModel}}, Path=GoToDetailCommand}"
+                                    CommandParameter="{Binding .}" />
+                            </Grid.GestureRecognizers>
+                            <Border Grid.Column="0" HeightRequest="134" Style="{StaticResource CoverFrame}">
+                                <Grid>
+                                    <Grid.Background>
+                                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                            <GradientStop Color="#3F3A55" Offset="0.0" />
+                                            <GradientStop Color="#1E1B2E" Offset="1.0" />
+                                        </LinearGradientBrush>
+                                    </Grid.Background>
+                                    <Label Text="{Binding Title}" IsVisible="{Binding HasNoCover}" FontFamily="{StaticResource SerifFont}"
+                                           FontSize="12" TextColor="White" HorizontalTextAlignment="Center" VerticalOptions="Center" Margin="6" />
+                                    <Image Source="{Binding CoverUrl}" IsVisible="{Binding HasCover}" Aspect="AspectFill" />
+                                    <Border HorizontalOptions="Start" VerticalOptions="End" Margin="0,0,0,8" Padding="8,3"
+                                            StrokeThickness="0" BackgroundColor="{Binding AccessColor}">
+                                        <Border.StrokeShape>
+                                            <RoundRectangle CornerRadius="0,8,0,8" />
+                                        </Border.StrokeShape>
+                                        <Label Text="{Binding AccessLabel}" TextColor="White" FontSize="10" FontFamily="BeVietnamBold" />
+                                    </Border>
+                                </Grid>
+                            </Border>
+                            <VerticalStackLayout Grid.Column="1" Spacing="7" VerticalOptions="Center">
+                                <Border Style="{StaticResource ChapterBadge}">
+                                    <Label Text="{Binding ChapterBadge}" FontSize="11.5" FontFamily="BeVietnamBold"
+                                           TextColor="{DynamicResource WebMuted}" />
+                                </Border>
+                                <Label Text="{Binding Title}" FontFamily="BeVietnamBold" FontSize="16"
+                                       TextColor="{DynamicResource WebText}" MaxLines="2" LineBreakMode="TailTruncation" />
+                                <Label Text="{Binding AuthorText}" FontSize="13.5" TextColor="{DynamicResource WebMuted}"
+                                       MaxLines="1" LineBreakMode="TailTruncation" />
+                                <Label Text="{Binding GenreLine}" FontSize="12" TextColor="{DynamicResource WebRoyal2}"
+                                       MaxLines="1" LineBreakMode="TailTruncation" />
+                            </VerticalStackLayout>
+                        </Grid>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+            </CollectionView>
+        </RefreshView>
+    </Grid>
+</ContentPage>

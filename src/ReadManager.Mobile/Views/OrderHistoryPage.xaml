@@ -6,7 +6,7 @@
              x:DataType="vm:OrderHistoryViewModel"
              x:Class="ReadManager.Mobile.Views.OrderHistoryPage"
              Title="Lịch sử thanh toán"
-             BackgroundColor="{StaticResource WebBg}">
+             BackgroundColor="{DynamicResource WebBg}">
 
     <Shell.BackButtonBehavior>
         <BackButtonBehavior IconOverride="ic_back.png" />
@@ -15,7 +15,7 @@
     <Grid RowDefinitions="Auto,Auto,*">
 
         <!-- Lọc theo trạng thái -->
-        <ScrollView Grid.Row="0" Orientation="Horizontal" BackgroundColor="White" HorizontalScrollBarVisibility="Never">
+        <ScrollView Grid.Row="0" Orientation="Horizontal" BackgroundColor="{DynamicResource WebSurface}" HorizontalScrollBarVisibility="Never">
             <HorizontalStackLayout BindableLayout.ItemsSource="{Binding Filters}" Spacing="8" Padding="16,12">
                 <BindableLayout.ItemTemplate>
                     <DataTemplate x:DataType="vm:StatusFilter">
@@ -24,9 +24,9 @@
                                 CommandParameter="{Binding Key}">
                             <Button.Triggers>
                                 <DataTrigger TargetType="Button" Binding="{Binding IsSelected}" Value="True">
-                                    <Setter Property="BackgroundColor" Value="{StaticResource WebRoyal}" />
+                                    <Setter Property="BackgroundColor" Value="{DynamicResource WebRoyal}" />
                                     <Setter Property="TextColor" Value="White" />
-                                    <Setter Property="BorderColor" Value="{StaticResource WebRoyal}" />
+                                    <Setter Property="BorderColor" Value="{DynamicResource WebRoyal}" />
                                 </DataTrigger>
                             </Button.Triggers>
                         </Button>
@@ -37,9 +37,9 @@
 
         <VerticalStackLayout Grid.Row="1" Padding="16,8,16,0">
             <Label Text="{Binding CountText}" Style="{StaticResource LblMuted}" />
-            <Label Text="{Binding ErrorMessage}" TextColor="{StaticResource WebCrimson}"
+            <Label Text="{Binding ErrorMessage}" TextColor="{DynamicResource WebCrimson}"
                    IsVisible="{Binding ErrorMessage, Converter={StaticResource StringToBoolConverter}}" />
-            <ActivityIndicator IsRunning="{Binding IsBusy}" IsVisible="{Binding IsBusy}" Color="{StaticResource WebRoyal}" />
+            <ActivityIndicator IsRunning="{Binding IsBusy}" IsVisible="{Binding IsBusy}" Color="{DynamicResource WebRoyal}" />
         </VerticalStackLayout>
 
         <CollectionView Grid.Row="2" ItemsSource="{Binding Items}" SelectionMode="None" Margin="16,6,16,0">
@@ -59,7 +59,7 @@
                         </Border.GestureRecognizers>
                         <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto,Auto" RowSpacing="3" ColumnSpacing="8">
                             <Label Grid.ColumnSpan="2" Text="{Binding TypeLabel}" FontSize="11.5" FontFamily="BeVietnamBold"
-                                   TextColor="{StaticResource WebMuted}" />
+                                   TextColor="{DynamicResource WebMuted}" />
                             <Label Grid.Row="1" Text="{Binding ItemName}" Style="{StaticResource LblCardTitle}" FontSize="15" />
                             <Border Grid.Row="1" Grid.Column="1" Padding="9,3" StrokeThickness="0"
                                     BackgroundColor="{Binding StatusColor}" VerticalOptions="Start">

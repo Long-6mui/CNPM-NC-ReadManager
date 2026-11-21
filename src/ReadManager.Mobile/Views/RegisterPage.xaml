@@ -5,7 +5,7 @@
              x:DataType="vm:RegisterViewModel"
              x:Class="ReadManager.Mobile.Views.RegisterPage"
              Title="Đăng ký"
-             BackgroundColor="{StaticResource WebBg}">
+             BackgroundColor="{DynamicResource WebBg}">
 
     <Shell.BackButtonBehavior>
         <BackButtonBehavior IconOverride="ic_back.png" />
@@ -81,11 +81,11 @@
                         </Border>
                     </VerticalStackLayout>
 
-                    <Label Text="{Binding ErrorMessage}" TextColor="{StaticResource WebCrimson}" FontSize="13"
+                    <Label Text="{Binding ErrorMessage}" TextColor="{DynamicResource WebCrimson}" FontSize="13"
                            IsVisible="{Binding ErrorMessage, Converter={StaticResource StringToBoolConverter}}" />
 
                     <ActivityIndicator IsRunning="{Binding IsBusy}" IsVisible="{Binding IsBusy}"
-                                       Color="{StaticResource WebRoyal}" />
+                                       Color="{DynamicResource WebRoyal}" />
 
                     <Button Text="Tạo tài khoản" Style="{StaticResource BtnBrass}"
                             Command="{Binding RegisterCommand}"

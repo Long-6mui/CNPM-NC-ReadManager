@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentView xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:fx="clr-namespace:ReadManager.Mobile.Behaviors"
+             x:Class="ReadManager.Mobile.Views.Controls.AppHeader">
+
+    <!-- THANH HEADER DÙNG CHUNG cho 4 trang chính (Trang chủ, Khám phá, Tủ sách, Tài khoản)
+         - Trái: logo + tên app (trang chủ) hoặc tiêu đề trang.
+         - Phải: chuỗi 🔥, tìm kiếm 🔍, chế độ tối 🌙/☀️, thông báo 🔔.
+         - IsHero = True (trang chủ): nền tối cùng màu với hero "sách bay" để chuyển màu liền mạch. -->
+    <Grid x:Name="Root" RowDefinitions="Auto,1" RowSpacing="0">
+        <Grid Grid.Row="0" Padding="16,10,12,10" ColumnDefinitions="*,Auto" ColumnSpacing="8">
+
+            <!-- Trái -->
+            <HorizontalStackLayout Grid.Column="0" Spacing="10" VerticalOptions="Center">
+                <Border x:Name="LogoBadge" WidthRequest="36" HeightRequest="36" StrokeThickness="0"
+                        VerticalOptions="Center" IsVisible="False">
+                    <Border.StrokeShape>
+                        <RoundRectangle CornerRadius="11" />
+                    </Border.StrokeShape>
+                    <Border.Background>
+                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                            <GradientStop Color="#FB7185" Offset="0.0" />
+                            <GradientStop Color="#E11D48" Offset="0.5" />
+                            <GradientStop Color="#9F1239" Offset="1.0" />
+                        </LinearGradientBrush>
+                    </Border.Background>
+                    <Border.Shadow>
+                        <Shadow Brush="#E11D48" Offset="0,4" Radius="10" Opacity="0.45" />
+                    </Border.Shadow>
+                    <Label Text="📖" FontSize="17" HorizontalOptions="Center" VerticalOptions="Center" />
+                </Border>
+
+                <VerticalStackLayout Spacing="0" VerticalOptions="Center">
+                    <Label x:Name="SubtitleLabel" FontSize="11.5" FontFamily="BeVietnamMedium" IsVisible="False"
+                           MaxLines="1" LineBreakMode="TailTruncation" />
+                    <Label x:Name="TitleLabel" FontSize="21" FontFamily="BeVietnamExtraBold"
+                           MaxLines="1" LineBreakMode="TailTruncation" />
+                </VerticalStackLayout>
+            </HorizontalStackLayout>
+
+            <!-- Phải -->
+            <HorizontalStackLayout Grid.Column="1" Spacing="7" VerticalOptions="Center">
+
+                <!-- Chuỗi đọc (chỉ hiện khi đã đăng nhập) -->
+                <Border x:Name="StreakChip" HeightRequest="40" Padding="11,0" StrokeThickness="0"
+                        IsVisible="False" fx:Motion.Press="True">
+                    <Border.StrokeShape>
+                        <RoundRectangle CornerRadius="20" />
+                    </Border.StrokeShape>
+                    <Border.GestureRecognizers>
+                        <TapGestureRecognizer Tapped="OnStreakTapped" />
+                    </Border.GestureRecognizers>
+                    <Label x:Name="StreakLabel" Text="🔥 0" FontSize="14" FontFamily="BeVietnamBold"
+                           VerticalOptions="Center" />
+                </Border>
+
+                <!-- Tìm kiếm -->
+                <Border x:Name="SearchBtn" Style="{StaticResource IconCircle}">
+                    <Border.GestureRecognizers>
+                        <TapGestureRecognizer Tapped="OnSearchTapped" />
+                    </Border.GestureRecognizers>
+                    <Image x:Name="SearchIcon" Source="ic_search_ink.png" WidthRequest="20" HeightRequest="20"
+                           HorizontalOptions="Center" VerticalOptions="Center" />
+                </Border>
+
+                <!-- Chế độ sáng / tối -->
+                <Border x:Name="ThemeBtn" Style="{StaticResource IconCircle}">
+                    <Border.GestureRecognizers>
+                        <TapGestureRecognizer Tapped="OnThemeTapped" />
+                    </Border.GestureRecognizers>
+                    <Label x:Name="ThemeIcon" Text="🌙" FontSize="17"
+                           HorizontalOptions="Center" VerticalOptions="Center" />
+                </Border>
+
+                <!-- Thông báo + số chưa đọc -->
+                <Grid>
+                    <Border x:Name="BellBtn" Style="{StaticResource IconCircle}">
+                        <Border.GestureRecognizers>
+                            <TapGestureRecognizer Tapped="OnBellTapped" />
+                        </Border.GestureRecognizers>
+                        <Label Text="🔔" FontSize="17" HorizontalOptions="Center" VerticalOptions="Center" />
+                    </Border>
+                    <Border x:Name="BellBadge" BackgroundColor="#E11D48" StrokeThickness="1.5" Stroke="White"
+                            HeightRequest="18" MinimumWidthRequest="18" Padding="4,0"
+                            HorizontalOptions="End" VerticalOptions="Start" Margin="0,-3,-3,0"
+                            IsVisible="False" InputTransparent="True">
+                        <Border.StrokeShape>
+                            <RoundRectangle CornerRadius="9" />
+                        </Border.StrokeShape>
+                        <Label x:Name="BellCount" TextColor="White" FontSize="10" FontFamily="BeVietnamBold"
+                               HorizontalOptions="Center" VerticalOptions="Center" />
+                    </Border>
+                </Grid>
+            </HorizontalStackLayout>
+        </Grid>
+
+        <!-- Đường kẻ mảnh dưới header (ẩn ở trang chủ) -->
+        <BoxView x:Name="BottomLine" Grid.Row="1" HeightRequest="1" />
+    </Grid>
+</ContentView>

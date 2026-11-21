@@ -5,7 +5,7 @@
              x:DataType="vm:LoginViewModel"
              x:Class="ReadManager.Mobile.Views.LoginPage"
              Title="Đăng nhập"
-             BackgroundColor="{StaticResource WebBg}">
+             BackgroundColor="{DynamicResource WebBg}">
 
     <Shell.BackButtonBehavior>
         <BackButtonBehavior IconOverride="ic_back.png" Command="{Binding GoHomeCommand}" />
@@ -70,11 +70,11 @@
                         </Border>
                     </VerticalStackLayout>
 
-                    <Label Text="{Binding ErrorMessage}" TextColor="{StaticResource WebCrimson}" FontSize="13"
+                    <Label Text="{Binding ErrorMessage}" TextColor="{DynamicResource WebCrimson}" FontSize="13"
                            IsVisible="{Binding ErrorMessage, Converter={StaticResource StringToBoolConverter}}" />
 
                     <ActivityIndicator IsRunning="{Binding IsBusy}" IsVisible="{Binding IsBusy}"
-                                       Color="{StaticResource WebRoyal}" />
+                                       Color="{DynamicResource WebRoyal}" />
 
                     <Button Text="Đăng nhập" Style="{StaticResource BtnBrass}"
                             Command="{Binding LoginCommand}"

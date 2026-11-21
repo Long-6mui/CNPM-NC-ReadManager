@@ -4,37 +4,26 @@
              xmlns:vm="clr-namespace:ReadManager.Mobile.ViewModels"
              xmlns:models="clr-namespace:ReadManager.Mobile.Models"
              xmlns:ctl="clr-namespace:ReadManager.Mobile.Views.Controls"
+             xmlns:fx="clr-namespace:ReadManager.Mobile.Behaviors"
              x:DataType="vm:StoryListViewModel"
              x:Class="ReadManager.Mobile.Views.StoryListPage"
-             Title="Chữ &amp; Đêm"
-             BackgroundColor="{StaticResource WebBg}">
-
-    <ContentPage.ToolbarItems>
-        <ToolbarItem x:Name="FlameItem" Text="🔥" Clicked="OnFlameClicked" />
-        <ToolbarItem x:Name="BellItem" Text="🔔" Clicked="OnBellClicked" />
-    </ContentPage.ToolbarItems>
+             Title="Trang chủ"
+             Shell.NavBarIsVisible="False"
+             BackgroundColor="{DynamicResource WebBg}">
 
     <ContentPage.Resources>
         <ResourceDictionary>
 
-            <!-- Thẻ truyện — giống Views/Shared/_StoryCard.cshtml của web -->
+            <!-- Thẻ truyện cuộn ngang ("Truyện nổi bật") — giống Views/Shared/_StoryCard.cshtml của web -->
             <DataTemplate x:Key="StoryCardTemplate" x:DataType="models:StorySummary">
-                <VerticalStackLayout WidthRequest="150" Margin="0,0,12,14" Spacing="0">
+                <VerticalStackLayout WidthRequest="140" Margin="0,0,12,14" Spacing="0" fx:Motion.Press="True">
                     <VerticalStackLayout.GestureRecognizers>
                         <TapGestureRecognizer
                             Command="{Binding Source={RelativeSource AncestorType={x:Type vm:StoryListViewModel}}, Path=GoToDetailCommand}"
                             CommandParameter="{Binding .}" />
                     </VerticalStackLayout.GestureRecognizers>
 
-                    <Border HeightRequest="225" StrokeThickness="1" Stroke="{StaticResource WebBorder}"
-                            BackgroundColor="{StaticResource WebSurface2}">
-                        <Border.StrokeShape>
-                            <RoundRectangle CornerRadius="12" />
-                        </Border.StrokeShape>
-<Border.Shadow>
-                        <Shadow Brush="#18181B" Offset="0,8" Radius="14" Opacity="0.20" />
-                    </Border.Shadow>
-
+                    <Border HeightRequest="205" Style="{StaticResource CoverFrame}">
                         <Grid>
                             <Grid.Background>
                                 <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
@@ -42,8 +31,6 @@
                                     <GradientStop Color="#1E1B2E" Offset="1.0" />
                                 </LinearGradientBrush>
                             </Grid.Background>
-
-                            <!-- Chưa có bìa: hiện tên truyện trên nền gradient (gen-cover của web) -->
                             <Label Text="{Binding Title}" IsVisible="{Binding HasNoCover}"
                                    FontFamily="{StaticResource SerifFont}" FontSize="15"
                                    TextColor="White" HorizontalTextAlignment="Center"
@@ -57,14 +44,6 @@
                                 </Border.StrokeShape>
                                 <Label Text="{Binding AccessLabel}" TextColor="White" FontSize="10" FontFamily="BeVietnamBold" />
                             </Border>
-
-                            <Border HorizontalOptions="End" VerticalOptions="End" Margin="7"
-                                    Padding="6,2" StrokeThickness="0" BackgroundColor="#8C000000">
-                                <Border.StrokeShape>
-                                    <RoundRectangle CornerRadius="8" />
-                                </Border.StrokeShape>
-                                <Label Text="{Binding StatusLabel}" TextColor="White" FontSize="9.5" FontFamily="BeVietnamBold" />
-                            </Border>
                         </Grid>
                     </Border>
 
@@ -73,9 +52,98 @@
                 </VerticalStackLayout>
             </DataTemplate>
 
+            <!-- Thẻ lưới 3 cột (Đề xuất cho bạn) -->
+            <DataTemplate x:Key="GridCardTemplate" x:DataType="models:StorySummary">
+                <VerticalStackLayout FlexLayout.Basis="33.3%" Padding="5,0,5,16" Spacing="0"
+                                     fx:Motion.Press="True" fx:Motion.Reveal="True">
+                    <VerticalStackLayout.GestureRecognizers>
+                        <TapGestureRecognizer
+                            Command="{Binding Source={RelativeSource AncestorType={x:Type vm:StoryListViewModel}}, Path=GoToDetailCommand}"
+                            CommandParameter="{Binding .}" />
+                    </VerticalStackLayout.GestureRecognizers>
+                    <Border HeightRequest="162" Style="{StaticResource CoverFrame}">
+                        <Grid>
+                            <Grid.Background>
+                                <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                    <GradientStop Color="#3F3A55" Offset="0.0" />
+                                    <GradientStop Color="#1E1B2E" Offset="1.0" />
+                                </LinearGradientBrush>
+                            </Grid.Background>
+                            <Label Text="{Binding Title}" IsVisible="{Binding HasNoCover}"
+                                   FontFamily="{StaticResource SerifFont}" FontSize="13"
+                                   TextColor="White" HorizontalTextAlignment="Center"
+                                   VerticalOptions="Center" Margin="8" />
+                            <Image Source="{Binding CoverUrl}" IsVisible="{Binding HasCover}" Aspect="AspectFill" />
+                        </Grid>
+                    </Border>
+                    <Label Text="{Binding Title}" FontFamily="BeVietnamBold" FontSize="13.5" Margin="0,8,0,0"
+                           TextColor="{DynamicResource WebText}" MaxLines="2" LineBreakMode="TailTruncation" />
+                    <Label Text="{Binding AuthorText}" Style="{StaticResource LblCardMeta}" Margin="0,2,0,0" />
+                </VerticalStackLayout>
+            </DataTemplate>
+
+            <!-- Thẻ lưới 3 cột có huy chương / số hạng (Bảng xếp hạng, hạng 2 trở đi) -->
+            <DataTemplate x:Key="RankCardTemplate" x:DataType="models:StorySummary">
+                <VerticalStackLayout FlexLayout.Basis="33.3%" Padding="5,0,5,16" Spacing="0"
+                                     fx:Motion.Press="True" fx:Motion.Reveal="True">
+                    <VerticalStackLayout.GestureRecognizers>
+                        <TapGestureRecognizer
+                            Command="{Binding Source={RelativeSource AncestorType={x:Type vm:StoryListViewModel}}, Path=GoToDetailCommand}"
+                            CommandParameter="{Binding .}" />
+                    </VerticalStackLayout.GestureRecognizers>
+                    <Grid>
+                        <Border HeightRequest="162" Style="{StaticResource CoverFrame}">
+                            <Grid>
+                                <Grid.Background>
+                                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                        <GradientStop Color="#3F3A55" Offset="0.0" />
+                                        <GradientStop Color="#1E1B2E" Offset="1.0" />
+                                    </LinearGradientBrush>
+                                </Grid.Background>
+                                <Label Text="{Binding Title}" IsVisible="{Binding HasNoCover}"
+                                       FontFamily="{StaticResource SerifFont}" FontSize="13"
+                                       TextColor="White" HorizontalTextAlignment="Center"
+                                       VerticalOptions="Center" Margin="8" />
+                                <Image Source="{Binding CoverUrl}" IsVisible="{Binding HasCover}" Aspect="AspectFill" />
+                            </Grid>
+                        </Border>
+
+                        <!-- Huy chương 2-3 -->
+                        <Border IsVisible="{Binding IsTop3}" WidthRequest="30" HeightRequest="30" StrokeThickness="2"
+                                Stroke="White" BackgroundColor="{Binding MedalColor}"
+                                HorizontalOptions="Start" VerticalOptions="Start" Margin="-4,-6,0,0">
+                            <Border.StrokeShape>
+                                <RoundRectangle CornerRadius="15" />
+                            </Border.StrokeShape>
+                            <Border.Shadow>
+                                <Shadow Brush="#000000" Offset="0,3" Radius="6" Opacity="0.35" />
+                            </Border.Shadow>
+                            <Label Text="{Binding RankText}" TextColor="White" FontFamily="BeVietnamExtraBold" FontSize="13"
+                                   HorizontalOptions="Center" VerticalOptions="Center" />
+                        </Border>
+                        <!-- Số hạng 4+ -->
+                        <Border IsVisible="{Binding IsRankNumber}" WidthRequest="30" HeightRequest="30" StrokeThickness="0"
+                                BackgroundColor="{DynamicResource WebSurface}"
+                                HorizontalOptions="Start" VerticalOptions="Start" Margin="-4,-6,0,0">
+                            <Border.StrokeShape>
+                                <RoundRectangle CornerRadius="15" />
+                            </Border.StrokeShape>
+                            <Border.Shadow>
+                                <Shadow Brush="#000000" Offset="0,3" Radius="6" Opacity="0.25" />
+                            </Border.Shadow>
+                            <Label Text="{Binding RankText}" TextColor="{DynamicResource WebText}" FontFamily="BeVietnamExtraBold"
+                                   FontSize="13" HorizontalOptions="Center" VerticalOptions="Center" />
+                        </Border>
+                    </Grid>
+                    <Label Text="{Binding Title}" FontFamily="BeVietnamBold" FontSize="13.5" Margin="0,8,0,0"
+                           TextColor="{DynamicResource WebText}" MaxLines="2" LineBreakMode="TailTruncation" />
+                    <Label Text="{Binding AuthorText}" Style="{StaticResource LblCardMeta}" Margin="0,2,0,0" />
+                </VerticalStackLayout>
+            </DataTemplate>
+
             <!-- Hàng ở bảng "Mới lên chương" -->
             <DataTemplate x:Key="UpdateRowTemplate" x:DataType="models:StorySummary">
-                <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,1" Padding="16,0" ColumnSpacing="10">
+                <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,1" Padding="16,0" ColumnSpacing="10" fx:Motion.Press="True">
                     <Grid.GestureRecognizers>
                         <TapGestureRecognizer
                             Command="{Binding Source={RelativeSource AncestorType={x:Type vm:StoryListViewModel}}, Path=GoToDetailCommand}"
@@ -83,69 +151,37 @@
                     </Grid.GestureRecognizers>
                     <VerticalStackLayout Grid.Column="0" Padding="0,12" Spacing="2">
                         <Label Text="{Binding Title}" FontSize="14" FontFamily="BeVietnamBold"
-                               TextColor="{StaticResource WebText}" LineBreakMode="TailTruncation" MaxLines="1" />
-                        <Label Text="{Binding AuthorName}" FontSize="12" TextColor="{StaticResource WebMuted}"
+                               TextColor="{DynamicResource WebText}" LineBreakMode="TailTruncation" MaxLines="1" />
+                        <Label Text="{Binding AuthorName}" FontSize="12" TextColor="{DynamicResource WebMuted}"
                                LineBreakMode="TailTruncation" MaxLines="1" />
                     </VerticalStackLayout>
                     <VerticalStackLayout Grid.Column="1" Padding="0,12" Spacing="2" HorizontalOptions="End">
-                        <Label Text="{Binding ChapterText}" FontSize="12" TextColor="{StaticResource WebText}" HorizontalTextAlignment="End" />
-                        <Label Text="{Binding AgoText}" FontSize="11.5" TextColor="{StaticResource WebMuted}" HorizontalTextAlignment="End" />
+                        <Label Text="{Binding ChapterText}" FontSize="12" TextColor="{DynamicResource WebText}" HorizontalTextAlignment="End" />
+                        <Label Text="{Binding AgoText}" FontSize="11.5" TextColor="{DynamicResource WebMuted}" HorizontalTextAlignment="End" />
                     </VerticalStackLayout>
-                    <BoxView Grid.Row="1" Grid.ColumnSpan="2" HeightRequest="1" Color="{StaticResource WebBorder}" />
+                    <BoxView Grid.Row="1" Grid.ColumnSpan="2" HeightRequest="1" Color="{DynamicResource WebBorder}" />
                 </Grid>
             </DataTemplate>
 
         </ResourceDictionary>
     </ContentPage.Resources>
 
-    <RefreshView IsRefreshing="{Binding IsRefreshing}" Command="{Binding RefreshCommand}">
-        <ScrollView>
-            <VerticalStackLayout Spacing="0">
+    <Grid RowDefinitions="Auto,*" RowSpacing="0">
 
-                <!-- Thanh trên: tìm kiếm + đăng nhập/đăng xuất (topbar của web) -->
-                <Grid BackgroundColor="White" Padding="16,10" ColumnDefinitions="*,Auto" ColumnSpacing="10">
-                    <Border Grid.Column="0" Style="{StaticResource FieldBorder}" HeightRequest="40">
-                        <Entry Style="{StaticResource WebEntry}" HeightRequest="40"
-                               Placeholder="Tìm truyện, tác giả..."
-                               Text="{Binding SearchText}"
-                               ReturnType="Search"
-                               ReturnCommand="{Binding SearchCommand}" />
-                    </Border>
-                    <Button Grid.Column="1" Text="Đăng nhập" Style="{StaticResource BtnBrassSm}"
-                            Command="{Binding GoToLoginCommand}" IsVisible="{Binding IsGuest}" />
-                    <Button Grid.Column="1" Text="Đăng xuất" Style="{StaticResource BtnOutlineSm}"
-                            Command="{Binding LogoutCommand}" IsVisible="{Binding IsLoggedIn}" />
-                </Grid>
-                <BoxView HeightRequest="1" Color="{StaticResource WebBorder}" />
+        <!-- Header tối, cùng màu với hero "sách bay" -->
+        <ctl:AppHeader x:Name="Header" Grid.Row="0" IsHero="True" ShowBrand="True" Greeting="True"
+                       Title="Chữ &amp; Đêm" Subtitle="Đọc truyện mỗi đêm" />
 
-                <ActivityIndicator IsRunning="{Binding IsBusy}" IsVisible="{Binding IsBusy}"
-                                   Color="{StaticResource WebRoyal}" Margin="0,16" />
+        <RefreshView Grid.Row="1" IsRefreshing="{Binding IsRefreshing}" Command="{Binding RefreshCommand}"
+                     RefreshColor="{DynamicResource WebRoyal}">
+            <ScrollView>
+                <VerticalStackLayout x:Name="Body" Spacing="0">
 
-                <Label Text="{Binding ErrorMessage}" TextColor="{StaticResource WebCrimson}" Padding="16,10"
-                       IsVisible="{Binding ErrorMessage, Converter={StaticResource StringToBoolConverter}}" />
+                    <ActivityIndicator IsRunning="{Binding IsBusy}" IsVisible="{Binding IsBusy}"
+                                       Color="{DynamicResource WebRoyal}" Margin="0,16" />
 
-                <!-- ============ KẾT QUẢ TÌM / LỌC (Stories/Browse) ============ -->
-                <Grid IsVisible="{Binding IsFiltering}" ColumnDefinitions="*,Auto" Padding="16,16,16,6">
-                    <Label Grid.Column="0" Text="{Binding FilterText}" VerticalOptions="Center"
-                           Style="{StaticResource LblH2}" FontSize="17" />
-                    <Button Grid.Column="1" Text="Xóa bộ lọc" Style="{StaticResource BtnLink}"
-                            Command="{Binding ClearFilterCommand}" />
-                </Grid>
-                <VerticalStackLayout IsVisible="{Binding IsFiltering}" Padding="16,8,16,24">
-                    <FlexLayout Wrap="Wrap" JustifyContent="Start"
-                                BindableLayout.ItemsSource="{Binding Results}"
-                                BindableLayout.ItemTemplate="{StaticResource StoryCardTemplate}" />
-                    <VerticalStackLayout IsVisible="{Binding ShowNoResults}" Padding="0,40" Spacing="6">
-                        <Label Text="Không tìm thấy truyện phù hợp" Style="{StaticResource LblH2}"
-                               FontSize="18" HorizontalTextAlignment="Center" />
-                        <Label Text="Thử tên truyện khác hoặc bỏ bộ lọc." Style="{StaticResource LblMuted}"
-                               HorizontalTextAlignment="Center" />
-                    </VerticalStackLayout>
-                </VerticalStackLayout>
-
-                <!-- ============ TRANG CHỦ (Home/Index) ============ -->
-                <VerticalStackLayout IsVisible="{Binding IsHome}" Spacing="0">
-                    <VerticalStackLayout x:Name="Recommendations" Padding="16,8" IsVisible="False" />
+                    <Label Text="{Binding ErrorMessage}" TextColor="{DynamicResource WebCrimson}" Padding="16,10"
+                           IsVisible="{Binding ErrorMessage, Converter={StaticResource StringToBoolConverter}}" />
 
                     <!-- Không có truyện -->
                     <VerticalStackLayout IsVisible="{Binding ShowEmpty}" Padding="20,60" Spacing="6">
@@ -157,68 +193,231 @@
 
                     <VerticalStackLayout IsVisible="{Binding HasStories}" Spacing="0">
 
-                        <!-- Hero "sách bay" (giống hero 3D của web) -->
+                        <!-- ============ HERO "SÁCH BAY" ============ -->
                         <ctl:FloatingHeroView x:Name="Hero" />
 
-                        <!-- Thống kê (hp-stats) -->
-                        <Border Style="{StaticResource Panel}" Margin="16,-34,16,0" Padding="10,14">
+                        <!-- ============ THỐNG KÊ ============ -->
+                        <Border Style="{StaticResource Panel}" Margin="16,-34,16,0" Padding="10,14" fx:Motion.Reveal="True">
                             <Grid ColumnDefinitions="*,*,*,*" ColumnSpacing="4">
                                 <VerticalStackLayout Grid.Column="0" HorizontalOptions="Center" Spacing="2">
                                     <Label Text="{Binding TotalStories}" Style="{StaticResource LblH2}" HorizontalTextAlignment="Center" />
-                                    <Label Text="Bộ truyện" FontSize="10.5" TextColor="{StaticResource WebMuted}" HorizontalTextAlignment="Center" />
+                                    <Label Text="Bộ truyện" FontSize="10.5" TextColor="{DynamicResource WebMuted}" HorizontalTextAlignment="Center" />
                                 </VerticalStackLayout>
                                 <VerticalStackLayout Grid.Column="1" HorizontalOptions="Center" Spacing="2">
                                     <Label Text="{Binding TotalGenres}" Style="{StaticResource LblH2}" HorizontalTextAlignment="Center" />
-                                    <Label Text="Thể loại" FontSize="10.5" TextColor="{StaticResource WebMuted}" HorizontalTextAlignment="Center" />
+                                    <Label Text="Thể loại" FontSize="10.5" TextColor="{DynamicResource WebMuted}" HorizontalTextAlignment="Center" />
                                 </VerticalStackLayout>
                                 <VerticalStackLayout Grid.Column="2" HorizontalOptions="Center" Spacing="2">
                                     <Label Text="{Binding TotalChapters}" Style="{StaticResource LblH2}" HorizontalTextAlignment="Center" />
-                                    <Label Text="Chương" FontSize="10.5" TextColor="{StaticResource WebMuted}" HorizontalTextAlignment="Center" />
+                                    <Label Text="Chương" FontSize="10.5" TextColor="{DynamicResource WebMuted}" HorizontalTextAlignment="Center" />
                                 </VerticalStackLayout>
                                 <VerticalStackLayout Grid.Column="3" HorizontalOptions="Center" Spacing="2">
                                     <Label Text="{Binding FreeCount}" Style="{StaticResource LblH2}" HorizontalTextAlignment="Center" />
-                                    <Label Text="Đọc miễn phí" FontSize="10.5" TextColor="{StaticResource WebMuted}" HorizontalTextAlignment="Center" />
+                                    <Label Text="Đọc miễn phí" FontSize="10.5" TextColor="{DynamicResource WebMuted}" HorizontalTextAlignment="Center" />
                                 </VerticalStackLayout>
                             </Grid>
                         </Border>
 
-                        <!-- Tìm thể loại bạn thích (hp-cats) -->
-                        <VerticalStackLayout IsVisible="{Binding HasGenres}" Padding="16,28,0,0" Spacing="12">
-                            <Label Text="Tìm thể loại bạn thích" Style="{StaticResource LblH2}" />
+                        <!-- ============ ĐỀ XUẤT CHO BẠN (theo sở thích) ============ -->
+                        <VerticalStackLayout IsVisible="{Binding IsLoggedIn}" Padding="16,30,16,0" Spacing="10">
+                            <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="8">
+                                <BoxView Grid.Column="0" Style="{StaticResource SectionBar}" />
+                                <Label Grid.Column="1" Text="⚡ Đề xuất cho bạn" Style="{StaticResource SectionTitle}" />
+                                <Button Grid.Column="2" Text="Xem tất cả  ›" Style="{StaticResource BtnLink}"
+                                        TextColor="{DynamicResource WebRoyal}"
+                                        IsVisible="{Binding HasRecommendations}" Command="{Binding GoToRecommendedCommand}" />
+                            </Grid>
+                            <Label Text="{Binding RecommendCaption}" Style="{StaticResource LblMuted}" Margin="12,-6,0,0"
+                                   IsVisible="{Binding HasPreferences}" />
+
+                            <!-- Chưa chọn sở thích -->
+                            <Border Style="{StaticResource Panel}" IsVisible="{Binding ShowPickPreferences}" fx:Motion.Reveal="True">
+                                <VerticalStackLayout Spacing="8">
+                                    <Label Text="Chọn thể loại bạn thích" Style="{StaticResource LblH2}" FontSize="17" />
+                                    <Label Text="Cho mình biết bạn thích đọc gì — mục này sẽ hiện ngay những truyện hợp gu của bạn."
+                                           Style="{StaticResource LblMuted}" />
+                                    <Button Text="Chọn sở thích" Style="{StaticResource BtnBrass}" Margin="0,4,0,0"
+                                            Command="{Binding GoToPreferencesCommand}" />
+                                </VerticalStackLayout>
+                            </Border>
+
+                            <ActivityIndicator IsRunning="{Binding IsRecommendBusy}" IsVisible="{Binding IsRecommendBusy}"
+                                               Color="{DynamicResource WebRoyal}" />
+
+                            <FlexLayout Wrap="Wrap" JustifyContent="Start" Margin="-5,4,-5,0"
+                                        IsVisible="{Binding HasRecommendations}"
+                                        BindableLayout.ItemsSource="{Binding Recommended}"
+                                        BindableLayout.ItemTemplate="{StaticResource GridCardTemplate}" />
+                        </VerticalStackLayout>
+
+                        <!-- ============ BẢNG XẾP HẠNG + LỌC THEO THỂ LOẠI ============ -->
+                        <VerticalStackLayout Padding="16,26,16,0" Spacing="12">
+                            <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="8">
+                                <BoxView Grid.Column="0" Style="{StaticResource SectionBar}" />
+                                <Label Grid.Column="1" Text="🔥 Bảng xếp hạng" Style="{StaticResource SectionTitle}" />
+                                <!-- Kỳ xếp hạng -->
+                                <Border Grid.Column="2" Style="{StaticResource Chip}" Padding="12,6" VerticalOptions="Center">
+                                    <Border.GestureRecognizers>
+                                        <TapGestureRecognizer Command="{Binding PickPeriodCommand}" />
+                                    </Border.GestureRecognizers>
+                                    <Label FontFamily="BeVietnamSemiBold" FontSize="13" TextColor="{DynamicResource WebRoyal}">
+                                        <Label.FormattedText>
+                                            <FormattedString>
+                                                <Span Text="{Binding PeriodName}" />
+                                                <Span Text="  ▾" />
+                                            </FormattedString>
+                                        </Label.FormattedText>
+                                    </Label>
+                                </Border>
+                            </Grid>
+
+                            <!-- Hàng thể loại (giống ảnh tham khảo: Tất cả | Ngôn Tình | Đô Thị ... ▾) -->
+                            <Border BackgroundColor="{DynamicResource WebSurface}" Stroke="{DynamicResource WebBorder}"
+                                    StrokeThickness="1" Padding="0">
+                                <Border.StrokeShape>
+                                    <RoundRectangle CornerRadius="16" />
+                                </Border.StrokeShape>
+                                <Grid ColumnDefinitions="*,1,48">
+                                    <ScrollView Grid.Column="0" Orientation="Horizontal" HorizontalScrollBarVisibility="Never">
+                                        <HorizontalStackLayout Padding="6,0" BindableLayout.ItemsSource="{Binding RankGenres}">
+                                            <BindableLayout.ItemTemplate>
+                                                <DataTemplate x:DataType="models:ChipItem">
+                                                    <Label Text="{Binding Name}" Padding="12,13" FontSize="15"
+                                                           FontFamily="BeVietnamMedium" TextColor="{DynamicResource WebMuted}"
+                                                           fx:Motion.Press="True">
+                                                        <Label.GestureRecognizers>
+                                                            <TapGestureRecognizer
+                                                                Command="{Binding Source={RelativeSource AncestorType={x:Type vm:StoryListViewModel}}, Path=SelectRankGenreCommand}"
+                                                                CommandParameter="{Binding .}" />
+                                                        </Label.GestureRecognizers>
+                                                        <Label.Triggers>
+                                                            <DataTrigger TargetType="Label" Binding="{Binding IsSelected}" Value="True">
+                                                                <Setter Property="TextColor" Value="{DynamicResource WebRoyal}" />
+                                                                <Setter Property="FontFamily" Value="BeVietnamExtraBold" />
+                                                            </DataTrigger>
+                                                        </Label.Triggers>
+                                                    </Label>
+                                                </DataTemplate>
+                                            </BindableLayout.ItemTemplate>
+                                        </HorizontalStackLayout>
+                                    </ScrollView>
+                                    <BoxView Grid.Column="1" Color="{DynamicResource WebBorder}" Margin="0,10" />
+                                    <Label Grid.Column="2" Text="▾" FontSize="20"
+                                           TextColor="{DynamicResource WebRoyal}"
+                                           HorizontalOptions="Center" VerticalOptions="Center" fx:Motion.Press="True">
+                                        <Label.GestureRecognizers>
+                                            <TapGestureRecognizer Command="{Binding PickRankGenreCommand}" />
+                                        </Label.GestureRecognizers>
+                                    </Label>
+                                </Grid>
+                            </Border>
+
+                            <!-- Tiêu chí: Lượt đọc | Theo dõi nhiều | Nổi bật nhất -->
                             <ScrollView Orientation="Horizontal" HorizontalScrollBarVisibility="Never">
-                                <HorizontalStackLayout Spacing="10" Padding="0,0,16,0"
-                                                       BindableLayout.ItemsSource="{Binding GenreCats}">
+                                <HorizontalStackLayout Spacing="8" BindableLayout.ItemsSource="{Binding RankMetrics}">
                                     <BindableLayout.ItemTemplate>
-                                        <DataTemplate x:DataType="models:Genre">
-                                            <Border Style="{StaticResource Panel}" Padding="16,12" WidthRequest="130">
+                                        <DataTemplate x:DataType="models:ChipItem">
+                                            <Border Style="{StaticResource Chip}">
                                                 <Border.GestureRecognizers>
                                                     <TapGestureRecognizer
-                                                        Command="{Binding Source={RelativeSource AncestorType={x:Type vm:StoryListViewModel}}, Path=FilterByGenreCommand}"
+                                                        Command="{Binding Source={RelativeSource AncestorType={x:Type vm:StoryListViewModel}}, Path=SelectRankMetricCommand}"
                                                         CommandParameter="{Binding .}" />
                                                 </Border.GestureRecognizers>
-                                                <VerticalStackLayout Spacing="2">
-                                                    <Label Text="{Binding Name}" FontFamily="BeVietnamBold" FontSize="14"
-                                                           TextColor="{StaticResource WebText}" LineBreakMode="TailTruncation" MaxLines="1" />
-                                                    <Label Text="Xem truyện" FontSize="11.5" TextColor="{StaticResource WebMuted}" />
-                                                </VerticalStackLayout>
+                                                <Border.Triggers>
+                                                    <DataTrigger TargetType="Border" Binding="{Binding IsSelected}" Value="True">
+                                                        <Setter Property="BackgroundColor" Value="{DynamicResource WebRoyal}" />
+                                                        <Setter Property="Stroke" Value="{DynamicResource WebRoyal}" />
+                                                    </DataTrigger>
+                                                </Border.Triggers>
+                                                <Label Text="{Binding Name}" Style="{StaticResource ChipText}">
+                                                    <Label.Triggers>
+                                                        <DataTrigger TargetType="Label" Binding="{Binding IsSelected}" Value="True">
+                                                            <Setter Property="TextColor" Value="White" />
+                                                        </DataTrigger>
+                                                    </Label.Triggers>
+                                                </Label>
                                             </Border>
                                         </DataTemplate>
                                     </BindableLayout.ItemTemplate>
                                 </HorizontalStackLayout>
                             </ScrollView>
+
+                            <ActivityIndicator IsRunning="{Binding IsRankingBusy}" IsVisible="{Binding IsRankingBusy}"
+                                               Color="{DynamicResource WebRoyal}" />
+
+                            <VerticalStackLayout x:Name="RankingBlock" IsVisible="{Binding HasRanking}" Spacing="16">
+                                <!-- Hạng 1: thẻ lớn -->
+                                <Border Style="{StaticResource Panel}" Padding="12" fx:Motion.Press="True">
+                                    <Border.GestureRecognizers>
+                                        <TapGestureRecognizer Command="{Binding GoToDetailCommand}" CommandParameter="{Binding RankingTop}" />
+                                    </Border.GestureRecognizers>
+                                    <Grid ColumnDefinitions="118,*" ColumnSpacing="14">
+                                        <Grid Grid.Column="0">
+                                            <Border HeightRequest="168" Style="{StaticResource CoverFrame}">
+                                                <Grid>
+                                                    <Grid.Background>
+                                                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                                            <GradientStop Color="#E11D48" Offset="0.0" />
+                                                            <GradientStop Color="#7F1D1D" Offset="1.0" />
+                                                        </LinearGradientBrush>
+                                                    </Grid.Background>
+                                                    <Label Text="{Binding RankingTop.Title}" IsVisible="{Binding RankingTop.HasNoCover}"
+                                                           FontFamily="{StaticResource SerifFont}" FontSize="14" TextColor="White"
+                                                           HorizontalTextAlignment="Center" VerticalOptions="Center" Margin="8" />
+                                                    <Image Source="{Binding RankingTop.CoverUrl}" IsVisible="{Binding RankingTop.HasCover}"
+                                                           Aspect="AspectFill" />
+                                                </Grid>
+                                            </Border>
+                                            <Border WidthRequest="34" HeightRequest="34" StrokeThickness="2" Stroke="White"
+                                                    BackgroundColor="#F59E0B" HorizontalOptions="Start" VerticalOptions="Start"
+                                                    Margin="-6,-8,0,0">
+                                                <Border.StrokeShape>
+                                                    <RoundRectangle CornerRadius="17" />
+                                                </Border.StrokeShape>
+                                                <Border.Shadow>
+                                                    <Shadow Brush="#F59E0B" Offset="0,3" Radius="10" Opacity="0.6" />
+                                                </Border.Shadow>
+                                                <Label Text="1" TextColor="White" FontFamily="BeVietnamExtraBold" FontSize="15"
+                                                       HorizontalOptions="Center" VerticalOptions="Center" />
+                                            </Border>
+                                        </Grid>
+                                        <VerticalStackLayout Grid.Column="1" Spacing="5" VerticalOptions="Center">
+                                            <Label Text="{Binding RankingTop.Title}" FontFamily="BeVietnamExtraBold" FontSize="17"
+                                                   TextColor="{DynamicResource WebText}" MaxLines="2" LineBreakMode="TailTruncation" />
+                                            <Label Text="{Binding RankingTop.AuthorText}" FontFamily="BeVietnamSemiBold" FontSize="13.5"
+                                                   TextColor="{DynamicResource WebRoyal2}" MaxLines="1" LineBreakMode="TailTruncation" />
+                                            <Label Text="{Binding RankingTop.Blurb}" FontSize="13" LineHeight="1.3"
+                                                   TextColor="{DynamicResource WebMuted}" MaxLines="4" LineBreakMode="TailTruncation" />
+                                            <Label Text="{Binding RankingTop.MetricText}" FontSize="12" FontFamily="BeVietnamSemiBold"
+                                                   TextColor="{DynamicResource WebAmber}" />
+                                        </VerticalStackLayout>
+                                    </Grid>
+                                </Border>
+
+                                <!-- Hạng 2..10: lưới 3 cột -->
+                                <FlexLayout Wrap="Wrap" JustifyContent="Start" Margin="-5,6,-5,0"
+                                            BindableLayout.ItemsSource="{Binding RankingRest}"
+                                            BindableLayout.ItemTemplate="{StaticResource RankCardTemplate}" />
+                            </VerticalStackLayout>
+
+                            <Label Text="Chưa có dữ liệu xếp hạng cho lựa chọn này." Style="{StaticResource LblMuted}"
+                                   HorizontalTextAlignment="Center" Margin="0,10" IsVisible="{Binding ShowRankingEmpty}" />
                         </VerticalStackLayout>
 
-                        <!-- Truyện nổi bật + 3 tab (hp-tabs) -->
-                        <VerticalStackLayout Padding="16,28,0,0" Spacing="12">
-                            <Label Text="Truyện nổi bật" Style="{StaticResource LblH2}" />
+                        <!-- ============ TRUYỆN NỔI BẬT (3 tab) ============ -->
+                        <VerticalStackLayout Padding="16,22,0,0" Spacing="12">
+                            <Grid ColumnDefinitions="Auto,*" ColumnSpacing="8">
+                                <BoxView Grid.Column="0" Style="{StaticResource SectionBar}" />
+                                <Label Grid.Column="1" Text="Truyện nổi bật" Style="{StaticResource SectionTitle}" />
+                            </Grid>
                             <HorizontalStackLayout Spacing="8">
                                 <Button Text="Mới cập nhật" Style="{StaticResource TabBtn}"
                                         Command="{Binding SelectTabCommand}" CommandParameter="0">
                                     <Button.Triggers>
                                         <DataTrigger TargetType="Button" Binding="{Binding IsTab0}" Value="True">
-                                            <Setter Property="BackgroundColor" Value="{StaticResource WebRoyal}" />
+                                            <Setter Property="BackgroundColor" Value="{DynamicResource WebRoyal}" />
                                             <Setter Property="TextColor" Value="White" />
-                                            <Setter Property="BorderColor" Value="{StaticResource WebRoyal}" />
+                                            <Setter Property="BorderColor" Value="{DynamicResource WebRoyal}" />
                                         </DataTrigger>
                                     </Button.Triggers>
                                 </Button>
@@ -226,9 +425,9 @@
                                         Command="{Binding SelectTabCommand}" CommandParameter="1">
                                     <Button.Triggers>
                                         <DataTrigger TargetType="Button" Binding="{Binding IsTab1}" Value="True">
-                                            <Setter Property="BackgroundColor" Value="{StaticResource WebRoyal}" />
+                                            <Setter Property="BackgroundColor" Value="{DynamicResource WebRoyal}" />
                                             <Setter Property="TextColor" Value="White" />
-                                            <Setter Property="BorderColor" Value="{StaticResource WebRoyal}" />
+                                            <Setter Property="BorderColor" Value="{DynamicResource WebRoyal}" />
                                         </DataTrigger>
                                     </Button.Triggers>
                                 </Button>
@@ -236,9 +435,9 @@
                                         Command="{Binding SelectTabCommand}" CommandParameter="2">
                                     <Button.Triggers>
                                         <DataTrigger TargetType="Button" Binding="{Binding IsTab2}" Value="True">
-                                            <Setter Property="BackgroundColor" Value="{StaticResource WebRoyal}" />
+                                            <Setter Property="BackgroundColor" Value="{DynamicResource WebRoyal}" />
                                             <Setter Property="TextColor" Value="White" />
-                                            <Setter Property="BorderColor" Value="{StaticResource WebRoyal}" />
+                                            <Setter Property="BorderColor" Value="{DynamicResource WebRoyal}" />
                                         </DataTrigger>
                                     </Button.Triggers>
                                 </Button>
@@ -250,31 +449,35 @@
                             </ScrollView>
                         </VerticalStackLayout>
 
-                        <!-- Mới lên chương (hp-list) -->
-                        <VerticalStackLayout Padding="0,16,0,0" Spacing="6">
-                            <Grid ColumnDefinitions="*,Auto" Padding="16,0">
-                                <Label Grid.Column="0" Text="Mới lên chương" Style="{StaticResource LblH2}" VerticalOptions="Center" />
-                                <Button Grid.Column="1" Text="Xem toàn bộ" Style="{StaticResource BtnLink}"
-                                        Command="{Binding GoToBrowseCommand}" />
+                        <!-- ============ MỚI LÊN CHƯƠNG ============ -->
+                        <VerticalStackLayout Padding="0,10,0,0" Spacing="6">
+                            <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="8" Padding="16,0">
+                                <BoxView Grid.Column="0" Style="{StaticResource SectionBar}" />
+                                <Label Grid.Column="1" Text="Mới lên chương" Style="{StaticResource SectionTitle}" />
+                                <Button Grid.Column="2" Text="Xem toàn bộ  ›" Style="{StaticResource BtnLink}"
+                                        TextColor="{DynamicResource WebRoyal}" Command="{Binding GoToSearchCommand}" />
                             </Grid>
-                            <Border Style="{StaticResource Panel}" Margin="16,0" Padding="0" StrokeThickness="1">
+                            <Border Style="{StaticResource Panel}" Margin="16,0,16,8" Padding="0" StrokeThickness="1">
                                 <VerticalStackLayout BindableLayout.ItemsSource="{Binding Updated}"
                                                      BindableLayout.ItemTemplate="{StaticResource UpdateRowTemplate}" />
                             </Border>
                         </VerticalStackLayout>
 
-                        <!-- Kêu gọi đăng nhập (hp-cta) — chỉ hiện khi chưa đăng nhập -->
-                        <Grid IsVisible="{Binding IsGuest}" Margin="16,28,16,32" Padding="22">
-                            <Grid.Background>
+                        <!-- ============ KÊU GỌI ĐĂNG NHẬP (khách) ============ -->
+                        <Border IsVisible="{Binding IsGuest}" Margin="16,22,16,32" Padding="22" StrokeThickness="0">
+                            <Border.StrokeShape>
+                                <RoundRectangle CornerRadius="18" />
+                            </Border.StrokeShape>
+                            <Border.Background>
                                 <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
-                                    <GradientStop Color="#14101F" Offset="0.0" />
+                                    <GradientStop Color="#17112C" Offset="0.0" />
                                     <GradientStop Color="#2A1B3D" Offset="1.0" />
                                 </LinearGradientBrush>
-                            </Grid.Background>
+                            </Border.Background>
                             <VerticalStackLayout Spacing="8">
                                 <Label Text="Tham gia cộng đồng đọc truyện" TextColor="White"
                                        FontFamily="{StaticResource SerifFont}" FontSize="20" />
-                                <Label Text="Đăng nhập để theo dõi truyện bạn yêu thích." TextColor="#CBD5E1" FontSize="14" />
+                                <Label Text="Đăng ký để chọn thể loại yêu thích và nhận đề xuất truyện hợp gu." TextColor="#CBD5E1" FontSize="14" />
                                 <HorizontalStackLayout Spacing="10" Margin="0,8,0,0">
                                     <Button Text="Đăng nhập" Style="{StaticResource BtnLight}"
                                             Command="{Binding GoToLoginCommand}" />
@@ -282,12 +485,12 @@
                                             Command="{Binding GoToRegisterCommand}" />
                                 </HorizontalStackLayout>
                             </VerticalStackLayout>
-                        </Grid>
+                        </Border>
+                        <BoxView HeightRequest="24" Color="Transparent" />
 
                     </VerticalStackLayout>
                 </VerticalStackLayout>
-
-            </VerticalStackLayout>
-        </ScrollView>
-    </RefreshView>
+            </ScrollView>
+        </RefreshView>
+    </Grid>
 </ContentPage>

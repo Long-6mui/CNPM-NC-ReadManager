@@ -3,23 +3,27 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:vm="clr-namespace:ReadManager.Mobile.ViewModels"
              xmlns:models="clr-namespace:ReadManager.Mobile.Models"
+             xmlns:ctl="clr-namespace:ReadManager.Mobile.Views.Controls"
              x:DataType="vm:LibraryViewModel"
              x:Class="ReadManager.Mobile.Views.LibraryPage"
              Title="Tủ sách"
-             BackgroundColor="{StaticResource WebBg}">
+             Shell.NavBarIsVisible="False"
+             BackgroundColor="{DynamicResource WebBg}">
 
-    <Grid RowDefinitions="Auto,Auto,*">
+    <Grid RowDefinitions="Auto,*" RowSpacing="0">
+    <ctl:AppHeader x:Name="Header" Grid.Row="0" Title="Tủ sách" Subtitle="Đang đọc · Đã xem · Yêu thích · Đã mua" />
+    <Grid Grid.Row="1" RowDefinitions="Auto,Auto,*">
 
         <!-- Ba mục: Đã xem gần đây | Yêu thích | Đã mua -->
-        <ScrollView Grid.Row="0" Orientation="Horizontal" BackgroundColor="#F6F5F2" HorizontalScrollBarVisibility="Never">
+        <ScrollView Grid.Row="0" Orientation="Horizontal" BackgroundColor="{DynamicResource WebBg}" HorizontalScrollBarVisibility="Never">
         <HorizontalStackLayout Spacing="8" Padding="16,12">
             <Button Text="Đang đọc" Style="{StaticResource TabBtn}"
                     Command="{Binding SelectTabCommand}" CommandParameter="3">
                 <Button.Triggers>
                     <DataTrigger TargetType="Button" Binding="{Binding IsTab3}" Value="True">
-                        <Setter Property="BackgroundColor" Value="{StaticResource WebRoyal}" />
+                        <Setter Property="BackgroundColor" Value="{DynamicResource WebRoyal}" />
                         <Setter Property="TextColor" Value="White" />
-                        <Setter Property="BorderColor" Value="{StaticResource WebRoyal}" />
+                        <Setter Property="BorderColor" Value="{DynamicResource WebRoyal}" />
                     </DataTrigger>
                 </Button.Triggers>
             </Button>
@@ -27,9 +31,9 @@
                     Command="{Binding SelectTabCommand}" CommandParameter="0">
                 <Button.Triggers>
                     <DataTrigger TargetType="Button" Binding="{Binding IsTab0}" Value="True">
-                        <Setter Property="BackgroundColor" Value="{StaticResource WebRoyal}" />
+                        <Setter Property="BackgroundColor" Value="{DynamicResource WebRoyal}" />
                         <Setter Property="TextColor" Value="White" />
-                        <Setter Property="BorderColor" Value="{StaticResource WebRoyal}" />
+                        <Setter Property="BorderColor" Value="{DynamicResource WebRoyal}" />
                     </DataTrigger>
                 </Button.Triggers>
             </Button>
@@ -37,9 +41,9 @@
                     Command="{Binding SelectTabCommand}" CommandParameter="1">
                 <Button.Triggers>
                     <DataTrigger TargetType="Button" Binding="{Binding IsTab1}" Value="True">
-                        <Setter Property="BackgroundColor" Value="{StaticResource WebRoyal}" />
+                        <Setter Property="BackgroundColor" Value="{DynamicResource WebRoyal}" />
                         <Setter Property="TextColor" Value="White" />
-                        <Setter Property="BorderColor" Value="{StaticResource WebRoyal}" />
+                        <Setter Property="BorderColor" Value="{DynamicResource WebRoyal}" />
                     </DataTrigger>
                 </Button.Triggers>
             </Button>
@@ -47,9 +51,9 @@
                     Command="{Binding SelectTabCommand}" CommandParameter="2">
                 <Button.Triggers>
                     <DataTrigger TargetType="Button" Binding="{Binding IsTab2}" Value="True">
-                        <Setter Property="BackgroundColor" Value="{StaticResource WebRoyal}" />
+                        <Setter Property="BackgroundColor" Value="{DynamicResource WebRoyal}" />
                         <Setter Property="TextColor" Value="White" />
-                        <Setter Property="BorderColor" Value="{StaticResource WebRoyal}" />
+                        <Setter Property="BorderColor" Value="{DynamicResource WebRoyal}" />
                     </DataTrigger>
                 </Button.Triggers>
             </Button>
@@ -76,7 +80,7 @@
 
                             <!-- Bìa nhỏ -->
                             <Border Grid.Column="0" HeightRequest="100" StrokeThickness="1"
-                                    Stroke="{StaticResource WebBorder}" VerticalOptions="Start">
+                                    Stroke="{DynamicResource WebBorder}" VerticalOptions="Start">
                                 <Border.StrokeShape>
                                     <RoundRectangle CornerRadius="12" />
                                 </Border.StrokeShape>
@@ -113,7 +117,7 @@
                                 <!-- Mục "Đã xem": chương đang đọc + thời điểm xem -->
                                 <VerticalStackLayout Spacing="2"
                                     IsVisible="{Binding Source={RelativeSource AncestorType={x:Type vm:LibraryViewModel}}, Path=ShowProgressInfo}">
-                                    <Label Text="{Binding ProgressText}" FontSize="12" TextColor="{StaticResource WebText}" />
+                                    <Label Text="{Binding ProgressText}" FontSize="12" TextColor="{DynamicResource WebText}" />
                                     <Label Text="{Binding ViewedText}" Style="{StaticResource LblCardMeta}" />
                                 </VerticalStackLayout>
 
@@ -129,7 +133,7 @@
                                     <Button Text="Xem truyện" Style="{StaticResource BtnOutlineSm}"
                                             Command="{Binding Source={RelativeSource AncestorType={x:Type vm:LibraryViewModel}}, Path=OpenCommand}"
                                             CommandParameter="{Binding .}" />
-                                    <Button Text="Xóa" Style="{StaticResource BtnLink}" TextColor="{StaticResource WebCrimson}"
+                                    <Button Text="Xóa" Style="{StaticResource BtnLink}" TextColor="{DynamicResource WebCrimson}"
                                             Command="{Binding Source={RelativeSource AncestorType={x:Type vm:LibraryViewModel}}, Path=RemoveCommand}"
                                             CommandParameter="{Binding .}" />
                                 </HorizontalStackLayout>
@@ -151,8 +155,8 @@
         <ScrollView Grid.Row="2" IsVisible="{Binding IsTab2}">
             <VerticalStackLayout Padding="16,6,16,32" Spacing="12">
 
-                <ActivityIndicator IsRunning="{Binding IsBusy}" IsVisible="{Binding IsBusy}" Color="{StaticResource WebRoyal}" />
-                <Label Text="{Binding ErrorMessage}" TextColor="{StaticResource WebCrimson}"
+                <ActivityIndicator IsRunning="{Binding IsBusy}" IsVisible="{Binding IsBusy}" Color="{DynamicResource WebRoyal}" />
+                <Label Text="{Binding ErrorMessage}" TextColor="{DynamicResource WebCrimson}"
                        IsVisible="{Binding ErrorMessage, Converter={StaticResource StringToBoolConverter}}" />
 
                 <!-- Chưa đăng nhập -->
@@ -166,17 +170,17 @@
                 <!-- Gói đang dùng -->
                 <Border Style="{StaticResource Panel}" IsVisible="{Binding HasMyPlans}">
                     <VerticalStackLayout Spacing="10">
-                        <Label Text="Gói đang dùng" FontSize="15" FontFamily="BeVietnamBold" TextColor="{StaticResource WebText}" />
+                        <Label Text="Gói đang dùng" FontSize="15" FontFamily="BeVietnamBold" TextColor="{DynamicResource WebText}" />
                         <VerticalStackLayout BindableLayout.ItemsSource="{Binding MyPlans}" Spacing="10">
                             <BindableLayout.ItemTemplate>
                                 <DataTemplate x:DataType="models:PlanEntitlement">
                                     <Grid ColumnDefinitions="*,Auto">
                                         <VerticalStackLayout Spacing="2">
-                                            <Label Text="{Binding PlanName}" FontSize="14" FontFamily="BeVietnamBold" TextColor="{StaticResource WebText}" />
+                                            <Label Text="{Binding PlanName}" FontSize="14" FontFamily="BeVietnamBold" TextColor="{DynamicResource WebText}" />
                                             <Label Text="{Binding ExpiresText}" Style="{StaticResource LblCardMeta}" />
                                         </VerticalStackLayout>
                                         <Label Grid.Column="1" Text="{Binding RemainingText}" FontSize="12" FontFamily="BeVietnamBold"
-                                               TextColor="{StaticResource WebSage}" VerticalOptions="Center" />
+                                               TextColor="{DynamicResource WebSage}" VerticalOptions="Center" />
                                     </Grid>
                                 </DataTemplate>
                             </BindableLayout.ItemTemplate>
@@ -187,7 +191,7 @@
                 <!-- Truyện đã mua trọn bộ -->
                 <Border Style="{StaticResource Panel}" IsVisible="{Binding HasOwnedStories}">
                     <VerticalStackLayout Spacing="10">
-                        <Label Text="Truyện đã mua trọn bộ" FontSize="15" FontFamily="BeVietnamBold" TextColor="{StaticResource WebText}" />
+                        <Label Text="Truyện đã mua trọn bộ" FontSize="15" FontFamily="BeVietnamBold" TextColor="{DynamicResource WebText}" />
                         <VerticalStackLayout BindableLayout.ItemsSource="{Binding OwnedStories}" Spacing="10">
                             <BindableLayout.ItemTemplate>
                                 <DataTemplate x:DataType="models:OwnedStory">
@@ -198,11 +202,11 @@
                                                 CommandParameter="{Binding .}" />
                                         </Grid.GestureRecognizers>
                                         <VerticalStackLayout Spacing="2">
-                                            <Label Text="{Binding Title}" FontSize="14" FontFamily="BeVietnamBold" TextColor="{StaticResource WebText}"
+                                            <Label Text="{Binding Title}" FontSize="14" FontFamily="BeVietnamBold" TextColor="{DynamicResource WebText}"
                                                    LineBreakMode="TailTruncation" MaxLines="1" />
                                             <Label Text="{Binding PurchasedText}" Style="{StaticResource LblCardMeta}" />
                                         </VerticalStackLayout>
-                                        <Label Grid.Column="1" Text="›" FontSize="20" TextColor="{StaticResource WebMuted}" VerticalOptions="Center" />
+                                        <Label Grid.Column="1" Text="›" FontSize="20" TextColor="{DynamicResource WebMuted}" VerticalOptions="Center" />
                                     </Grid>
                                 </DataTemplate>
                             </BindableLayout.ItemTemplate>
@@ -222,5 +226,6 @@
                         Command="{Binding OpenHistoryCommand}" />
             </VerticalStackLayout>
         </ScrollView>
+    </Grid>
     </Grid>
 </ContentPage>

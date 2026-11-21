@@ -1,0 +1,312 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:ReadManager.Mobile.ViewModels"
+             xmlns:models="clr-namespace:ReadManager.Mobile.Models"
+             xmlns:fx="clr-namespace:ReadManager.Mobile.Behaviors"
+             x:DataType="vm:SearchViewModel"
+             x:Class="ReadManager.Mobile.Views.SearchPage"
+             Title="Tìm kiếm"
+             Shell.NavBarIsVisible="False"
+             Shell.TabBarIsVisible="False"
+             BackgroundColor="{DynamicResource WebBg}">
+
+    <ContentPage.Resources>
+        <ResourceDictionary>
+            <!-- Kiểu danh sách: bìa + "N CHƯƠNG" + tên + tác giả (giống ảnh mẫu) -->
+            <DataTemplate x:Key="ListRowTemplate" x:DataType="models:StorySummary">
+                <Grid Padding="16,8" ColumnDefinitions="92,*" ColumnSpacing="14" fx:Motion.Press="True">
+                    <Grid.GestureRecognizers>
+                        <TapGestureRecognizer
+                            Command="{Binding Source={RelativeSource AncestorType={x:Type vm:SearchViewModel}}, Path=GoToDetailCommand}"
+                            CommandParameter="{Binding .}" />
+                    </Grid.GestureRecognizers>
+                    <Border Grid.Column="0" HeightRequest="128" Style="{StaticResource CoverFrame}">
+                        <Grid>
+                            <Grid.Background>
+                                <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                    <GradientStop Color="#3F3A55" Offset="0.0" />
+                                    <GradientStop Color="#1E1B2E" Offset="1.0" />
+                                </LinearGradientBrush>
+                            </Grid.Background>
+                            <Label Text="{Binding Title}" IsVisible="{Binding HasNoCover}" FontFamily="{StaticResource SerifFont}"
+                                   FontSize="12" TextColor="White" HorizontalTextAlignment="Center" VerticalOptions="Center" Margin="6" />
+                            <Image Source="{Binding CoverUrl}" IsVisible="{Binding HasCover}" Aspect="AspectFill" />
+                            <Border HorizontalOptions="Start" VerticalOptions="End" Margin="0,0,0,8" Padding="8,3"
+                                    StrokeThickness="0" BackgroundColor="{Binding AccessColor}">
+                                <Border.StrokeShape>
+                                    <RoundRectangle CornerRadius="0,8,0,8" />
+                                </Border.StrokeShape>
+                                <Label Text="{Binding AccessLabel}" TextColor="White" FontSize="10" FontFamily="BeVietnamBold" />
+                            </Border>
+                        </Grid>
+                    </Border>
+                    <VerticalStackLayout Grid.Column="1" Spacing="7" VerticalOptions="Center">
+                        <Border Style="{StaticResource ChapterBadge}">
+                            <Label Text="{Binding ChapterBadge}" FontSize="11.5" FontFamily="BeVietnamBold"
+                                   TextColor="{DynamicResource WebMuted}" />
+                        </Border>
+                        <Label Text="{Binding Title}" FontFamily="BeVietnamBold" FontSize="16"
+                               TextColor="{DynamicResource WebText}" MaxLines="2" LineBreakMode="TailTruncation" />
+                        <Label Text="{Binding AuthorText}" FontSize="13.5" TextColor="{DynamicResource WebMuted}"
+                               MaxLines="1" LineBreakMode="TailTruncation" />
+                    </VerticalStackLayout>
+                </Grid>
+            </DataTemplate>
+
+            <!-- Kiểu lưới 3 cột -->
+            <DataTemplate x:Key="GridCellTemplate" x:DataType="models:StorySummary">
+                <VerticalStackLayout Padding="6,0,6,14" fx:Motion.Press="True">
+                    <VerticalStackLayout.GestureRecognizers>
+                        <TapGestureRecognizer
+                            Command="{Binding Source={RelativeSource AncestorType={x:Type vm:SearchViewModel}}, Path=GoToDetailCommand}"
+                            CommandParameter="{Binding .}" />
+                    </VerticalStackLayout.GestureRecognizers>
+                    <Border HeightRequest="158" Style="{StaticResource CoverFrame}">
+                        <Grid>
+                            <Grid.Background>
+                                <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                    <GradientStop Color="#3F3A55" Offset="0.0" />
+                                    <GradientStop Color="#1E1B2E" Offset="1.0" />
+                                </LinearGradientBrush>
+                            </Grid.Background>
+                            <Label Text="{Binding Title}" IsVisible="{Binding HasNoCover}" FontFamily="{StaticResource SerifFont}"
+                                   FontSize="12" TextColor="White" HorizontalTextAlignment="Center" VerticalOptions="Center" Margin="6" />
+                            <Image Source="{Binding CoverUrl}" IsVisible="{Binding HasCover}" Aspect="AspectFill" />
+                        </Grid>
+                    </Border>
+                    <Label Text="{Binding Title}" FontFamily="BeVietnamBold" FontSize="13" Margin="0,8,0,0"
+                           TextColor="{DynamicResource WebText}" MaxLines="2" LineBreakMode="TailTruncation" />
+                    <Label Text="{Binding AuthorText}" Style="{StaticResource LblCardMeta}" />
+                </VerticalStackLayout>
+            </DataTemplate>
+        </ResourceDictionary>
+    </ContentPage.Resources>
+
+    <Grid RowDefinitions="Auto,*" RowSpacing="0">
+
+        <!-- ============ Ô TÌM KIẾM + "Hủy" ============ -->
+        <Grid Grid.Row="0" Padding="16,12,12,12" ColumnDefinitions="*,Auto" ColumnSpacing="10"
+              BackgroundColor="{DynamicResource WebHeader}">
+            <Border x:Name="SearchBox" Grid.Column="0" HeightRequest="48" Padding="14,0" StrokeThickness="2"
+                    Stroke="{DynamicResource WebBorder}" BackgroundColor="{DynamicResource WebField}">
+                <Border.StrokeShape>
+                    <RoundRectangle CornerRadius="24" />
+                </Border.StrokeShape>
+                <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="8">
+                    <Image x:Name="SearchGlyph" Grid.Column="0" Source="ic_search_ink.png" WidthRequest="20" HeightRequest="20"
+                           VerticalOptions="Center" Opacity="0.75" />
+                    <Entry x:Name="QueryEntry" Grid.Column="1" Style="{StaticResource WebEntry}"
+                           Placeholder="Tìm tên sách, tác giả,..." Text="{Binding SearchText}"
+                           ReturnType="Search" ReturnCommand="{Binding SearchCommand}"
+                           Focused="OnQueryFocused" Unfocused="OnQueryUnfocused" />
+                    <Label Grid.Column="2" Text="✕" FontSize="15" TextColor="{DynamicResource WebMuted}" Padding="6"
+                           VerticalOptions="Center" fx:Motion.Press="True"
+                           IsVisible="{Binding SearchText, Converter={StaticResource StringToBoolConverter}}">
+                        <Label.GestureRecognizers>
+                            <TapGestureRecognizer Command="{Binding ClearTextCommand}" />
+                        </Label.GestureRecognizers>
+                    </Label>
+                </Grid>
+            </Border>
+            <Label Grid.Column="1" Text="Hủy" FontSize="16" FontFamily="BeVietnamMedium" TextColor="{DynamicResource WebMuted}"
+                   VerticalOptions="Center" Padding="6,10" fx:Motion.Press="True">
+                <Label.GestureRecognizers>
+                    <TapGestureRecognizer Command="{Binding CancelCommand}" />
+                </Label.GestureRecognizers>
+            </Label>
+        </Grid>
+
+        <!-- ============ CHƯA TÌM: DANH MỤC + TỪ KHÓA HOT ============ -->
+        <ScrollView Grid.Row="1" IsVisible="{Binding IsBrowsing}">
+            <VerticalStackLayout Padding="16,14,16,28" Spacing="14">
+                <ActivityIndicator IsRunning="{Binding IsBusy}" IsVisible="{Binding IsBusy}" Color="{DynamicResource WebRoyal}" />
+                <Label Text="{Binding ErrorMessage}" TextColor="{DynamicResource WebCrimson}"
+                       IsVisible="{Binding ErrorMessage, Converter={StaticResource StringToBoolConverter}}" />
+
+                <VerticalStackLayout Spacing="10" IsVisible="{Binding HasKeywords}">
+                    <Label Text="🔥 Mọi người đang tìm" Style="{StaticResource SectionTitle}" FontSize="18" />
+                    <FlexLayout Wrap="Wrap" BindableLayout.ItemsSource="{Binding Keywords}">
+                        <BindableLayout.ItemTemplate>
+                            <DataTemplate x:DataType="x:String">
+                                <Border Style="{StaticResource Chip}" Margin="0,0,8,10" Padding="14,8"
+                                        BackgroundColor="{DynamicResource WebPill}" StrokeThickness="0">
+                                    <Border.GestureRecognizers>
+                                        <TapGestureRecognizer
+                                            Command="{Binding Source={RelativeSource AncestorType={x:Type vm:SearchViewModel}}, Path=SearchKeywordCommand}"
+                                            CommandParameter="{Binding .}" />
+                                    </Border.GestureRecognizers>
+                                    <Label Text="{Binding .}" FontFamily="BeVietnamSemiBold" FontSize="13"
+                                           TextColor="{DynamicResource WebPillText}" />
+                                </Border>
+                            </DataTemplate>
+                        </BindableLayout.ItemTemplate>
+                    </FlexLayout>
+                </VerticalStackLayout>
+
+                <Label Text="🌷 Danh mục" Style="{StaticResource SectionTitle}" FontSize="20" />
+                <FlexLayout Wrap="Wrap" BindableLayout.ItemsSource="{Binding Categories}">
+                    <BindableLayout.ItemTemplate>
+                        <DataTemplate x:DataType="models:ChipItem">
+                            <Border Style="{StaticResource Chip}" Margin="0,0,10,12" Padding="18,10" fx:Motion.Reveal="True">
+                                <Border.GestureRecognizers>
+                                    <TapGestureRecognizer
+                                        Command="{Binding Source={RelativeSource AncestorType={x:Type vm:SearchViewModel}}, Path=PickCategoryCommand}"
+                                        CommandParameter="{Binding .}" />
+                                </Border.GestureRecognizers>
+                                <Label Text="{Binding Name}" FontFamily="BeVietnamMedium" FontSize="15"
+                                       TextColor="{DynamicResource WebText}" />
+                            </Border>
+                        </DataTemplate>
+                    </BindableLayout.ItemTemplate>
+                </FlexLayout>
+            </VerticalStackLayout>
+        </ScrollView>
+
+        <!-- ============ KẾT QUẢ ============ -->
+        <Grid Grid.Row="1" IsVisible="{Binding HasQueried}" RowDefinitions="Auto,Auto,*">
+
+            <!-- Thanh lọc: ⚙ bộ lọc | thể loại ▾ | sắp xếp ▾ -->
+            <ScrollView Grid.Row="0" Orientation="Horizontal" HorizontalScrollBarVisibility="Never"
+                        BackgroundColor="{DynamicResource WebSurface2}">
+                <HorizontalStackLayout Padding="16,10" Spacing="10">
+                    <Border Style="{StaticResource IconCircle}" WidthRequest="44" HeightRequest="44"
+                            BackgroundColor="{DynamicResource WebSurface}">
+                        <Border.GestureRecognizers>
+                            <TapGestureRecognizer Command="{Binding PickFilterCommand}" />
+                        </Border.GestureRecognizers>
+                        <Border.Triggers>
+                            <DataTrigger TargetType="Border" Binding="{Binding HasFilter}" Value="True">
+                                <Setter Property="BackgroundColor" Value="{DynamicResource WebPill}" />
+                            </DataTrigger>
+                        </Border.Triggers>
+                        <Label Text="⚙" FontSize="19" TextColor="{DynamicResource WebText}"
+                               HorizontalOptions="Center" VerticalOptions="Center" />
+                    </Border>
+
+                    <!-- Thể loại (nền đậm như ảnh mẫu) -->
+                    <Border Style="{StaticResource Chip}" Padding="18,0" HeightRequest="44"
+                            BackgroundColor="{DynamicResource WebChipDark}" StrokeThickness="0">
+                        <Border.GestureRecognizers>
+                            <TapGestureRecognizer Command="{Binding PickGenreCommand}" />
+                        </Border.GestureRecognizers>
+                        <Label FontFamily="BeVietnamSemiBold" FontSize="15" VerticalOptions="Center"
+                               TextColor="{DynamicResource WebChipDarkText}">
+                            <Label.FormattedText>
+                                <FormattedString>
+                                    <Span Text="{Binding GenreName}" />
+                                    <Span Text="   ▾" />
+                                </FormattedString>
+                            </Label.FormattedText>
+                        </Label>
+                    </Border>
+
+                    <Border Style="{StaticResource Chip}" Padding="18,0" HeightRequest="44" StrokeThickness="0"
+                            BackgroundColor="{DynamicResource WebSurface}">
+                        <Border.GestureRecognizers>
+                            <TapGestureRecognizer Command="{Binding PickSortCommand}" />
+                        </Border.GestureRecognizers>
+                        <Label FontFamily="BeVietnamSemiBold" FontSize="15" VerticalOptions="Center"
+                               TextColor="{DynamicResource WebText}">
+                            <Label.FormattedText>
+                                <FormattedString>
+                                    <Span Text="{Binding SortName}" />
+                                    <Span Text="   ▾" />
+                                </FormattedString>
+                            </Label.FormattedText>
+                        </Label>
+                    </Border>
+
+                    <Border Style="{StaticResource Chip}" Padding="16,0" HeightRequest="44" StrokeThickness="0"
+                            BackgroundColor="{DynamicResource WebPill}" IsVisible="{Binding HasFilter}">
+                        <Border.GestureRecognizers>
+                            <TapGestureRecognizer Command="{Binding PickFilterCommand}" />
+                        </Border.GestureRecognizers>
+                        <Label Text="{Binding FilterName}" FontFamily="BeVietnamSemiBold" FontSize="14"
+                               VerticalOptions="Center" TextColor="{DynamicResource WebPillText}" />
+                    </Border>
+                </HorizontalStackLayout>
+            </ScrollView>
+
+            <!-- "Tìm thấy N truyện" + đổi kiểu xem -->
+            <Grid Grid.Row="1" Padding="16,14,16,6" ColumnDefinitions="*,Auto">
+                <Label Grid.Column="0" FontSize="18" FontFamily="BeVietnamMedium" TextColor="{DynamicResource WebRoyal}"
+                       VerticalOptions="Center">
+                    <Label.FormattedText>
+                        <FormattedString>
+                            <Span Text="Tìm thấy " />
+                            <Span Text="{Binding CountText}" FontFamily="BeVietnamExtraBold" />
+                        </FormattedString>
+                    </Label.FormattedText>
+                </Label>
+                <Border Grid.Column="1" Padding="4" StrokeThickness="0" BackgroundColor="{DynamicResource WebSurface2}">
+                    <Border.StrokeShape>
+                        <RoundRectangle CornerRadius="10" />
+                    </Border.StrokeShape>
+                    <HorizontalStackLayout Spacing="4">
+                        <Border WidthRequest="38" HeightRequest="32" StrokeThickness="0" BackgroundColor="Transparent"
+                                fx:Motion.Press="True">
+                            <Border.StrokeShape>
+                                <RoundRectangle CornerRadius="8" />
+                            </Border.StrokeShape>
+                            <Border.Triggers>
+                                <DataTrigger TargetType="Border" Binding="{Binding IsList}" Value="True">
+                                    <Setter Property="BackgroundColor" Value="{DynamicResource WebSurface}" />
+                                </DataTrigger>
+                            </Border.Triggers>
+                            <Border.GestureRecognizers>
+                                <TapGestureRecognizer Command="{Binding ShowListCommand}" />
+                            </Border.GestureRecognizers>
+                            <Label Text="☰" FontSize="16" TextColor="{DynamicResource WebText}"
+                                   HorizontalOptions="Center" VerticalOptions="Center" />
+                        </Border>
+                        <Border WidthRequest="38" HeightRequest="32" StrokeThickness="0" BackgroundColor="Transparent"
+                                fx:Motion.Press="True">
+                            <Border.StrokeShape>
+                                <RoundRectangle CornerRadius="8" />
+                            </Border.StrokeShape>
+                            <Border.Triggers>
+                                <DataTrigger TargetType="Border" Binding="{Binding IsGrid}" Value="True">
+                                    <Setter Property="BackgroundColor" Value="{DynamicResource WebSurface}" />
+                                </DataTrigger>
+                            </Border.Triggers>
+                            <Border.GestureRecognizers>
+                                <TapGestureRecognizer Command="{Binding ShowGridCommand}" />
+                            </Border.GestureRecognizers>
+                            <Label Text="▦" FontSize="16" TextColor="{DynamicResource WebText}"
+                                   HorizontalOptions="Center" VerticalOptions="Center" />
+                        </Border>
+                    </HorizontalStackLayout>
+                </Border>
+            </Grid>
+
+            <!-- Danh sách -->
+            <CollectionView Grid.Row="2" ItemsSource="{Binding Results}" SelectionMode="None"
+                            IsVisible="{Binding IsList}" ItemTemplate="{StaticResource ListRowTemplate}" />
+
+            <!-- Lưới 3 cột -->
+            <CollectionView Grid.Row="2" ItemsSource="{Binding Results}" SelectionMode="None" Margin="10,0"
+                            IsVisible="{Binding IsGrid}" ItemTemplate="{StaticResource GridCellTemplate}">
+                <CollectionView.ItemsLayout>
+                    <GridItemsLayout Orientation="Vertical" Span="3" />
+                </CollectionView.ItemsLayout>
+            </CollectionView>
+
+            <ActivityIndicator Grid.Row="2" IsRunning="{Binding IsSearching}" IsVisible="{Binding IsSearching}"
+                               Color="{DynamicResource WebRoyal}" VerticalOptions="Start" Margin="0,24" />
+
+            <VerticalStackLayout Grid.Row="2" IsVisible="{Binding ShowNoResults}" Padding="24,48" Spacing="6"
+                                 VerticalOptions="Start">
+                <Label Text="📚" FontSize="42" HorizontalTextAlignment="Center" />
+                <Label Text="Không tìm thấy truyện phù hợp" Style="{StaticResource LblH2}" FontSize="18"
+                       HorizontalTextAlignment="Center" />
+                <Label Text="Thử từ khóa khác hoặc đổi thể loại / bộ lọc." Style="{StaticResource LblMuted}"
+                       HorizontalTextAlignment="Center" />
+            </VerticalStackLayout>
+
+            <Label Grid.Row="2" Text="{Binding ErrorMessage}" TextColor="{DynamicResource WebCrimson}" Padding="16"
+                   VerticalOptions="Start"
+                   IsVisible="{Binding ErrorMessage, Converter={StaticResource StringToBoolConverter}}" />
+        </Grid>
+    </Grid>
+</ContentPage>

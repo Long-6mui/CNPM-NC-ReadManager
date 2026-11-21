@@ -16,6 +16,7 @@ public partial class LibraryPage : ContentPage
     protected override void OnAppearing()
     {
         base.OnAppearing();
+        _ = Header.RefreshAsync();
         _viewModel.LoadCommand.Execute(null);
     }
 }

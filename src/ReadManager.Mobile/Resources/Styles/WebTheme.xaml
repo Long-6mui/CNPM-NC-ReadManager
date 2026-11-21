@@ -3,7 +3,8 @@
 <!-- Theme lấy từ web (wwwroot/css/marvel-3d-theme.css, chế độ sáng): nền giấy ấm, chữ than, nhấn đỏ hồng #E11D48,
      điểm vàng #EAB308, phông Be Vietnam Pro. Giữ nguyên tên khóa cũ (WebRoyal, WebNavy...) để các trang không phải sửa. -->
 <ResourceDictionary xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
-                    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml">
+                    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+                    xmlns:fx="clr-namespace:ReadManager.Mobile.Behaviors">
 
     <!-- Bảng màu -->
     <Color x:Key="WebNavy">#18181B</Color>        <!-- mực đậm: avatar, chữ nhấn -->
@@ -22,6 +23,20 @@
     <Color x:Key="WebPillText">#BE123C</Color>
     <Color x:Key="WebInk2">#27272A</Color>
 
+    <!-- Khóa màu thêm cho chế độ sáng/tối (giá trị chế độ tối nằm ở Services/ThemeService.cs) -->
+    <Color x:Key="WebField">#F4F4F5</Color>
+    <Color x:Key="WebPlaceholder">#A1A1AA</Color>
+    <Color x:Key="WebHeader">#FFFFFF</Color>
+    <Color x:Key="WebTabBar">#FFFFFF</Color>
+    <Color x:Key="WebIconBg">#F4F2EE</Color>
+    <Color x:Key="WebWarnBg">#FFF5E5</Color>
+    <Color x:Key="WebDangerBg">#FDECEC</Color>
+    <Color x:Key="WebAlertBg">#FFF4DC</Color>
+    <Color x:Key="WebStreakDay">#EFEDE7</Color>
+    <Color x:Key="WebStreakDayOn">#FFF1E0</Color>
+    <Color x:Key="WebChipDark">#18181B</Color>
+    <Color x:Key="WebChipDarkText">#FFFFFF</Color>
+
     <!-- Phông: Be Vietnam Pro (đậm cho tiêu đề thay cho phông có chân cũ) -->
     <x:String x:Key="SerifFont">BeVietnamBold</x:String>
     <x:String x:Key="FontRegular">BeVietnamRegular</x:String>
@@ -32,7 +47,8 @@
 
     <!-- Nút -->
     <Style x:Key="BtnBrass" TargetType="Button">
-        <Setter Property="BackgroundColor" Value="{StaticResource WebRoyal}" />
+        <Setter Property="fx:Motion.Press" Value="True" />
+        <Setter Property="BackgroundColor" Value="{DynamicResource WebRoyal}" />
         <Setter Property="TextColor" Value="White" />
         <Setter Property="FontFamily" Value="BeVietnamSemiBold" />
         <Setter Property="FontSize" Value="14" />
@@ -42,6 +58,11 @@
         <Setter Property="Shadow">
             <Shadow Brush="#E11D48" Offset="0,6" Radius="14" Opacity="0.28" />
         </Setter>
+        <Style.Triggers>
+            <Trigger TargetType="Button" Property="IsEnabled" Value="False">
+                <Setter Property="Opacity" Value="0.5" />
+            </Trigger>
+        </Style.Triggers>
     </Style>
     <Style x:Key="BtnBrassSm" TargetType="Button" BasedOn="{StaticResource BtnBrass}">
         <Setter Property="FontSize" Value="13" />
@@ -50,9 +71,10 @@
         <Setter Property="CornerRadius" Value="9" />
     </Style>
     <Style x:Key="BtnOutlineSm" TargetType="Button">
-        <Setter Property="BackgroundColor" Value="White" />
-        <Setter Property="TextColor" Value="{StaticResource WebText}" />
-        <Setter Property="BorderColor" Value="{StaticResource WebBorder}" />
+        <Setter Property="fx:Motion.Press" Value="True" />
+        <Setter Property="BackgroundColor" Value="{DynamicResource WebSurface}" />
+        <Setter Property="TextColor" Value="{DynamicResource WebText}" />
+        <Setter Property="BorderColor" Value="{DynamicResource WebBorder}" />
         <Setter Property="BorderWidth" Value="1" />
         <Setter Property="FontFamily" Value="BeVietnamSemiBold" />
         <Setter Property="FontSize" Value="13" />
@@ -61,6 +83,7 @@
         <Setter Property="HeightRequest" Value="40" />
     </Style>
     <Style x:Key="BtnLight" TargetType="Button">
+        <Setter Property="fx:Motion.Press" Value="True" />
         <Setter Property="BackgroundColor" Value="#14FFFFFF" />
         <Setter Property="TextColor" Value="White" />
         <Setter Property="BorderColor" Value="#55FFFFFF" />
@@ -72,24 +95,26 @@
         <Setter Property="HeightRequest" Value="46" />
     </Style>
     <Style x:Key="BtnAmber" TargetType="Button" BasedOn="{StaticResource BtnBrass}">
-        <Setter Property="BackgroundColor" Value="{StaticResource WebAmber}" />
+        <Setter Property="BackgroundColor" Value="{DynamicResource WebAmber}" />
         <Setter Property="TextColor" Value="#241A08" />
         <Setter Property="Shadow">
             <Shadow Brush="#EAB308" Offset="0,6" Radius="14" Opacity="0.30" />
         </Setter>
     </Style>
     <Style x:Key="BtnLink" TargetType="Button">
+        <Setter Property="fx:Motion.Press" Value="True" />
         <Setter Property="BackgroundColor" Value="Transparent" />
-        <Setter Property="TextColor" Value="{StaticResource WebRoyal2}" />
+        <Setter Property="TextColor" Value="{DynamicResource WebRoyal2}" />
         <Setter Property="FontFamily" Value="BeVietnamSemiBold" />
         <Setter Property="FontSize" Value="13" />
         <Setter Property="Padding" Value="8,0" />
         <Setter Property="HeightRequest" Value="36" />
     </Style>
     <Style x:Key="TabBtn" TargetType="Button">
-        <Setter Property="BackgroundColor" Value="White" />
-        <Setter Property="TextColor" Value="{StaticResource WebMuted}" />
-        <Setter Property="BorderColor" Value="{StaticResource WebBorder}" />
+        <Setter Property="fx:Motion.Press" Value="True" />
+        <Setter Property="BackgroundColor" Value="{DynamicResource WebSurface}" />
+        <Setter Property="TextColor" Value="{DynamicResource WebMuted}" />
+        <Setter Property="BorderColor" Value="{DynamicResource WebBorder}" />
         <Setter Property="BorderWidth" Value="1" />
         <Setter Property="FontFamily" Value="BeVietnamSemiBold" />
         <Setter Property="FontSize" Value="13" />
@@ -102,28 +127,28 @@
     <Style x:Key="LblH2" TargetType="Label">
         <Setter Property="FontFamily" Value="BeVietnamBold" />
         <Setter Property="FontSize" Value="20" />
-        <Setter Property="TextColor" Value="{StaticResource WebText}" />
+        <Setter Property="TextColor" Value="{DynamicResource WebText}" />
     </Style>
     <Style x:Key="LblMuted" TargetType="Label">
         <Setter Property="FontSize" Value="13" />
         <Setter Property="LineHeight" Value="1.35" />
-        <Setter Property="TextColor" Value="{StaticResource WebMuted}" />
+        <Setter Property="TextColor" Value="{DynamicResource WebMuted}" />
     </Style>
     <Style x:Key="LblFieldName" TargetType="Label">
         <Setter Property="FontFamily" Value="BeVietnamSemiBold" />
         <Setter Property="FontSize" Value="13" />
-        <Setter Property="TextColor" Value="{StaticResource WebText}" />
+        <Setter Property="TextColor" Value="{DynamicResource WebText}" />
     </Style>
     <Style x:Key="LblCardTitle" TargetType="Label">
         <Setter Property="FontFamily" Value="BeVietnamSemiBold" />
         <Setter Property="FontSize" Value="14" />
-        <Setter Property="TextColor" Value="{StaticResource WebText}" />
+        <Setter Property="TextColor" Value="{DynamicResource WebText}" />
         <Setter Property="MaxLines" Value="2" />
         <Setter Property="LineBreakMode" Value="TailTruncation" />
     </Style>
     <Style x:Key="LblCardMeta" TargetType="Label">
         <Setter Property="FontSize" Value="11.5" />
-        <Setter Property="TextColor" Value="{StaticResource WebMuted}" />
+        <Setter Property="TextColor" Value="{DynamicResource WebMuted}" />
         <Setter Property="MaxLines" Value="1" />
         <Setter Property="LineBreakMode" Value="TailTruncation" />
     </Style>
@@ -132,13 +157,13 @@
         <Setter Property="FontFamily" Value="BeVietnamBold" />
         <Setter Property="FontSize" Value="11" />
         <Setter Property="CharacterSpacing" Value="1.2" />
-        <Setter Property="TextColor" Value="{StaticResource WebRoyal}" />
+        <Setter Property="TextColor" Value="{DynamicResource WebRoyal}" />
     </Style>
 
     <!-- Khung / ô nhập -->
     <Style x:Key="Panel" TargetType="Border">
-        <Setter Property="BackgroundColor" Value="White" />
-        <Setter Property="Stroke" Value="{StaticResource WebBorder}" />
+        <Setter Property="BackgroundColor" Value="{DynamicResource WebSurface}" />
+        <Setter Property="Stroke" Value="{DynamicResource WebBorder}" />
         <Setter Property="StrokeThickness" Value="1" />
         <Setter Property="Padding" Value="18" />
         <Setter Property="StrokeShape">
@@ -149,8 +174,8 @@
         </Setter>
     </Style>
     <Style x:Key="FieldBorder" TargetType="Border">
-        <Setter Property="BackgroundColor" Value="#F4F4F5" />
-        <Setter Property="Stroke" Value="{StaticResource WebBorder}" />
+        <Setter Property="BackgroundColor" Value="{DynamicResource WebField}" />
+        <Setter Property="Stroke" Value="{DynamicResource WebBorder}" />
         <Setter Property="StrokeThickness" Value="1" />
         <Setter Property="Padding" Value="14,0" />
         <Setter Property="StrokeShape">
@@ -159,7 +184,7 @@
     </Style>
     <!-- Nhãn nhỏ dạng viên thuốc (pill) -->
     <Style x:Key="Pill" TargetType="Border">
-        <Setter Property="BackgroundColor" Value="{StaticResource WebPill}" />
+        <Setter Property="BackgroundColor" Value="{DynamicResource WebPill}" />
         <Setter Property="StrokeThickness" Value="0" />
         <Setter Property="Padding" Value="10,3" />
         <Setter Property="StrokeShape">
@@ -168,10 +193,102 @@
     </Style>
     <Style x:Key="WebEntry" TargetType="Entry">
         <Setter Property="BackgroundColor" Value="Transparent" />
-        <Setter Property="TextColor" Value="{StaticResource WebText}" />
-        <Setter Property="PlaceholderColor" Value="#A1A1AA" />
+        <Setter Property="TextColor" Value="{DynamicResource WebText}" />
+        <Setter Property="PlaceholderColor" Value="{DynamicResource WebPlaceholder}" />
         <Setter Property="FontFamily" Value="BeVietnamRegular" />
         <Setter Property="FontSize" Value="14" />
         <Setter Property="HeightRequest" Value="46" />
+    </Style>
+
+    <!-- ===================== THÊM CHO GIAO DIỆN MỚI ===================== -->
+
+    <!-- Nút tròn trên header (tìm kiếm, chế độ tối, chuông...) -->
+    <Style x:Key="IconCircle" TargetType="Border">
+        <Setter Property="fx:Motion.Press" Value="True" />
+        <Setter Property="WidthRequest" Value="40" />
+        <Setter Property="HeightRequest" Value="40" />
+        <Setter Property="StrokeThickness" Value="0" />
+        <Setter Property="BackgroundColor" Value="{DynamicResource WebIconBg}" />
+        <Setter Property="StrokeShape">
+            <RoundRectangle CornerRadius="20" />
+        </Setter>
+    </Style>
+
+    <!-- Chip lọc (thể loại, tiêu chí xếp hạng...) -->
+    <Style x:Key="Chip" TargetType="Border">
+        <Setter Property="fx:Motion.Press" Value="True" />
+        <Setter Property="BackgroundColor" Value="{DynamicResource WebSurface}" />
+        <Setter Property="Stroke" Value="{DynamicResource WebBorder}" />
+        <Setter Property="StrokeThickness" Value="1" />
+        <Setter Property="Padding" Value="16,8" />
+        <Setter Property="StrokeShape">
+            <RoundRectangle CornerRadius="20" />
+        </Setter>
+    </Style>
+    <Style x:Key="ChipText" TargetType="Label">
+        <Setter Property="FontFamily" Value="BeVietnamSemiBold" />
+        <Setter Property="FontSize" Value="13.5" />
+        <Setter Property="TextColor" Value="{DynamicResource WebMuted}" />
+        <Setter Property="HorizontalTextAlignment" Value="Center" />
+        <Setter Property="VerticalTextAlignment" Value="Center" />
+    </Style>
+
+    <!-- Tiêu đề mục ở trang chủ (có vạch màu bên trái giống ảnh tham khảo) -->
+    <Style x:Key="SectionTitle" TargetType="Label">
+        <Setter Property="FontFamily" Value="BeVietnamExtraBold" />
+        <Setter Property="FontSize" Value="20" />
+        <Setter Property="TextColor" Value="{DynamicResource WebText}" />
+        <Setter Property="VerticalOptions" Value="Center" />
+    </Style>
+    <Style x:Key="SectionBar" TargetType="BoxView">
+        <Setter Property="WidthRequest" Value="4" />
+        <Setter Property="HeightRequest" Value="22" />
+        <Setter Property="CornerRadius" Value="2" />
+        <Setter Property="Color" Value="{DynamicResource WebRoyal}" />
+        <Setter Property="VerticalOptions" Value="Center" />
+    </Style>
+
+    <!-- Khung bìa truyện -->
+    <Style x:Key="CoverFrame" TargetType="Border">
+        <Setter Property="StrokeThickness" Value="0" />
+        <Setter Property="BackgroundColor" Value="{DynamicResource WebSurface2}" />
+        <Setter Property="StrokeShape">
+            <RoundRectangle CornerRadius="10" />
+        </Setter>
+        <Setter Property="Shadow">
+            <Shadow Brush="#18181B" Offset="0,6" Radius="12" Opacity="0.18" />
+        </Setter>
+    </Style>
+
+    <!-- Nhãn "107 CHƯƠNG" -->
+    <Style x:Key="ChapterBadge" TargetType="Border">
+        <Setter Property="BackgroundColor" Value="{DynamicResource WebSurface2}" />
+        <Setter Property="StrokeThickness" Value="0" />
+        <Setter Property="Padding" Value="9,3" />
+        <Setter Property="HorizontalOptions" Value="Start" />
+        <Setter Property="StrokeShape">
+            <RoundRectangle CornerRadius="6" />
+        </Setter>
+    </Style>
+
+    <!-- Dòng menu trong trang Tài khoản -->
+    <Style x:Key="MenuRow" TargetType="Grid">
+        <Setter Property="fx:Motion.Press" Value="True" />
+        <Setter Property="Padding" Value="16,14" />
+        <Setter Property="ColumnSpacing" Value="12" />
+        <Setter Property="BackgroundColor" Value="Transparent" />
+    </Style>
+
+    <!-- Nút đăng xuất -->
+    <Style x:Key="BtnDanger" TargetType="Button">
+        <Setter Property="fx:Motion.Press" Value="True" />
+        <Setter Property="BackgroundColor" Value="{DynamicResource WebDangerBg}" />
+        <Setter Property="TextColor" Value="{DynamicResource WebCrimson}" />
+        <Setter Property="BorderColor" Value="{DynamicResource WebCrimson}" />
+        <Setter Property="BorderWidth" Value="1" />
+        <Setter Property="FontFamily" Value="BeVietnamBold" />
+        <Setter Property="FontSize" Value="15" />
+        <Setter Property="CornerRadius" Value="12" />
+        <Setter Property="HeightRequest" Value="50" />
     </Style>
 </ResourceDictionary>
