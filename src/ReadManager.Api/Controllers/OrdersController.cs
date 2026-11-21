@@ -31,10 +31,21 @@ public class OrdersController : ControllerBase
 
     // ----- Báo giá -----
     [HttpGet("api/orders/quote/story/{storyId:int}")]
-    public async Task<ActionResult<OrderQuoteDto>> QuoteStory(int storyId)
+    public async Task<ActionResult<OrderQuoteDto>> QuoteStory(int storyId, [FromQuery] int? voucherId = null)
     {
-        var quote = await _orderService.QuoteStoryAsync(storyId, CurrentUserId);
-        return quote is null ? NotFound(new { message = "Không tìm thấy truyện." }) : Ok(quote);
+        try
+        {
+            var quote = await _orderService.QuoteStoryAsync(storyId, CurrentUserId, voucherId);
+            return quote is null ? NotFound(new { message = "Không tìm thấy truyện." }) : Ok(quote);
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return Conflict(new { message = ex.Message });
+        }
     }
 
     [HttpGet("api/orders/quote/plan/{planId:int}")]
@@ -62,6 +73,22 @@ public class OrdersController : ControllerBase
             return BadRequest(new { message = ex.Message });
         }
         catch (InvalidOperationException ex)  // đã sở hữu
+        {
+            return Conflict(new { message = ex.Message });
+        }
+    }
+
+    // ----- Hủy đơn chờ thanh toán -----
+    [Authorize]
+    [HttpPost("api/orders/{orderId:int}/cancel")]
+    public async Task<ActionResult<OrderDto>> Cancel(int orderId)
+    {
+        try
+        {
+            var order = await _orderService.CancelAsync(orderId, CurrentUserId!.Value);
+            return order is null ? NotFound(new { message = "Không tìm thấy đơn hàng." }) : Ok(order);
+        }
+        catch (InvalidOperationException ex)
         {
             return Conflict(new { message = ex.Message });
         }
