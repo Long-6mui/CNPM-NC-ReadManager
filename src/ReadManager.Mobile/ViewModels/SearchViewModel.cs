@@ -51,7 +51,9 @@ public partial class SearchViewModel : BaseViewModel
     [ObservableProperty] private bool hasGenre;
     [ObservableProperty] private string sortName = "Mới cập nhật";
     [ObservableProperty] private string filterName = "Tất cả truyện";
-    [ObservableProperty] private bool hasFilter;
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(FilterIconBg))]
+    private bool hasFilter;
     [ObservableProperty] private string countText = string.Empty;
     [ObservableProperty] private bool showNoResults;
     [ObservableProperty] private bool hasKeywords;
@@ -59,10 +61,17 @@ public partial class SearchViewModel : BaseViewModel
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(IsList))]
+    [NotifyPropertyChangedFor(nameof(ListTabBg))]
+    [NotifyPropertyChangedFor(nameof(GridTabBg))]
     private bool isGrid;
 
     public bool IsBrowsing => !HasQueried;
     public bool IsList => !IsGrid;
+
+    // Màu tính sẵn (không dùng DataTrigger + DynamicResource — xem Models/ChipItem.cs)
+    public Color FilterIconBg => ThemeService.Get(HasFilter ? "WebPill" : "WebSurface");
+    public Color ListTabBg => IsList ? ThemeService.Get("WebSurface") : Colors.Transparent;
+    public Color GridTabBg => IsGrid ? ThemeService.Get("WebSurface") : Colors.Transparent;
 
     private int? _genreId;
     private string _sortKey = "updated";

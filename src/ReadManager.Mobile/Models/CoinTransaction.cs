@@ -5,7 +5,7 @@ namespace ReadManager.Mobile.Models;
 // Lịch sử xu — GET api/reader/coin-history?page=&pageSize= (ReaderActivityController.History)
 public class CoinTransaction
 {
-    public int Id { get; set; }
+    public long Id { get; set; }
     public long Amount { get; set; }
     public long BalanceAfter { get; set; }
     public string Type { get; set; } = string.Empty;
@@ -20,6 +20,9 @@ public class CoinTransaction
     {
         "ChapterReward" => "📖",
         "FreezeCard" => "🧊",
+        "DailyCheckIn" => "📅",
+        "DailyMission" => "🎯",
+        "Voucher" => "🎟",
         _ when Description.Contains("chuỗi", StringComparison.OrdinalIgnoreCase) => "🔥",
         _ => Amount >= 0 ? "🪙" : "🎟"
     };

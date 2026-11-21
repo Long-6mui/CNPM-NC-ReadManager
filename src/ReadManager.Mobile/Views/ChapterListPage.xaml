@@ -25,7 +25,7 @@
                 <LinearItemsLayout Orientation="Vertical" ItemSpacing="8" />
             </CollectionView.ItemsLayout>
             <CollectionView.Footer>
-                <BoxView HeightRequest="20" Color="Transparent" />
+                <ContentView HeightRequest="20" />
             </CollectionView.Footer>
             <CollectionView.EmptyView>
                 <Label Text="Chưa có chương công khai." Style="{StaticResource LblMuted}"

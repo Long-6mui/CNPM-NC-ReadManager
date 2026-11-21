@@ -34,5 +34,7 @@ public class LibraryEntry
     [JsonIgnore] public string ViewedText => $"Xem {StoryLabels.Ago(ViewedAt)}";
     [JsonIgnore] public string SavedText => $"Đã lưu {StoryLabels.Ago(SavedAt)}";
     [JsonIgnore] public bool CanContinue => LastChapterId > 0;
+    // Dòng ghi chú do Tủ sách gán theo từng tab (tiến độ / lúc lưu / lúc theo dõi)
+    [JsonIgnore] public string Note { get; set; } = string.Empty;
     [JsonIgnore] public string ProgressText => LastChapterNumber > 0 ? $"Đã đọc đến chương {LastChapterNumber}" : "Chưa đọc chương nào";
 }

@@ -13,7 +13,7 @@ namespace ReadManager.Mobile.ViewModels;
 //  2. Thống kê nhanh
 //  3. Đề xuất cho bạn (3 hàng x 3 truyện theo sở thích, nút "Xem tất cả")
 //  4. Bảng xếp hạng (thay cho trang Xếp hạng cũ) + lọc theo thể loại + tiêu chí (lượt đọc / theo dõi / tổng hợp) + kỳ
-//  5. Truyện nổi bật (3 tab) và Mới lên chương
+//  5. Mới ra mắt (2 hàng x 2 truyện, "Xem thêm" -> trang Mới ra mắt) và Truyện nổi bật (3 tab)
 // Tìm kiếm đã chuyển sang trang riêng (nút 🔍 trên header).
 public partial class StoryListViewModel : BaseViewModel
 {
@@ -31,12 +31,21 @@ public partial class StoryListViewModel : BaseViewModel
     private int _rankingLoad;          // chống kết quả cũ ghi đè khi bấm chip liên tục
     private int _recommendLoad;
 
-    public ObservableCollection<StorySummary> Updated { get; } = new();          // hero + "Mới lên chương"
+    public ObservableCollection<StorySummary> Updated { get; } = new();          // hero "sách bay"
+    public ObservableCollection<StorySummary> NewReleases { get; } = new();      // "Mới ra mắt": 4 truyện mới đăng
     public ObservableCollection<StorySummary> TabStories { get; } = new();       // tab "Truyện nổi bật" đang chọn
     public ObservableCollection<StorySummary> Recommended { get; } = new();      // 9 truyện đề xuất
     public ObservableCollection<StorySummary> RankingRest { get; } = new();      // hạng 2..10
 
     public ObservableCollection<ChipItem> RankGenres { get; } = new();           // Tất cả + các thể loại
+
+    // Tab "Truyện nổi bật"
+    public ObservableCollection<ChipItem> FeaturedTabs { get; } = new()
+    {
+        new ChipItem("0", "Mới cập nhật") { IsSelected = true },
+        new ChipItem("1", "Vừa đăng"),
+        new ChipItem("2", "Đọc miễn phí"),
+    };
     public ObservableCollection<ChipItem> RankMetrics { get; } = new()
     {
         new ChipItem("reads", "Lượt đọc") { IsSelected = true },
@@ -53,11 +62,7 @@ public partial class StoryListViewModel : BaseViewModel
 
     [ObservableProperty] private bool isRefreshing;
 
-    [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(IsTab0))]
-    [NotifyPropertyChangedFor(nameof(IsTab1))]
-    [NotifyPropertyChangedFor(nameof(IsTab2))]
-    private int selectedTab;
+    private int _selectedTab;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(IsGuest))]
@@ -89,9 +94,6 @@ public partial class StoryListViewModel : BaseViewModel
 
     public bool IsGuest => !IsLoggedIn;
     public bool ShowPickPreferences => IsLoggedIn && !HasPreferences;
-    public bool IsTab0 => SelectedTab == 0;
-    public bool IsTab1 => SelectedTab == 1;
-    public bool IsTab2 => SelectedTab == 2;
 
     public StoryListViewModel(IStoryService storyService, IAuthService authService,
         RankingService ranking, RecommendationService recommend)
@@ -140,6 +142,7 @@ public partial class StoryListViewModel : BaseViewModel
 
         Replace(Updated, updated.Items);
         _newest = newest.Items;
+        Replace(NewReleases, newest.Items.Take(4));
         _free = free.Items;
 
         TotalStories = updated.TotalItems;
@@ -298,11 +301,16 @@ public partial class StoryListViewModel : BaseViewModel
     // ===================== ĐIỀU HƯỚNG =====================
 
     [RelayCommand]
-    private void SelectTab(string? index)
+    private void SelectFeaturedTab(ChipItem? chip)
     {
-        SelectedTab = int.TryParse(index, out var i) ? i : 0;
+        if (chip is null || chip.IsSelected) return;
+        foreach (var c in FeaturedTabs) c.IsSelected = ReferenceEquals(c, chip);
+        _selectedTab = int.TryParse(chip.Key, out var i) ? i : 0;
         ShowTab();
     }
+
+    [RelayCommand]
+    private async Task GoToNewReleasesAsync() => await Shell.Current.GoToAsync(nameof(Views.NewReleasesPage));
 
     [RelayCommand]
     private async Task GoToDetailAsync(StorySummary? story)
@@ -333,7 +341,7 @@ public partial class StoryListViewModel : BaseViewModel
 
     private void ShowTab()
     {
-        IEnumerable<StorySummary> source = SelectedTab switch
+        IEnumerable<StorySummary> source = _selectedTab switch
         {
             1 => _newest,
             2 => _free,
