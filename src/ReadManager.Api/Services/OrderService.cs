@@ -13,12 +13,15 @@ namespace ReadManager.Api.Services;
 public interface IOrderService
 {
     // Báo giá trước khi mua. Trả null = không tìm thấy truyện / gói.
-    Task<OrderQuoteDto?> QuoteStoryAsync(int storyId, int? userId);
+    Task<OrderQuoteDto?> QuoteStoryAsync(int storyId, int? userId, int? voucherId = null);
     Task<OrderQuoteDto?> QuotePlanAsync(int planId, int? userId);
 
     // Tạo đơn. Trả null = không tìm thấy truyện / gói.
-    // Ném ArgumentException (→ 400: dữ liệu sai / không bán) hoặc InvalidOperationException (→ 409: đã sở hữu).
+    // Ném ArgumentException (→ 400: dữ liệu sai / không bán) hoặc InvalidOperationException (→ 409: đã sở hữu / voucher không hợp lệ).
     Task<OrderDto?> CreateAsync(int userId, CreateOrderDto dto);
+
+    // Hủy đơn Pending của chính người mua và giải phóng voucher nếu có.
+    Task<OrderDto?> CancelAsync(int orderId, int userId);
 
     // PB26 — lịch sử của CHÍNH người đang đăng nhập
     Task<PagedResultDto<OrderDto>> GetMyOrdersAsync(int userId, string? status, int page, int pageSize);
@@ -64,7 +67,7 @@ public class OrderService : IOrderService
     // =====================================================================
     // BÁO GIÁ
     // =====================================================================
-    public async Task<OrderQuoteDto?> QuoteStoryAsync(int storyId, int? userId)
+    public async Task<OrderQuoteDto?> QuoteStoryAsync(int storyId, int? userId, int? voucherId = null)
     {
         var story = await _db.Stories.AsNoTracking()
             .Where(s => s.StoryId == storyId && s.Visibility == PublicVisibility)
@@ -73,12 +76,13 @@ public class OrderService : IOrderService
         if (story is null)
             return null;
 
+        var originalPrice = story.CurrentPrice ?? 0;
         var quote = new OrderQuoteDto
         {
             OrderType = TypeStory,
             StoryId = story.StoryId,
             ItemName = story.Title,
-            Amount = story.CurrentPrice ?? 0
+            Amount = originalPrice
         };
 
         // Truyện miễn phí / chưa có giá → không bán
@@ -100,7 +104,48 @@ public class OrderService : IOrderService
                 return quote;
             }
 
-            quote.PendingOrderId = await FindPendingAsync(userId.Value, TypeStory, storyId: storyId);
+            var pendingOrder = await _db.Orders.AsNoTracking()
+                .Where(o => o.UserId == userId.Value && o.Status == Pending
+                            && o.OrderType == TypeStory && o.StoryId == storyId)
+                .OrderByDescending(o => o.CreatedAt)
+                .Select(o => new { o.OrderId, o.Amount, o.OriginalAmount, o.DiscountAmount, o.VoucherId })
+                .FirstOrDefaultAsync();
+
+            quote.PendingOrderId = pendingOrder?.OrderId;
+
+            if (voucherId.HasValue)
+            {
+                if (pendingOrder is not null && pendingOrder.VoucherId == voucherId.Value)
+                {
+                    quote.OriginalAmount = pendingOrder.OriginalAmount ?? originalPrice;
+                    quote.DiscountAmount = pendingOrder.DiscountAmount;
+                    quote.Amount = pendingOrder.Amount;
+                    quote.VoucherId = pendingOrder.VoucherId;
+                }
+                else
+                {
+                    var now = DateTime.UtcNow;
+                    var voucher = await _db.Vouchers.AsNoTracking()
+                        .FirstOrDefaultAsync(v => v.VoucherId == voucherId.Value);
+                    ValidateVoucherForStory(voucher, userId.Value, originalPrice, now);
+                    var discount = CalculateVoucherDiscount(originalPrice, voucher!);
+                    quote.OriginalAmount = originalPrice;
+                    quote.DiscountAmount = discount;
+                    quote.Amount = originalPrice - discount;
+                    quote.VoucherId = voucher!.VoucherId;
+                }
+            }
+            else if (pendingOrder is not null && pendingOrder.DiscountAmount > 0)
+            {
+                quote.OriginalAmount = pendingOrder.OriginalAmount ?? originalPrice;
+                quote.DiscountAmount = pendingOrder.DiscountAmount;
+                quote.Amount = pendingOrder.Amount;
+                quote.VoucherId = pendingOrder.VoucherId;
+            }
+        }
+        else if (voucherId.HasValue)
+        {
+            throw new ArgumentException("Vui lòng đăng nhập để áp dụng voucher.");
         }
 
         quote.CanBuy = true;
@@ -148,6 +193,12 @@ public class OrderService : IOrderService
             throw new ArgumentException("Mua truyện cần gửi StoryId.");
         if (dto.OrderType == TypePlan && dto.PlanId is null && dto.PlanVersionId is null)
             throw new ArgumentException("Mua gói cần gửi PlanId hoặc PlanVersionId.");
+        if (dto.CouponId.HasValue && dto.VoucherId.HasValue)
+            throw new ArgumentException("Không thể áp dụng đồng thời coupon gói đọc và voucher mua truyện.");
+        if (dto.VoucherId.HasValue && dto.OrderType != TypeStory)
+            throw new ArgumentException("Voucher chỉ áp dụng khi mua truyện.");
+        if (dto.CouponId.HasValue && dto.OrderType != TypePlan)
+            throw new ArgumentException("Mã giảm giá chỉ áp dụng khi mua gói đọc.");
 
         // Mua gói theo PlanVersionId → tìm ra gói của phiên bản đó
         var planId = dto.PlanId;
@@ -160,6 +211,12 @@ public class OrderService : IOrderService
             if (planId is null)
                 return null;
         }
+
+        await using var tx = _db.Database.CurrentTransaction is null
+            ? await _db.Database.BeginTransactionAsync()
+            : null;
+        await _db.Users.FromSqlInterpolated($"SELECT * FROM Users WHERE UserId = {userId} FOR UPDATE")
+            .AsNoTracking().ToListAsync();
 
         // 2. Báo giá — giá LẤY TỪ DATABASE, không tin giá client gửi
         var quote = dto.OrderType == TypeStory
@@ -178,32 +235,48 @@ public class OrderService : IOrderService
         if (!quote.CanBuy)
             throw new ArgumentException(quote.Message ?? "Không thể mua nội dung này.");
 
+        var now = DateTime.UtcNow;
+
         // 3. Đang có đơn chờ thanh toán cho đúng món này → dùng lại đơn đó (bấm "Mua" 2 lần không tạo 2 đơn)
         if (quote.PendingOrderId.HasValue)
         {
-            var pendingCoupon = await _db.Orders.Where(o => o.OrderId == quote.PendingOrderId.Value)
-                .Select(o => o.CouponId).FirstOrDefaultAsync();
-            // Sprint 5 — người dùng chọn mã giảm giá KHÁC với đơn đang chờ → hủy đơn chờ cũ, tạo đơn mới có giảm giá
-            if (dto.CouponId is null || pendingCoupon == dto.CouponId)
+            var pendingInfo = await _db.Orders
+                .Where(o => o.OrderId == quote.PendingOrderId.Value)
+                .Select(o => new { o.CouponId, o.VoucherId })
+                .FirstOrDefaultAsync();
+
+            var switchingCoupon = dto.OrderType == TypePlan && dto.CouponId.HasValue && pendingInfo?.CouponId != dto.CouponId;
+            var switchingVoucher = dto.OrderType == TypeStory && dto.VoucherId.HasValue && pendingInfo?.VoucherId != dto.VoucherId;
+
+            if (!switchingCoupon && !switchingVoucher)
+            {
+                if (tx is not null) await tx.CommitAsync();
                 return await GetByIdAsync(quote.PendingOrderId.Value, userId, isAdmin: false);
+            }
 
             await _db.Orders.Where(o => o.OrderId == quote.PendingOrderId.Value && o.Status == Pending)
-                .ExecuteUpdateAsync(s => s.SetProperty(o => o.Status, Cancelled).SetProperty(o => o.UpdatedAt, DateTime.UtcNow));
+                .ExecuteUpdateAsync(s => s.SetProperty(o => o.Status, Cancelled).SetProperty(o => o.UpdatedAt, now));
+
+            if (pendingInfo?.VoucherId is int oldVoucherId)
+                await VoucherService.ReleaseUnusedVouchersAsync(_db, [oldVoucherId], now);
         }
 
-        // Sprint 5 — áp mã giảm giá từ chuỗi đọc (giá vẫn do SERVER tính, client chỉ gửi couponId)
-        var finalAmount = quote.Amount;
+        // Báo giá gốc trước giảm (nếu pending cũ có giảm giá thì lấy lại giá gốc của truyện/gói)
+        var baseAmount = quote.OriginalAmount ?? quote.Amount;
+        var finalAmount = baseAmount;
         decimal? originalAmount = null;
         var discount = 0m;
         int? couponId = null;
+        int? voucherId = null;
+        string? voucherName = null;
+
+        // Sprint 5 — áp mã giảm giá từ chuỗi đọc (gói đọc)
         if (dto.CouponId.HasValue)
         {
-            if (quote.OrderType != TypePlan)
-                throw new ArgumentException("Mã giảm giá chỉ áp dụng khi mua gói đọc.");
             var coupon = await _db.Coupons.FirstOrDefaultAsync(c => c.CouponId == dto.CouponId.Value && c.UserId == userId);
             if (coupon is null)
                 throw new ArgumentException("Mã giảm giá không tồn tại.");
-            if (coupon.ExpiresAt <= DateTime.UtcNow)
+            if (coupon.ExpiresAt <= now)
                 throw new ArgumentException("Mã giảm giá đã hết hạn.");
             var months = coupon.DurationMonthsCsv.Split(',', StringSplitOptions.RemoveEmptyEntries).Select(int.Parse).ToList();
             if (!months.Contains(quote.DurationMonths ?? 0))
@@ -212,14 +285,29 @@ public class OrderService : IOrderService
             if (inUse)
                 throw new ArgumentException("Mã giảm giá đã được sử dụng.");
 
-            originalAmount = quote.Amount;
-            discount = Math.Round(quote.Amount * coupon.Percent / 100m, 0);
-            finalAmount = quote.Amount - discount;
+            originalAmount = baseAmount;
+            discount = Math.Round(baseAmount * coupon.Percent / 100m, 0);
+            finalAmount = baseAmount - discount;
             couponId = coupon.CouponId;
         }
 
+        // Sprint 5 — áp voucher mua truyện và giữ chỗ (Reserved) cho đơn chờ thanh toán
+        if (dto.VoucherId.HasValue)
+        {
+            var voucher = await _db.Vouchers
+                .FromSqlInterpolated($"SELECT * FROM Vouchers WHERE VoucherId = {dto.VoucherId.Value} FOR UPDATE")
+                .FirstOrDefaultAsync();
+            ValidateVoucherForStory(voucher, userId, baseAmount, now);
+
+            originalAmount = baseAmount;
+            discount = CalculateVoucherDiscount(baseAmount, voucher!);
+            finalAmount = baseAmount - discount;
+            voucherId = voucher!.VoucherId;
+            voucherName = voucher.Name;
+            voucher.Status = VoucherStatuses.Reserved;
+        }
+
         // 4. Tạo đơn mới, chụp lại giá + tên + số tháng
-        var now = DateTime.UtcNow;
         var order = new Order
         {
             UserId = userId,
@@ -231,6 +319,8 @@ public class OrderService : IOrderService
             OriginalAmount = originalAmount,
             DiscountAmount = discount,
             CouponId = couponId,
+            VoucherId = voucherId,
+            VoucherName = voucherName,
             DurationMonths = quote.DurationMonths,
             Status = Pending,
             CreatedAt = now,
@@ -239,7 +329,45 @@ public class OrderService : IOrderService
         _db.Orders.Add(order);
         await _db.SaveChangesAsync();
 
+        if (tx is not null)
+            await tx.CommitAsync();
+
         return await GetByIdAsync(order.OrderId, userId, isAdmin: false);
+    }
+
+    public async Task<OrderDto?> CancelAsync(int orderId, int userId)
+    {
+        await using var tx = _db.Database.CurrentTransaction is null
+            ? await _db.Database.BeginTransactionAsync()
+            : null;
+        await _db.Users.FromSqlInterpolated($"SELECT * FROM Users WHERE UserId = {userId} FOR UPDATE")
+            .AsNoTracking().ToListAsync();
+
+        var now = DateTime.UtcNow;
+        await ExpireOldPendingAsync(userId);
+
+        var order = await _db.Orders.FirstOrDefaultAsync(o => o.OrderId == orderId && o.UserId == userId);
+        if (order is null)
+            return null;
+
+        if (order.Status == Pending)
+        {
+            order.Status = Cancelled;
+            order.UpdatedAt = now;
+            await _db.SaveChangesAsync();
+
+            if (order.VoucherId.HasValue)
+                await VoucherService.ReleaseUnusedVouchersAsync(_db, [order.VoucherId.Value], now);
+        }
+        else if (order.Status != Cancelled && order.Status != Expired)
+        {
+            throw new InvalidOperationException($"Đơn đang ở trạng thái {order.Status}, không thể hủy.");
+        }
+
+        if (tx is not null)
+            await tx.CommitAsync();
+
+        return await GetByIdAsync(orderId, userId, isAdmin: false);
     }
 
     // =====================================================================
@@ -280,14 +408,31 @@ public class OrderService : IOrderService
     public async Task<bool> MarkPaidAsync(int orderId, DateTime? paidAtUtc = null)
     {
         var now = DateTime.UtcNow;
+        var usedAt = paidAtUtc ?? now;
         // Chỉ đổi khi CHƯA Paid → callback gửi lặp nhiều lần cũng chỉ ghi nhận 1 lần.
         // Đơn đã Expired/Cancelled nhưng tiền vẫn về thành công → vẫn ghi nhận Paid để không mất tiền của người mua.
         var changed = await _db.Orders
             .Where(o => o.OrderId == orderId && o.Status != Paid)
             .ExecuteUpdateAsync(s => s
                 .SetProperty(o => o.Status, Paid)
-                .SetProperty(o => o.PaidAt, paidAtUtc ?? now)
+                .SetProperty(o => o.PaidAt, usedAt)
                 .SetProperty(o => o.UpdatedAt, now));
+
+        if (changed > 0)
+        {
+            var voucherId = await _db.Orders.AsNoTracking()
+                .Where(o => o.OrderId == orderId)
+                .Select(o => o.VoucherId)
+                .FirstOrDefaultAsync();
+            if (voucherId.HasValue)
+            {
+                await _db.Vouchers
+                    .Where(v => v.VoucherId == voucherId.Value && v.Status != VoucherStatuses.Used)
+                    .ExecuteUpdateAsync(s => s
+                        .SetProperty(v => v.Status, VoucherStatuses.Used)
+                        .SetProperty(v => v.UsedAt, usedAt));
+            }
+        }
         return changed > 0;
     }
 
@@ -299,6 +444,16 @@ public class OrderService : IOrderService
             .ExecuteUpdateAsync(s => s
                 .SetProperty(o => o.Status, Failed)
                 .SetProperty(o => o.UpdatedAt, now));
+
+        if (changed > 0)
+        {
+            var voucherId = await _db.Orders.AsNoTracking()
+                .Where(o => o.OrderId == orderId)
+                .Select(o => o.VoucherId)
+                .FirstOrDefaultAsync();
+            if (voucherId.HasValue)
+                await VoucherService.ReleaseUnusedVouchersAsync(_db, [voucherId.Value], now);
+        }
         return changed > 0;
     }
 
@@ -306,17 +461,41 @@ public class OrderService : IOrderService
     // HÀM PHỤ
     // =====================================================================
 
-    // Đơn Pending quá 30 phút → Expired (userId = null: tất cả người dùng)
-    private async Task ExpireOldPendingAsync(int? userId)
+    // Đơn Pending quá 30 phút → Expired + giải phóng voucher đang giữ (userId = null: tất cả người dùng)
+    private Task ExpireOldPendingAsync(int? userId)
+        => VoucherService.ExpirePendingOrdersAndVouchersAsync(_db, userId, DateTime.UtcNow);
+
+    private static void ValidateVoucherForStory(Voucher? voucher, int userId, decimal originalPrice, DateTime now)
     {
-        var now = DateTime.UtcNow;
-        var cutoff = now - PendingLifetime;
-        var query = _db.Orders.Where(o => o.Status == Pending && o.CreatedAt < cutoff);
-        if (userId.HasValue)
-            query = query.Where(o => o.UserId == userId.Value);
-        await query.ExecuteUpdateAsync(s => s
-            .SetProperty(o => o.Status, Expired)
-            .SetProperty(o => o.UpdatedAt, now));
+        if (voucher is null || voucher.UserId != userId)
+            throw new ArgumentException("Voucher không tồn tại hoặc không thuộc tài khoản của bạn.");
+        if (voucher.Status == VoucherStatuses.Used)
+            throw new InvalidOperationException("Voucher này đã được sử dụng.");
+        if (voucher.Status == VoucherStatuses.Reserved)
+            throw new InvalidOperationException("Voucher này đang được giữ cho một đơn chờ thanh toán khác.");
+        if (voucher.Status == VoucherStatuses.Expired || voucher.ExpiresAt <= now)
+            throw new InvalidOperationException("Voucher này đã hết hạn sử dụng.");
+        if (voucher.Status != VoucherStatuses.Available)
+            throw new InvalidOperationException("Voucher hiện không khả dụng.");
+        if (voucher.MinOrderAmount is > 0m && originalPrice < voucher.MinOrderAmount.Value)
+            throw new ArgumentException($"Đơn hàng tối thiểu {voucher.MinOrderAmount.Value:N0}₫ để áp dụng voucher này.");
+    }
+
+    private static decimal CalculateVoucherDiscount(decimal originalPrice, Voucher voucher)
+    {
+        decimal discount = voucher.DiscountType == VoucherDiscountTypes.Percent
+            ? Math.Round(originalPrice * voucher.Value / 100m, 0, MidpointRounding.AwayFromZero)
+            : voucher.Value;
+
+        if (voucher.DiscountType == VoucherDiscountTypes.Percent && voucher.MaxDiscount is > 0m)
+            discount = Math.Min(discount, voucher.MaxDiscount.Value);
+
+        // Giữ tổng thanh toán > 0 để khớp ràng buộc DB (CK_Orders_Amount) và cổng thanh toán.
+        var maxDiscount = originalPrice > 1000m
+            ? originalPrice - 1000m
+            : Math.Max(0m, originalPrice - 1m);
+
+        return Math.Clamp(discount, 0m, maxDiscount);
     }
 
     // Đã mua truyện này chưa (có đơn Paid)
@@ -388,6 +567,8 @@ public class OrderService : IOrderService
             OriginalAmount = o.OriginalAmount,
             DiscountAmount = o.DiscountAmount,
             CouponId = o.CouponId,
+            VoucherId = o.VoucherId,
+            VoucherName = o.VoucherName ?? (o.Voucher != null ? o.Voucher.Name : null),
             DurationMonths = o.DurationMonths,
             Status = o.Status,
             CreatedAt = o.CreatedAt,

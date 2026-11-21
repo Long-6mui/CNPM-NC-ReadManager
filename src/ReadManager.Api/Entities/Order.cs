@@ -28,12 +28,15 @@ public class Order
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
     public DateTime? PaidAt { get; set; }           // lúc thanh toán thành công
 
-    // SPRINT 5 — giảm giá từ chuỗi đọc: Amount là số tiền SAU giảm
-    public decimal? OriginalAmount { get; set; }    // giá gốc trước giảm (null = không dùng coupon)
+    // SPRINT 5 — giảm giá từ chuỗi đọc / voucher mua truyện: Amount là số tiền SAU giảm
+    public decimal? OriginalAmount { get; set; }    // giá gốc trước giảm (null = không dùng mã giảm)
     public decimal DiscountAmount { get; set; }     // số tiền được giảm
     public int? CouponId { get; set; }
+    public int? VoucherId { get; set; }
+    public string? VoucherName { get; set; }
 
     public User User { get; set; } = null!;
     public ReadingPlanVersion? PlanVersion { get; set; }
     public Story? Story { get; set; }
+    public Voucher? Voucher { get; set; }
 }
