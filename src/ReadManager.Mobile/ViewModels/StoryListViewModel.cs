@@ -5,6 +5,7 @@ using ReadManager.Mobile.Models;
 using ReadManager.Mobile.Services;
 using ReadManager.Mobile.Services.Auth;
 
+
 namespace ReadManager.Mobile.ViewModels;
 
 // TRANG CHỦ
@@ -18,7 +19,7 @@ public partial class StoryListViewModel : BaseViewModel
 {
     private const int HomePageSize = 12;      // web: ListAsync mặc định pageSize = 12
     private const int RecommendPreview = 9;   // 3 hàng x 3 truyện
-    private const int RankingTop = 10;        // hạng 1 (thẻ lớn) + 9 truyện (3 hàng x 3)
+    private const int RankingCount = 10;       // hạng 1 (thẻ lớn) + 9 truyện (3 hàng x 3)
 
     private readonly IStoryService _storyService;
     private readonly IAuthService _authService;
@@ -214,7 +215,7 @@ public partial class StoryListViewModel : BaseViewModel
         {
             var by = RankMetrics.FirstOrDefault(c => c.IsSelected)?.Key ?? "reads";
             var genreId = RankGenres.FirstOrDefault(c => c.IsSelected)?.Id;
-            var items = await _ranking.GetStoriesAsync(by, PeriodKey, genreId, RankingTop);
+            var items = await _ranking.GetStoriesAsync(by, PeriodKey, genreId, RankingCount);
             if (load != _rankingLoad) return;
 
             foreach (var s in items) s.MetricText = MetricLabel(by, s);
