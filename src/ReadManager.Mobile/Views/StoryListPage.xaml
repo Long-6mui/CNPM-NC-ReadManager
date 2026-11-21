@@ -3,6 +3,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:vm="clr-namespace:ReadManager.Mobile.ViewModels"
              xmlns:models="clr-namespace:ReadManager.Mobile.Models"
+             xmlns:ctl="clr-namespace:ReadManager.Mobile.Views.Controls"
              x:DataType="vm:StoryListViewModel"
              x:Class="ReadManager.Mobile.Views.StoryListPage"
              Title="Chữ &amp; Đêm"
@@ -28,19 +29,23 @@
                     <Border HeightRequest="225" StrokeThickness="1" Stroke="{StaticResource WebBorder}"
                             BackgroundColor="{StaticResource WebSurface2}">
                         <Border.StrokeShape>
-                            <RoundRectangle CornerRadius="4" />
+                            <RoundRectangle CornerRadius="12" />
                         </Border.StrokeShape>
+<Border.Shadow>
+                        <Shadow Brush="#18181B" Offset="0,8" Radius="14" Opacity="0.20" />
+                    </Border.Shadow>
+
                         <Grid>
                             <Grid.Background>
                                 <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
-                                    <GradientStop Color="#3B4E63" Offset="0.0" />
-                                    <GradientStop Color="#22303F" Offset="1.0" />
+                                    <GradientStop Color="#3F3A55" Offset="0.0" />
+                                    <GradientStop Color="#1E1B2E" Offset="1.0" />
                                 </LinearGradientBrush>
                             </Grid.Background>
 
                             <!-- Chưa có bìa: hiện tên truyện trên nền gradient (gen-cover của web) -->
                             <Label Text="{Binding Title}" IsVisible="{Binding HasNoCover}"
-                                   FontFamily="{StaticResource SerifFont}" FontSize="15" FontAttributes="Bold"
+                                   FontFamily="{StaticResource SerifFont}" FontSize="15"
                                    TextColor="White" HorizontalTextAlignment="Center"
                                    VerticalOptions="Center" Margin="10" />
                             <Image Source="{Binding CoverUrl}" IsVisible="{Binding HasCover}" Aspect="AspectFill" />
@@ -48,17 +53,17 @@
                             <Border HorizontalOptions="Start" VerticalOptions="Start" Margin="7"
                                     Padding="7,3" StrokeThickness="0" BackgroundColor="{Binding AccessColor}">
                                 <Border.StrokeShape>
-                                    <RoundRectangle CornerRadius="3" />
+                                    <RoundRectangle CornerRadius="8" />
                                 </Border.StrokeShape>
-                                <Label Text="{Binding AccessLabel}" TextColor="White" FontSize="10" FontAttributes="Bold" />
+                                <Label Text="{Binding AccessLabel}" TextColor="White" FontSize="10" FontFamily="BeVietnamBold" />
                             </Border>
 
                             <Border HorizontalOptions="End" VerticalOptions="End" Margin="7"
                                     Padding="6,2" StrokeThickness="0" BackgroundColor="#8C000000">
                                 <Border.StrokeShape>
-                                    <RoundRectangle CornerRadius="3" />
+                                    <RoundRectangle CornerRadius="8" />
                                 </Border.StrokeShape>
-                                <Label Text="{Binding StatusLabel}" TextColor="White" FontSize="9.5" FontAttributes="Bold" />
+                                <Label Text="{Binding StatusLabel}" TextColor="White" FontSize="9.5" FontFamily="BeVietnamBold" />
                             </Border>
                         </Grid>
                     </Border>
@@ -77,7 +82,7 @@
                             CommandParameter="{Binding .}" />
                     </Grid.GestureRecognizers>
                     <VerticalStackLayout Grid.Column="0" Padding="0,12" Spacing="2">
-                        <Label Text="{Binding Title}" FontSize="14" FontAttributes="Bold"
+                        <Label Text="{Binding Title}" FontSize="14" FontFamily="BeVietnamBold"
                                TextColor="{StaticResource WebText}" LineBreakMode="TailTruncation" MaxLines="1" />
                         <Label Text="{Binding AuthorName}" FontSize="12" TextColor="{StaticResource WebMuted}"
                                LineBreakMode="TailTruncation" MaxLines="1" />
@@ -152,29 +157,8 @@
 
                     <VerticalStackLayout IsVisible="{Binding HasStories}" Spacing="0">
 
-                        <!-- Hero (hp-hero) -->
-                        <Grid Padding="22,32,22,64">
-                            <Grid.Background>
-                                <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
-                                    <GradientStop Color="#0B1F4B" Offset="0.0" />
-                                    <GradientStop Color="#12347D" Offset="1.0" />
-                                </LinearGradientBrush>
-                            </Grid.Background>
-                            <VerticalStackLayout Spacing="12">
-                                <Label Text="Thư viện đọc truyện trực tuyến" TextColor="{StaticResource WebAmber}"
-                                       FontSize="13" FontAttributes="Bold" />
-                                <Label Text="Mỗi trang sách, một chân trời mới." TextColor="White"
-                                       FontFamily="{StaticResource SerifFont}" FontSize="32" FontAttributes="Bold" />
-                                <Label Text="Khám phá những câu chuyện mới, từ hành trình kỳ ảo đến những điều bình dị mỗi ngày."
-                                       TextColor="#C3D2F5" FontSize="15" />
-                                <HorizontalStackLayout Spacing="10" Margin="0,6,0,0">
-                                    <Button Text="Khám phá thư viện" Style="{StaticResource BtnBrass}"
-                                            Command="{Binding GoToBrowseCommand}" />
-                                    <Button Text="Đọc miễn phí" Style="{StaticResource BtnLight}"
-                                            Command="{Binding BrowseCommand}" CommandParameter="Free" />
-                                </HorizontalStackLayout>
-                            </VerticalStackLayout>
-                        </Grid>
+                        <!-- Hero "sách bay" (giống hero 3D của web) -->
+                        <ctl:FloatingHeroView x:Name="Hero" />
 
                         <!-- Thống kê (hp-stats) -->
                         <Border Style="{StaticResource Panel}" Margin="16,-34,16,0" Padding="10,14">
@@ -213,7 +197,7 @@
                                                         CommandParameter="{Binding .}" />
                                                 </Border.GestureRecognizers>
                                                 <VerticalStackLayout Spacing="2">
-                                                    <Label Text="{Binding Name}" FontAttributes="Bold" FontSize="14"
+                                                    <Label Text="{Binding Name}" FontFamily="BeVietnamBold" FontSize="14"
                                                            TextColor="{StaticResource WebText}" LineBreakMode="TailTruncation" MaxLines="1" />
                                                     <Label Text="Xem truyện" FontSize="11.5" TextColor="{StaticResource WebMuted}" />
                                                 </VerticalStackLayout>
@@ -232,9 +216,9 @@
                                         Command="{Binding SelectTabCommand}" CommandParameter="0">
                                     <Button.Triggers>
                                         <DataTrigger TargetType="Button" Binding="{Binding IsTab0}" Value="True">
-                                            <Setter Property="BackgroundColor" Value="{StaticResource WebNavy}" />
+                                            <Setter Property="BackgroundColor" Value="{StaticResource WebRoyal}" />
                                             <Setter Property="TextColor" Value="White" />
-                                            <Setter Property="BorderColor" Value="{StaticResource WebNavy}" />
+                                            <Setter Property="BorderColor" Value="{StaticResource WebRoyal}" />
                                         </DataTrigger>
                                     </Button.Triggers>
                                 </Button>
@@ -242,9 +226,9 @@
                                         Command="{Binding SelectTabCommand}" CommandParameter="1">
                                     <Button.Triggers>
                                         <DataTrigger TargetType="Button" Binding="{Binding IsTab1}" Value="True">
-                                            <Setter Property="BackgroundColor" Value="{StaticResource WebNavy}" />
+                                            <Setter Property="BackgroundColor" Value="{StaticResource WebRoyal}" />
                                             <Setter Property="TextColor" Value="White" />
-                                            <Setter Property="BorderColor" Value="{StaticResource WebNavy}" />
+                                            <Setter Property="BorderColor" Value="{StaticResource WebRoyal}" />
                                         </DataTrigger>
                                     </Button.Triggers>
                                 </Button>
@@ -252,9 +236,9 @@
                                         Command="{Binding SelectTabCommand}" CommandParameter="2">
                                     <Button.Triggers>
                                         <DataTrigger TargetType="Button" Binding="{Binding IsTab2}" Value="True">
-                                            <Setter Property="BackgroundColor" Value="{StaticResource WebNavy}" />
+                                            <Setter Property="BackgroundColor" Value="{StaticResource WebRoyal}" />
                                             <Setter Property="TextColor" Value="White" />
-                                            <Setter Property="BorderColor" Value="{StaticResource WebNavy}" />
+                                            <Setter Property="BorderColor" Value="{StaticResource WebRoyal}" />
                                         </DataTrigger>
                                     </Button.Triggers>
                                 </Button>
@@ -283,14 +267,14 @@
                         <Grid IsVisible="{Binding IsGuest}" Margin="16,28,16,32" Padding="22">
                             <Grid.Background>
                                 <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
-                                    <GradientStop Color="#0B1F4B" Offset="0.0" />
-                                    <GradientStop Color="#12347D" Offset="1.0" />
+                                    <GradientStop Color="#14101F" Offset="0.0" />
+                                    <GradientStop Color="#2A1B3D" Offset="1.0" />
                                 </LinearGradientBrush>
                             </Grid.Background>
                             <VerticalStackLayout Spacing="8">
                                 <Label Text="Tham gia cộng đồng đọc truyện" TextColor="White"
-                                       FontFamily="{StaticResource SerifFont}" FontSize="20" FontAttributes="Bold" />
-                                <Label Text="Đăng nhập để theo dõi truyện bạn yêu thích." TextColor="#C3D2F5" FontSize="14" />
+                                       FontFamily="{StaticResource SerifFont}" FontSize="20" />
+                                <Label Text="Đăng nhập để theo dõi truyện bạn yêu thích." TextColor="#CBD5E1" FontSize="14" />
                                 <HorizontalStackLayout Spacing="10" Margin="0,8,0,0">
                                     <Button Text="Đăng nhập" Style="{StaticResource BtnLight}"
                                             Command="{Binding GoToLoginCommand}" />

@@ -35,8 +35,8 @@ public class StreakDay
     public bool IsToday { get; set; }
 
     public string Mark => Read ? "🔥" : (IsToday ? "·" : "○");
-    public Color BgColor => Read ? Color.FromArgb("#FFF1E0") : Color.FromArgb("#EEF2F9");
-    public Color BorderColor => IsToday ? Color.FromArgb("#1D4ED8") : Colors.Transparent;
+    public Color BgColor => Read ? Color.FromArgb("#FFF1E0") : Color.FromArgb("#EFEDE7");
+    public Color BorderColor => IsToday ? Color.FromArgb("#E11D48") : Colors.Transparent;
 }
 
 public class StreakRewardItem

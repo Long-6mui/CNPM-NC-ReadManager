@@ -13,17 +13,17 @@
     <Grid RowDefinitions="*,Auto">
 
         <ScrollView x:Name="ReaderScroll" Grid.Row="0" Scrolled="OnScrolled" SizeChanged="OnReaderSizeChanged">
-            <VerticalStackLayout Padding="20" Spacing="12">
+            <VerticalStackLayout Padding="22,18,22,28" Spacing="14">
                 <ActivityIndicator IsRunning="{Binding IsBusy}" IsVisible="{Binding IsBusy}" />
 
                 <Label Text="{Binding Chapter.Title, StringFormat='Chương {0}'}"
-                       FontSize="18" FontAttributes="Bold" />
+                       FontSize="22" FontFamily="BeVietnamExtraBold" TextColor="{StaticResource WebText}" Margin="0,4,0,2" />
 
-                <Label Text="{Binding ErrorMessage}" TextColor="Red" />
-                <Label Text="{Binding ProgressMessage}" FontSize="12" />
+                <Label Text="{Binding ErrorMessage}" TextColor="{StaticResource WebCrimson}" />
+                <Label Text="{Binding ProgressMessage}" FontSize="12" TextColor="{StaticResource WebMuted}" />
                 <Label IsVisible="{Binding IsReadable}" Text="{Binding Chapter.Content}"
-                       FontSize="16"
-                       LineHeight="1.4" />
+                       FontSize="17" TextColor="{StaticResource WebText}"
+                       LineHeight="1.65" />
 
                 <!-- Chương trả phí chưa mở khóa (giống web: Stories/Read.cshtml) -->
                 <Border Style="{StaticResource Panel}" IsVisible="{Binding IsLocked}">
@@ -47,13 +47,13 @@
             </VerticalStackLayout>
         </ScrollView>
 
-        <Grid Grid.Row="1" ColumnDefinitions="*,*" Padding="16" ColumnSpacing="12">
-            <Button Grid.Column="0"
+        <Grid Grid.Row="1" ColumnDefinitions="*,*" Padding="16,12" ColumnSpacing="12" BackgroundColor="White">
+            <Button Grid.Column="0" Style="{StaticResource BtnOutlineSm}" HeightRequest="46"
                     Text="◀ Chương trước"
                     Command="{Binding GoToPreviousCommand}"
                     IsEnabled="{Binding Chapter.PreviousChapterId, Converter={StaticResource StringToBoolConverter}}" />
 
-            <Button Grid.Column="1"
+            <Button Grid.Column="1" Style="{StaticResource BtnBrass}"
                     Text="Chương sau ▶"
                     Command="{Binding GoToNextCommand}"
                     IsEnabled="{Binding Chapter.NextChapterId, Converter={StaticResource StringToBoolConverter}}" />
