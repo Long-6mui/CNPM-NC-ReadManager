@@ -11,8 +11,8 @@
     <Grid x:Name="Root" RowDefinitions="Auto,1" RowSpacing="0">
         <Grid Grid.Row="0" Padding="16,10,12,10" ColumnDefinitions="*,Auto" ColumnSpacing="8">
 
-            <!-- Trái -->
-            <HorizontalStackLayout Grid.Column="0" Spacing="10" VerticalOptions="Center">
+            <!-- Trái (dùng Grid để chữ bị giới hạn trong phần còn trống, không chui xuống dưới các nút bên phải) -->
+            <Grid Grid.Column="0" ColumnDefinitions="Auto,*" ColumnSpacing="10" VerticalOptions="Center">
                 <Border x:Name="LogoBadge" WidthRequest="36" HeightRequest="36" StrokeThickness="0"
                         VerticalOptions="Center" IsVisible="False">
                     <Border.StrokeShape>
@@ -31,13 +31,13 @@
                     <Label Text="📖" FontSize="17" HorizontalOptions="Center" VerticalOptions="Center" />
                 </Border>
 
-                <VerticalStackLayout Spacing="0" VerticalOptions="Center">
+                <VerticalStackLayout Grid.Column="1" Spacing="0" VerticalOptions="Center">
                     <Label x:Name="SubtitleLabel" FontSize="11.5" FontFamily="BeVietnamMedium" IsVisible="False"
                            MaxLines="1" LineBreakMode="TailTruncation" />
                     <Label x:Name="TitleLabel" FontSize="21" FontFamily="BeVietnamExtraBold"
                            MaxLines="1" LineBreakMode="TailTruncation" />
                 </VerticalStackLayout>
-            </HorizontalStackLayout>
+            </Grid>
 
             <!-- Phải -->
             <HorizontalStackLayout Grid.Column="1" Spacing="7" VerticalOptions="Center">

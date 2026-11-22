@@ -7,8 +7,9 @@ using ReadManager.Mobile.Services.Auth;
 
 namespace ReadManager.Mobile.ViewModels;
 
-// Màn "Chuỗi đọc sách" (Sprint 5): chuỗi hiện tại, 7 ngày gần nhất, thẻ bảo vệ, khôi phục, mốc thưởng,
-// bộ sưu tập (đeo danh hiệu / khung avatar), thông báo về chuỗi, bảng xếp hạng.
+// Màn "Chuỗi đọc sách": chuỗi hiện tại (avatar + khung + danh hiệu đang đeo), 7 ngày gần nhất, thẻ bảo vệ,
+// khôi phục, các MỐC THƯỞNG (giữ chuỗi đủ N ngày -> nhận gì, còn bao nhiêu ngày), thông báo, bảng xếp hạng.
+// (Đã bỏ "Bộ sưu tập" và nút mã giảm giá; đổi khung / danh hiệu ở trang Tài khoản.)
 public partial class StreakViewModel : BaseViewModel
 {
     private readonly IStreakService _streak;
@@ -22,8 +23,16 @@ public partial class StreakViewModel : BaseViewModel
     [ObservableProperty] private bool hasNotices;
     [ObservableProperty] private bool hasBoard;
     [ObservableProperty] private string message = string.Empty;
+    [ObservableProperty] private ImageSource? avatarSource;
+    [ObservableProperty] private string userInitial = "?";
 
     public bool IsGuest => !IsLoggedIn;
+
+    // Mỗi lần có dữ liệu chuỗi mới: gán chuỗi hiện tại cho từng mốc để hiện "còn N ngày"
+    partial void OnInfoChanging(StreakInfo value)
+    {
+        foreach (var m in value.Milestones) m.CurrentStreak = value.CurrentStreak;
+    }
 
     public ObservableCollection<StreakNotice> Notices { get; } = new();
     public ObservableCollection<StreakRankItem> Board { get; } = new();
@@ -49,6 +58,13 @@ public partial class StreakViewModel : BaseViewModel
     private async Task ReloadAsync()
     {
         Info = await _streak.GetAsync();
+
+        var user = _auth.CurrentUser;
+        if (user is not null)
+        {
+            UserInitial = AvatarStore.Initial(string.IsNullOrWhiteSpace(user.DisplayName) ? user.Username : user.DisplayName);
+            AvatarSource = AvatarStore.Load(user.UserId);
+        }
 
         Collection.Clear();
         foreach (var c in Info.Collection) Collection.Add(c);

@@ -68,6 +68,8 @@ namespace ReadManager.Mobile
             builder.Services.AddTransient<IStreakService, StreakService>();   // Sprint 5
             builder.Services.AddTransient<RankingService>();                  // bảng xếp hạng ở trang chủ
             builder.Services.AddTransient<RecommendationService>();           // đề xuất theo sở thích
+            builder.Services.AddTransient<RewardsService>();                  // điểm danh, nhiệm vụ, shop voucher
+            builder.Services.AddSingleton<NewChapterWatcher>();               // báo chương mới cho truyện theo dõi
             builder.Services.AddTransient<ReportFlow>();
             builder.Services.AddTransient<LocalReadingProgressService>();
             if (ApiSettings.UseReadingProgressApi)
@@ -83,6 +85,7 @@ namespace ReadManager.Mobile
             builder.Services.AddTransient<SearchViewModel>();       // trang Tìm kiếm
             builder.Services.AddTransient<RecommendedViewModel>();  // trang Đề xuất cho bạn
             builder.Services.AddTransient<ReaderGenresViewModel>(); // chọn sở thích đọc
+            builder.Services.AddTransient<NewReleasesViewModel>();  // trang Mới ra mắt
             builder.Services.AddTransient<AccountViewModel>();
             builder.Services.AddTransient<ChapterListViewModel>();
             builder.Services.AddTransient<ChapterReaderViewModel>();
@@ -118,6 +121,7 @@ namespace ReadManager.Mobile
             builder.Services.AddTransient<StreakPage>();
             builder.Services.AddTransient<SearchPage>();
             builder.Services.AddTransient<RecommendedPage>();
+            builder.Services.AddTransient<NewReleasesPage>();
 
             return builder.Build();
         }

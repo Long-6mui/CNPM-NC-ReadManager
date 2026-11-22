@@ -171,15 +171,10 @@
                         BackgroundColor="{DynamicResource WebSurface2}">
                 <HorizontalStackLayout Padding="16,10" Spacing="10">
                     <Border Style="{StaticResource IconCircle}" WidthRequest="44" HeightRequest="44"
-                            BackgroundColor="{DynamicResource WebSurface}">
+                            BackgroundColor="{Binding FilterIconBg}">
                         <Border.GestureRecognizers>
                             <TapGestureRecognizer Command="{Binding PickFilterCommand}" />
                         </Border.GestureRecognizers>
-                        <Border.Triggers>
-                            <DataTrigger TargetType="Border" Binding="{Binding HasFilter}" Value="True">
-                                <Setter Property="BackgroundColor" Value="{DynamicResource WebPill}" />
-                            </DataTrigger>
-                        </Border.Triggers>
                         <Label Text="⚙" FontSize="19" TextColor="{DynamicResource WebText}"
                                HorizontalOptions="Center" VerticalOptions="Center" />
                     </Border>
@@ -244,32 +239,22 @@
                         <RoundRectangle CornerRadius="10" />
                     </Border.StrokeShape>
                     <HorizontalStackLayout Spacing="4">
-                        <Border WidthRequest="38" HeightRequest="32" StrokeThickness="0" BackgroundColor="Transparent"
+                        <Border WidthRequest="38" HeightRequest="32" StrokeThickness="0" BackgroundColor="{Binding ListTabBg}"
                                 fx:Motion.Press="True">
                             <Border.StrokeShape>
                                 <RoundRectangle CornerRadius="8" />
                             </Border.StrokeShape>
-                            <Border.Triggers>
-                                <DataTrigger TargetType="Border" Binding="{Binding IsList}" Value="True">
-                                    <Setter Property="BackgroundColor" Value="{DynamicResource WebSurface}" />
-                                </DataTrigger>
-                            </Border.Triggers>
                             <Border.GestureRecognizers>
                                 <TapGestureRecognizer Command="{Binding ShowListCommand}" />
                             </Border.GestureRecognizers>
                             <Label Text="☰" FontSize="16" TextColor="{DynamicResource WebText}"
                                    HorizontalOptions="Center" VerticalOptions="Center" />
                         </Border>
-                        <Border WidthRequest="38" HeightRequest="32" StrokeThickness="0" BackgroundColor="Transparent"
+                        <Border WidthRequest="38" HeightRequest="32" StrokeThickness="0" BackgroundColor="{Binding GridTabBg}"
                                 fx:Motion.Press="True">
                             <Border.StrokeShape>
                                 <RoundRectangle CornerRadius="8" />
                             </Border.StrokeShape>
-                            <Border.Triggers>
-                                <DataTrigger TargetType="Border" Binding="{Binding IsGrid}" Value="True">
-                                    <Setter Property="BackgroundColor" Value="{DynamicResource WebSurface}" />
-                                </DataTrigger>
-                            </Border.Triggers>
                             <Border.GestureRecognizers>
                                 <TapGestureRecognizer Command="{Binding ShowGridCommand}" />
                             </Border.GestureRecognizers>

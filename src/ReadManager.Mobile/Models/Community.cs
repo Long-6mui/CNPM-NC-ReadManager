@@ -38,6 +38,10 @@ public class CommentItem
     public bool CanDelete { get; set; }
 
     public bool HasTitle => !string.IsNullOrEmpty(Title);
+    // Tên người bình luận nhuốm màu danh hiệu cao cấp (mốc 90 ngày trở lên)
+    public Color NameColor => Cosmetics.Title(Title) is { Tier: >= 6 } t
+        ? Color.FromArgb(t.Background[^1] == "#0F172A" ? "#64748B" : t.Background[Math.Min(1, t.Background.Length - 1)])
+        : ReadManager.Mobile.Services.ThemeService.Get("WebText");
     public Color FrameColor => StreakLook.FrameColor(AvatarFrame);
     public double FrameThickness => StreakLook.FrameThickness(AvatarFrame);
 

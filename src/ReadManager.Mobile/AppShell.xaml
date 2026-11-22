@@ -6,7 +6,7 @@
     xmlns:views="clr-namespace:ReadManager.Mobile.Views"
     Shell.NavBarHasShadow="False"
     FlyoutBehavior="Disabled"
-    Title="Chữ &amp; Đêm">
+    Title="FOLIO">
 
     <!-- Màu thanh trên / menu dưới được gán trong AppShell.xaml.cs (ApplyTheme) để đổi theo chế độ sáng/tối. -->
 

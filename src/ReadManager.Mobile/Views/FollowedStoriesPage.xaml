@@ -23,7 +23,7 @@
 
         <CollectionView Grid.Row="1" ItemsSource="{Binding Items}" SelectionMode="None" Margin="16,6,16,0">
             <CollectionView.Footer>
-                <BoxView HeightRequest="16" Color="Transparent" />
+                <ContentView HeightRequest="16" />
             </CollectionView.Footer>
             <CollectionView.ItemTemplate>
                 <DataTemplate x:DataType="models:FollowedStory">

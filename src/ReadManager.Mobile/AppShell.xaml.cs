@@ -38,6 +38,7 @@ namespace ReadManager.Mobile
             // Giao diện mới: trang tìm kiếm (nút 🔍 trên header) + trang "Đề xuất cho bạn"
             Routing.RegisterRoute(nameof(SearchPage), typeof(SearchPage));
             Routing.RegisterRoute(nameof(RecommendedPage), typeof(RecommendedPage));
+            Routing.RegisterRoute(nameof(NewReleasesPage), typeof(NewReleasesPage));
 
             ApplyTheme();
             ThemeService.ThemeChanged += (_, _) => ApplyTheme();

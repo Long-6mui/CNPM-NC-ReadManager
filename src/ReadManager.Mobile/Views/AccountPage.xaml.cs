@@ -14,6 +14,13 @@ public partial class AccountPage : ContentPage
         _viewModel = viewModel;
         BindingContext = viewModel;
 
+        // Vừa đổi khung / danh hiệu -> avatar & danh hiệu nảy nhẹ
+        _viewModel.CosmeticChanged += (_, _) => Dispatcher.Dispatch(async () =>
+        {
+            await Motion.PopAsync(ProfileAvatar);
+            await Motion.PopAsync(ProfileTitle);
+        });
+
         // Đăng xuất xong -> header ẩn chuỗi 🔥 / số thông báo
         _viewModel.PropertyChanged += (_, e) =>
         {

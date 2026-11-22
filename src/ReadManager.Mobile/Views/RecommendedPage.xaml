@@ -21,25 +21,14 @@
                 <HorizontalStackLayout Padding="16,0,8,0" Spacing="8" BindableLayout.ItemsSource="{Binding GenreChips}">
                     <BindableLayout.ItemTemplate>
                         <DataTemplate x:DataType="models:ChipItem">
-                            <Border Style="{StaticResource Chip}" Padding="14,7">
+                            <Border Style="{StaticResource Chip}" Padding="14,7"
+                                    BackgroundColor="{Binding Background}" Stroke="{Binding Stroke}">
                                 <Border.GestureRecognizers>
                                     <TapGestureRecognizer
                                         Command="{Binding Source={RelativeSource AncestorType={x:Type vm:RecommendedViewModel}}, Path=SelectGenreCommand}"
                                         CommandParameter="{Binding .}" />
                                 </Border.GestureRecognizers>
-                                <Border.Triggers>
-                                    <DataTrigger TargetType="Border" Binding="{Binding IsSelected}" Value="True">
-                                        <Setter Property="BackgroundColor" Value="{DynamicResource WebRoyal}" />
-                                        <Setter Property="Stroke" Value="{DynamicResource WebRoyal}" />
-                                    </DataTrigger>
-                                </Border.Triggers>
-                                <Label Text="{Binding Name}" Style="{StaticResource ChipText}">
-                                    <Label.Triggers>
-                                        <DataTrigger TargetType="Label" Binding="{Binding IsSelected}" Value="True">
-                                            <Setter Property="TextColor" Value="White" />
-                                        </DataTrigger>
-                                    </Label.Triggers>
-                                </Label>
+                                <Label Text="{Binding Name}" Style="{StaticResource ChipText}" TextColor="{Binding Foreground}" />
                             </Border>
                         </DataTemplate>
                     </BindableLayout.ItemTemplate>

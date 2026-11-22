@@ -21,7 +21,7 @@
 		<Nullable>enable</Nullable>
 
 		<!-- Display name -->
-		<ApplicationTitle>Chữ &amp; Đêm</ApplicationTitle>
+		<ApplicationTitle>FOLIO</ApplicationTitle>
 
 		<!-- App Identifier -->
 		<ApplicationId>com.companyname.readmanager.mobile</ApplicationId>

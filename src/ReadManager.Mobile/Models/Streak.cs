@@ -7,22 +7,11 @@ namespace ReadManager.Mobile.Models;
 
 public static class StreakLook
 {
-    // Mã khung avatar -> tên + màu viền
-    public static string FrameName(string? code) => code switch
-    {
-        "frame_dong" => "Ngọn Lửa Đồng",
-        "frame_bac" => "Ngọn Lửa Bạc",
-        "frame_kim_cuong" => "Lửa Kim Cương",
-        _ => "Không đeo"
-    };
+    // Mã khung avatar -> tên + màu viền (kiểu dáng đầy đủ ở Models/Cosmetics.cs)
+    public static string FrameName(string? code) => Cosmetics.Frame(code)?.Name ?? "Không đeo";
 
-    public static Color FrameColor(string? code) => code switch
-    {
-        "frame_dong" => Color.FromArgb("#B87333"),
-        "frame_bac" => Color.FromArgb("#9AA5B1"),
-        "frame_kim_cuong" => Color.FromArgb("#22D3EE"),
-        _ => Colors.Transparent
-    };
+    public static Color FrameColor(string? code)
+        => Cosmetics.Frame(code) is { } f ? Color.FromArgb(f.Colors[Math.Min(1, f.Colors.Length - 1)]) : Colors.Transparent;
 
     public static double FrameThickness(string? code) => string.IsNullOrEmpty(code) ? 0 : 3;
 }
@@ -46,7 +35,11 @@ public class StreakRewardItem
     public string Code { get; set; } = string.Empty;
     public string Name { get; set; } = string.Empty;
     public bool Unlocked { get; set; }
+    public int Milestone { get; set; }     // số ngày chuỗi để mở khóa (0 = đồ người mới)
+    public bool Starter { get; set; }
 
+    public bool IsOther => Kind is not ("Title" or "Frame");
+    public bool Locked => !Unlocked;
     public string Icon => Kind switch
     {
         "Badge" => "🏅",
@@ -75,6 +68,18 @@ public class StreakMilestone
     public string Header => $"{Days} ngày · {Name}";
     public string Mark => Reached ? "✅" : "🔒";
     public double ItemOpacity => Reached ? 1.0 : 0.55;
+
+    // ----- Trang Chuỗi (bản mới): ViewModel gán chuỗi hiện tại để tính "còn bao nhiêu ngày" -----
+    public int CurrentStreak { get; set; }
+    public string GoalText => $"Giữ chuỗi đủ {Days} ngày liên tiếp";
+    public string StateText => Reached
+        ? "✓ Đã nhận thưởng"
+        : CurrentStreak >= Days ? "Đọc hôm nay để nhận thưởng" : $"Còn {Days - CurrentStreak} ngày nữa";
+    public double Progress => Reached ? 1 : Math.Clamp(CurrentStreak / (double)Days, 0, 1);
+    public Color DayColor => Reached ? Color.FromArgb("#F97316") : Color.FromArgb("#A1A1AA");
+    public Color StateColor => Reached ? Color.FromArgb("#12A150") : Color.FromArgb("#E11D48");
+    public List<StreakRewardItem> Cosmetics => Rewards.Where(r => r.Kind is "Frame" or "Title").ToList();
+    public List<StreakRewardItem> Others => Rewards.Where(r => r.Kind is not ("Frame" or "Title")).ToList();
 }
 
 public class StreakInfo

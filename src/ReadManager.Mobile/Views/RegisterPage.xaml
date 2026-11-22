@@ -40,7 +40,7 @@
                         <Label Text="Đ" TextColor="White" FontFamily="BeVietnamExtraBold" FontSize="28"
                                HorizontalOptions="Center" VerticalOptions="Center" />
                     </Border>
-                    <Label Text="Chữ &amp; Đêm" TextColor="White" FontFamily="BeVietnamExtraBold" FontSize="26"
+                    <Label Text="FOLIO" TextColor="White" FontFamily="BeVietnamExtraBold" FontSize="26"
                            HorizontalTextAlignment="Center" />
                     <Label Text="Thư viện đọc truyện trực tuyến" TextColor="#A1A1AA" FontSize="13"
                            HorizontalTextAlignment="Center" />

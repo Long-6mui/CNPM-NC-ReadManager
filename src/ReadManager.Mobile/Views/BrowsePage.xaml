@@ -11,36 +11,62 @@
              Shell.NavBarIsVisible="False"
              BackgroundColor="{DynamicResource WebBg}">
 
-    <!-- TAB "KHÁM PHÁ": chuỗi đọc theo từng ngày + số xu (tìm truyện đã chuyển sang nút 🔍 trên header) -->
+    <!-- TAB "KHÁM PHÁ": điểm danh 7 ngày + chuỗi đọc + (Nhiệm vụ hằng ngày | Shop đổi voucher) -->
     <Grid RowDefinitions="Auto,*" RowSpacing="0">
-        <ctl:AppHeader x:Name="Header" Grid.Row="0" Title="Khám phá" Subtitle="Chuỗi đọc &amp; xu thưởng" />
+        <ctl:AppHeader x:Name="Header" Grid.Row="0" Title="Khám phá" />
 
         <RefreshView Grid.Row="1" IsRefreshing="{Binding IsRefreshing}" Command="{Binding RefreshCommand}"
                      RefreshColor="{DynamicResource WebRoyal}">
             <ScrollView>
-                <VerticalStackLayout x:Name="Body" Padding="16,16,16,32" Spacing="16">
+                <Grid>
+                    <!-- Dải màu phía sau thẻ điểm danh (giống ảnh tham khảo) -->
+                    <BoxView HeightRequest="150" VerticalOptions="Start">
+                        <BoxView.Background>
+                            <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                <GradientStop Color="#E11D48" Offset="0.0" />
+                                <GradientStop Color="#FB7185" Offset="0.6" />
+                                <GradientStop Color="#FDA4AF" Offset="1.0" />
+                            </LinearGradientBrush>
+                        </BoxView.Background>
+                    </BoxView>
 
-                    <Label Text="{Binding ErrorMessage}" TextColor="{DynamicResource WebCrimson}"
-                           IsVisible="{Binding ErrorMessage, Converter={StaticResource StringToBoolConverter}}" />
+                    <VerticalStackLayout x:Name="Body" Padding="16,16,16,32" Spacing="16">
 
-                    <!-- ============ KHÁCH ============ -->
-                    <Border Style="{StaticResource Panel}" IsVisible="{Binding IsGuest}" fx:Motion.Reveal="True">
-                        <VerticalStackLayout Spacing="10">
-                            <Label Text="🔥 Chuỗi đọc sách &amp; xu thưởng" Style="{StaticResource LblH2}" />
-                            <Label Text="Đăng nhập để giữ chuỗi đọc mỗi ngày: đọc hết 1 chương được +10 xu, từ ngày thứ hai của chuỗi được cộng thêm xu, đổi xu lấy thẻ bảo vệ chuỗi và quà tặng."
-                                   Style="{StaticResource LblMuted}" />
-                            <Button Text="Đăng nhập" Style="{StaticResource BtnBrass}" Command="{Binding GoToLoginCommand}" />
-                            <Button Text="Tạo tài khoản" Style="{StaticResource BtnOutlineSm}" HeightRequest="44"
-                                    Command="{Binding GoToRegisterCommand}" />
-                        </VerticalStackLayout>
-                    </Border>
+                        <Label Text="{Binding ErrorMessage}" TextColor="White" FontFamily="BeVietnamSemiBold"
+                               IsVisible="{Binding ErrorMessage, Converter={StaticResource StringToBoolConverter}}" />
 
-                    <VerticalStackLayout IsVisible="{Binding IsLoggedIn}" Spacing="16">
+                        <!-- ============ KHÁCH ============ -->
+                        <Border Style="{StaticResource Panel}" IsVisible="{Binding IsGuest}" fx:Motion.Reveal="True">
+                            <VerticalStackLayout Spacing="10">
+                                <Label Text="🎁 Điểm danh, nhiệm vụ &amp; voucher" Style="{StaticResource LblH2}" />
+                                <Label Text="Đăng nhập để điểm danh mỗi ngày, làm nhiệm vụ nhận xu, giữ chuỗi đọc và đổi xu lấy voucher giảm giá khi mua truyện."
+                                       Style="{StaticResource LblMuted}" />
+                                <Button Text="Đăng nhập" Style="{StaticResource BtnBrass}" Command="{Binding GoToLoginCommand}" />
+                                <Button Text="Tạo tài khoản" Style="{StaticResource BtnOutlineSm}" HeightRequest="44"
+                                        Command="{Binding GoToRegisterCommand}" />
+                            </VerticalStackLayout>
+                        </Border>
 
-                        <ActivityIndicator IsRunning="{Binding IsBusy}" IsVisible="{Binding IsBusy}" Color="{DynamicResource WebRoyal}" />
+                        <!-- ============ ĐIỂM DANH NHẬN THƯỞNG ============ -->
+                        <Border Style="{StaticResource Panel}" Padding="0" IsVisible="{Binding IsLoggedIn}" fx:Motion.Reveal="True">
+                            <VerticalStackLayout>
+                                <Grid ColumnDefinitions="*,Auto" Padding="18,16,18,12" BackgroundColor="{DynamicResource WebWarnBg}">
+                                    <Label Text="📅 Điểm danh nhận thưởng" FontFamily="BeVietnamExtraBold" FontSize="18"
+                                           TextColor="{DynamicResource WebText}" VerticalOptions="Center" />
+                                    <Label Grid.Column="1" Text="{Binding WeekText}" FontSize="12.5" FontFamily="BeVietnamSemiBold"
+                                           TextColor="#B45309" VerticalOptions="Center" />
+                                </Grid>
 
-                        <!-- ============ CHUỖI ĐỌC THEO TỪNG NGÀY ============ -->
-                        <Border StrokeThickness="0" Padding="18" fx:Motion.Reveal="True">
+                                <!-- 7 ô T2..CN (tạo trong BrowsePage.xaml.cs) -->
+                                <Grid x:Name="CheckInRow" ColumnDefinitions="*,*,*,*,*,*,*" ColumnSpacing="6" Padding="12,14,12,6" />
+
+                                <Button Text="{Binding CheckInText}" Style="{StaticResource BtnBrass}" Margin="16,8,16,16"
+                                        Command="{Binding CheckInCommand}" />
+                            </VerticalStackLayout>
+                        </Border>
+
+                        <!-- ============ CHUỖI ĐỌC ============ -->
+                        <Border StrokeThickness="0" Padding="18" IsVisible="{Binding IsLoggedIn}" fx:Motion.Reveal="True">
                             <Border.StrokeShape>
                                 <RoundRectangle CornerRadius="20" />
                             </Border.StrokeShape>
@@ -51,123 +77,245 @@
                                     <GradientStop Color="#4A1730" Offset="1.0" />
                                 </LinearGradientBrush>
                             </Border.Background>
-                            <Border.Shadow>
-                                <Shadow Brush="#17112C" Offset="0,10" Radius="22" Opacity="0.35" />
-                            </Border.Shadow>
-                            <VerticalStackLayout Spacing="14">
+                            <VerticalStackLayout Spacing="12">
                                 <Grid ColumnDefinitions="*,Auto">
-                                    <VerticalStackLayout Spacing="2">
-                                        <Label Text="CHUỖI ĐỌC SÁCH" TextColor="#FDA4AF" FontSize="11" FontFamily="BeVietnamBold"
-                                               CharacterSpacing="1.2" />
-                                        <HorizontalStackLayout Spacing="8">
-                                            <Label x:Name="Flame" Text="🔥" FontSize="40" VerticalOptions="Center"
-                                                   TextColor="{Binding Info.FlameColor}" />
-                                            <Label Text="{Binding Info.CurrentStreak}" FontSize="44" TextColor="White"
-                                                   FontFamily="BeVietnamExtraBold" VerticalOptions="Center" />
-                                            <Label Text="ngày" FontSize="16" TextColor="#CBD5E1" VerticalOptions="End" Margin="0,0,0,10" />
-                                        </HorizontalStackLayout>
-                                    </VerticalStackLayout>
-                                    <VerticalStackLayout Grid.Column="1" Spacing="2" VerticalOptions="Center" HorizontalOptions="End">
-                                        <Label Text="Dài nhất" TextColor="#B7C0D6" FontSize="11.5" HorizontalTextAlignment="End" />
-                                        <Label TextColor="#FBBF24" FontSize="16" FontFamily="BeVietnamBold" HorizontalTextAlignment="End">
-                                            <Label.FormattedText>
-                                                <FormattedString>
-                                                    <Span Text="{Binding Info.LongestStreak}" />
-                                                    <Span Text=" ngày" />
-                                                </FormattedString>
-                                            </Label.FormattedText>
-                                        </Label>
-                                    </VerticalStackLayout>
+                                    <HorizontalStackLayout Spacing="8">
+                                        <Label x:Name="Flame" Text="🔥" FontSize="34" VerticalOptions="Center" />
+                                        <Label Text="{Binding Info.CurrentStreak}" FontSize="36" TextColor="White"
+                                               FontFamily="BeVietnamExtraBold" VerticalOptions="Center" />
+                                        <VerticalStackLayout VerticalOptions="Center" Spacing="0">
+                                            <Label Text="ngày liên tiếp" FontSize="13" TextColor="#CBD5E1" />
+                                            <Label Text="{Binding FreezeText}" FontSize="11.5" TextColor="#93C5FD" />
+                                        </VerticalStackLayout>
+                                    </HorizontalStackLayout>
+                                    <Border Grid.Column="1" Padding="12,6" StrokeThickness="0" BackgroundColor="#26FFFFFF"
+                                            VerticalOptions="Center" fx:Motion.Press="True">
+                                        <Border.StrokeShape>
+                                            <RoundRectangle CornerRadius="14" />
+                                        </Border.StrokeShape>
+                                        <Border.GestureRecognizers>
+                                            <TapGestureRecognizer Command="{Binding GoToStreakCommand}" />
+                                        </Border.GestureRecognizers>
+                                        <Label Text="Chi tiết  ›" TextColor="White" FontSize="12.5" FontFamily="BeVietnamBold" />
+                                    </Border>
                                 </Grid>
-
-                                <Label Text="{Binding Info.StatusText}" TextColor="#E2E8F0" FontSize="13.5" />
-
-                                <!-- 7 ngày gần nhất (giống trang Chuỗi) -->
+                                <Label Text="{Binding Info.StatusText}" TextColor="#E2E8F0" FontSize="13" />
                                 <Grid ColumnDefinitions="*,*,*,*,*,*,*" ColumnSpacing="6" x:Name="DaysRow" />
-
-                                <!-- Tiến độ tới mốc tiếp theo -->
-                                <VerticalStackLayout Spacing="6">
-                                    <ProgressBar Progress="{Binding MilestoneProgress}" ProgressColor="#FB7185" HeightRequest="6" />
-                                    <Label Text="{Binding Info.NextText}" TextColor="#B7C0D6" FontSize="12.5" />
-                                </VerticalStackLayout>
-
+                                <ProgressBar Progress="{Binding MilestoneProgress}" ProgressColor="#FB7185" HeightRequest="6" />
+                                <Label Text="{Binding Info.NextText}" TextColor="#B7C0D6" FontSize="12" />
                                 <Button Text="Xem chi tiết chuỗi  →" BackgroundColor="White" TextColor="#17112C"
-                                        FontFamily="BeVietnamBold" FontSize="14.5" CornerRadius="12" HeightRequest="46"
+                                        FontFamily="BeVietnamBold" FontSize="14" CornerRadius="12" HeightRequest="44"
                                         fx:Motion.Press="True" Command="{Binding GoToStreakCommand}" />
                             </VerticalStackLayout>
                         </Border>
 
-                        <!-- ============ SỐ XU ============ -->
-                        <Border Style="{StaticResource Panel}" fx:Motion.Reveal="True">
-                            <VerticalStackLayout Spacing="12">
-                                <Grid ColumnDefinitions="Auto,*" ColumnSpacing="14">
-                                    <Border WidthRequest="56" HeightRequest="56" StrokeThickness="0" VerticalOptions="Center">
-                                        <Border.StrokeShape>
-                                            <RoundRectangle CornerRadius="28" />
-                                        </Border.StrokeShape>
-                                        <Border.Background>
-                                            <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
-                                                <GradientStop Color="#FDE68A" Offset="0.0" />
-                                                <GradientStop Color="#F59E0B" Offset="1.0" />
-                                            </LinearGradientBrush>
-                                        </Border.Background>
-                                        <Label Text="🪙" FontSize="26" HorizontalOptions="Center" VerticalOptions="Center" />
-                                    </Border>
-                                    <VerticalStackLayout Grid.Column="1" Spacing="0" VerticalOptions="Center">
-                                        <Label Text="Số xu của bạn" Style="{StaticResource LblMuted}" />
-                                        <Label FontFamily="BeVietnamExtraBold" FontSize="30" TextColor="{DynamicResource WebText}">
-                                            <Label.FormattedText>
-                                                <FormattedString>
-                                                    <Span Text="{Binding CoinsText}" />
-                                                    <Span Text=" xu" FontSize="16" TextColor="{DynamicResource WebMuted}" />
-                                                </FormattedString>
-                                            </Label.FormattedText>
-                                        </Label>
+                        <!-- ============ HAI MỤC: NHIỆM VỤ | SHOP VOUCHER ============ -->
+                        <Border Style="{StaticResource Panel}" Padding="0">
+                            <VerticalStackLayout>
+                                <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,1">
+                                    <VerticalStackLayout Grid.Column="0" Padding="8,14,8,0" Spacing="10" fx:Motion.Press="True">
+                                        <VerticalStackLayout.GestureRecognizers>
+                                            <TapGestureRecognizer Command="{Binding SelectTabCommand}" CommandParameter="{Binding Tabs[0]}" />
+                                        </VerticalStackLayout.GestureRecognizers>
+                                        <Label Text="{Binding Tabs[0].Name}" FontSize="15" FontFamily="{Binding Tabs[0].FontFamily}"
+                                               TextColor="{Binding Tabs[0].AccentText}" HorizontalTextAlignment="Center" />
+                                        <BoxView HeightRequest="3" CornerRadius="2" Color="{Binding Tabs[0].IndicatorColor}" Margin="24,0" />
                                     </VerticalStackLayout>
+                                    <VerticalStackLayout Grid.Column="1" Padding="8,14,8,0" Spacing="10" fx:Motion.Press="True">
+                                        <VerticalStackLayout.GestureRecognizers>
+                                            <TapGestureRecognizer Command="{Binding SelectTabCommand}" CommandParameter="{Binding Tabs[1]}" />
+                                        </VerticalStackLayout.GestureRecognizers>
+                                        <Label Text="{Binding Tabs[1].Name}" FontSize="15" FontFamily="{Binding Tabs[1].FontFamily}"
+                                               TextColor="{Binding Tabs[1].AccentText}" HorizontalTextAlignment="Center" />
+                                        <BoxView HeightRequest="3" CornerRadius="2" Color="{Binding Tabs[1].IndicatorColor}" Margin="24,0" />
+                                    </VerticalStackLayout>
+                                    <BoxView Grid.Row="1" Grid.ColumnSpan="2" Color="{DynamicResource WebBorder}" />
+                                </Grid>
+                                <!-- Số xu hiện có -->
+                                <Grid ColumnDefinitions="*,Auto" Padding="18,12,18,4">
+                                    <Label Text="Số xu của bạn" Style="{StaticResource LblMuted}" VerticalOptions="Center" />
+                                    <Label Grid.Column="1" FontFamily="BeVietnamExtraBold" FontSize="18" TextColor="#D97706">
+                                        <Label.FormattedText>
+                                            <FormattedString>
+                                                <Span Text="🪙 " />
+                                                <Span Text="{Binding CoinsText}" />
+                                                <Span Text=" xu" FontSize="13" />
+                                            </FormattedString>
+                                        </Label.FormattedText>
+                                    </Label>
                                 </Grid>
 
-                                <Border Style="{StaticResource Pill}" HorizontalOptions="Start" Padding="12,5">
-                                    <Label Text="{Binding FreezeText}" FontSize="12.5" FontFamily="BeVietnamBold"
-                                           TextColor="{DynamicResource WebPillText}" />
-                                </Border>
+                                <!-- ===== Nhiệm vụ hằng ngày ===== -->
+                                <VerticalStackLayout IsVisible="{Binding IsMissionsTab}" Padding="14,8,14,14" Spacing="10">
+                                    <Label Text="Đăng nhập để làm nhiệm vụ nhận xu." Style="{StaticResource LblMuted}"
+                                           IsVisible="{Binding IsGuest}" Margin="4,0" />
+                                    <VerticalStackLayout BindableLayout.ItemsSource="{Binding Missions}" Spacing="10">
+                                        <BindableLayout.ItemTemplate>
+                                            <DataTemplate x:DataType="models:DailyMission">
+                                                <Border Padding="14,12" StrokeThickness="1" Stroke="{DynamicResource WebBorder}"
+                                                        BackgroundColor="{DynamicResource WebSurface}" fx:Motion.Reveal="True">
+                                                    <Border.StrokeShape>
+                                                        <RoundRectangle CornerRadius="16" />
+                                                    </Border.StrokeShape>
+                                                    <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="12">
+                                                        <Label Text="{Binding Icon}" FontSize="26" VerticalOptions="Center" />
+                                                        <VerticalStackLayout Grid.Column="1" Spacing="5" VerticalOptions="Center">
+                                                            <Label Text="{Binding Title}" FontFamily="BeVietnamSemiBold" FontSize="15"
+                                                                   TextColor="{DynamicResource WebText}" />
+                                                            <Border Padding="8,2" StrokeThickness="0" BackgroundColor="#FFEDD5"
+                                                                    HorizontalOptions="Start">
+                                                                <Border.StrokeShape>
+                                                                    <RoundRectangle CornerRadius="10" />
+                                                                </Border.StrokeShape>
+                                                                <Label Text="{Binding RewardText}" FontSize="12" FontFamily="BeVietnamBold"
+                                                                       TextColor="#C2410C" />
+                                                            </Border>
+                                                            <ProgressBar Progress="{Binding ProgressValue}" ProgressColor="#F59E0B" HeightRequest="4" />
+                                                        </VerticalStackLayout>
+                                                        <Border Grid.Column="2" WidthRequest="64" HeightRequest="64" StrokeThickness="0"
+                                                                BackgroundColor="{Binding ButtonColor}" VerticalOptions="Center" fx:Motion.Press="True">
+                                                            <Border.StrokeShape>
+                                                                <RoundRectangle CornerRadius="32" />
+                                                            </Border.StrokeShape>
+                                                            <Border.GestureRecognizers>
+                                                                <TapGestureRecognizer
+                                                                    Command="{Binding Source={RelativeSource AncestorType={x:Type vm:ExploreViewModel}}, Path=ClaimMissionCommand}"
+                                                                    CommandParameter="{Binding .}" />
+                                                            </Border.GestureRecognizers>
+                                                            <Label Text="{Binding ButtonText}" TextColor="{Binding ButtonTextColor}" FontSize="13"
+                                                                   FontFamily="BeVietnamBold" HorizontalOptions="Center" VerticalOptions="Center" />
+                                                        </Border>
+                                                    </Grid>
+                                                </Border>
+                                            </DataTemplate>
+                                        </BindableLayout.ItemTemplate>
+                                    </VerticalStackLayout>
 
-                                <BoxView HeightRequest="1" Color="{DynamicResource WebBorder}" />
-                                <Label Text="Cách nhận xu" FontFamily="BeVietnamBold" FontSize="14" TextColor="{DynamicResource WebText}" />
-                                <Label Text="📖  Đọc hết một chương: +10 xu (mỗi chương một lần)" Style="{StaticResource LblMuted}" />
-                                <Label Text="🔥  Giữ chuỗi từ ngày thứ hai: cộng thêm xu mỗi ngày" Style="{StaticResource LblMuted}" />
-                                <Label Text="🧊  Đổi 50 xu lấy 1 thẻ bảo vệ chuỗi (ở trang Chuỗi)" Style="{StaticResource LblMuted}" />
-
-                                <Button Text="Đọc truyện kiếm xu" Style="{StaticResource BtnBrass}" Margin="0,4,0,0"
-                                        Command="{Binding GoToSearchCommand}" />
-                            </VerticalStackLayout>
-                        </Border>
-
-                        <!-- ============ LỊCH SỬ XU ============ -->
-                        <Border Style="{StaticResource Panel}" Padding="0" IsVisible="{Binding HasHistory}" fx:Motion.Reveal="True">
-                            <VerticalStackLayout>
-                                <Label Text="Lịch sử xu gần đây" Style="{StaticResource LblH2}" FontSize="17" Padding="18,16,18,6" />
-                                <VerticalStackLayout BindableLayout.ItemsSource="{Binding History}">
-                                    <BindableLayout.ItemTemplate>
-                                        <DataTemplate x:DataType="models:CoinTransaction">
-                                            <Grid Padding="18,10" ColumnDefinitions="36,*,Auto" ColumnSpacing="10">
-                                                <Label Grid.Column="0" Text="{Binding Icon}" FontSize="20" VerticalOptions="Center" />
-                                                <VerticalStackLayout Grid.Column="1" Spacing="1" VerticalOptions="Center">
-                                                    <Label Text="{Binding Description}" FontSize="13.5" TextColor="{DynamicResource WebText}"
-                                                           MaxLines="1" LineBreakMode="TailTruncation" />
-                                                    <Label Text="{Binding TimeText}" Style="{StaticResource LblCardMeta}" />
-                                                </VerticalStackLayout>
-                                                <Label Grid.Column="2" Text="{Binding AmountText}" TextColor="{Binding AmountColor}"
-                                                       FontFamily="BeVietnamBold" FontSize="15" VerticalOptions="Center" />
-                                            </Grid>
-                                        </DataTemplate>
-                                    </BindableLayout.ItemTemplate>
+                                    <!-- Lịch sử xu gần đây -->
+                                    <VerticalStackLayout IsVisible="{Binding HasHistory}" Spacing="0" Margin="0,8,0,0">
+                                        <Label Text="Lịch sử xu gần đây" FontFamily="BeVietnamBold" FontSize="15"
+                                               TextColor="{DynamicResource WebText}" Margin="4,0,0,6" />
+                                        <VerticalStackLayout BindableLayout.ItemsSource="{Binding History}">
+                                            <BindableLayout.ItemTemplate>
+                                                <DataTemplate x:DataType="models:CoinTransaction">
+                                                    <Grid Padding="4,8" ColumnDefinitions="32,*,Auto" ColumnSpacing="10">
+                                                        <Label Grid.Column="0" Text="{Binding Icon}" FontSize="18" VerticalOptions="Center" />
+                                                        <VerticalStackLayout Grid.Column="1" Spacing="1" VerticalOptions="Center">
+                                                            <Label Text="{Binding Description}" FontSize="13" TextColor="{DynamicResource WebText}"
+                                                                   MaxLines="1" LineBreakMode="TailTruncation" />
+                                                            <Label Text="{Binding TimeText}" Style="{StaticResource LblCardMeta}" />
+                                                        </VerticalStackLayout>
+                                                        <Label Grid.Column="2" Text="{Binding AmountText}" TextColor="{Binding AmountColor}"
+                                                               FontFamily="BeVietnamBold" FontSize="14" VerticalOptions="Center" />
+                                                    </Grid>
+                                                </DataTemplate>
+                                            </BindableLayout.ItemTemplate>
+                                        </VerticalStackLayout>
+                                    </VerticalStackLayout>
                                 </VerticalStackLayout>
-                                <BoxView HeightRequest="8" Color="Transparent" />
+
+                                <!-- ===== Shop đổi voucher ===== -->
+                                <VerticalStackLayout IsVisible="{Binding IsShopTab}" Padding="14,8,14,16" Spacing="12">
+                                    <Label Text="Đổi xu lấy voucher giảm giá khi mua trọn bộ truyện." Style="{StaticResource LblMuted}" Margin="4,0" />
+                                    <Label Text="{Binding ShopMessage}" TextColor="{DynamicResource WebCrimson}" FontSize="13" Margin="4,0"
+                                           IsVisible="{Binding ShopMessage, Converter={StaticResource StringToBoolConverter}}" />
+                                    <Label Text="Hiện chưa có voucher nào để đổi." Style="{StaticResource LblMuted}" Margin="4,0"
+                                           IsVisible="{Binding HasNoOffers}" />
+
+                                    <!-- Thẻ voucher kiểu "vé": cuống màu bên trái + thông tin + nút đổi -->
+                                    <VerticalStackLayout BindableLayout.ItemsSource="{Binding Offers}" Spacing="12">
+                                        <BindableLayout.ItemTemplate>
+                                            <DataTemplate x:DataType="models:VoucherOffer">
+                                                <Border StrokeThickness="1" Stroke="{DynamicResource WebBorder}" Padding="0"
+                                                        BackgroundColor="{DynamicResource WebSurface}" fx:Motion.Reveal="True">
+                                                    <Border.StrokeShape>
+                                                        <RoundRectangle CornerRadius="16" />
+                                                    </Border.StrokeShape>
+                                                    <Grid ColumnDefinitions="104,*">
+                                                        <Grid Grid.Column="0" Padding="8">
+                                                            <Grid.Background>
+                                                                <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                                                    <GradientStop Color="#E11D48" Offset="0.0" />
+                                                                    <GradientStop Color="#9F1239" Offset="1.0" />
+                                                                </LinearGradientBrush>
+                                                            </Grid.Background>
+                                                            <VerticalStackLayout VerticalOptions="Center" Spacing="2">
+                                                                <Label Text="🎟" FontSize="22" HorizontalTextAlignment="Center" />
+                                                                <Label Text="{Binding DiscountText}" TextColor="White" FontFamily="BeVietnamExtraBold"
+                                                                       FontSize="14" HorizontalTextAlignment="Center" />
+                                                            </VerticalStackLayout>
+                                                        </Grid>
+                                                        <Grid Grid.Column="1" Padding="14,12" RowDefinitions="Auto,Auto,Auto" ColumnDefinitions="*,Auto"
+                                                              RowSpacing="4" ColumnSpacing="8">
+                                                            <Label Grid.ColumnSpan="2" Text="{Binding Name}" FontFamily="BeVietnamBold" FontSize="15"
+                                                                   TextColor="{DynamicResource WebText}" MaxLines="2" LineBreakMode="TailTruncation" />
+                                                            <Label Grid.Row="1" Grid.ColumnSpan="2" Text="{Binding ConditionText}" FontSize="12"
+                                                                   TextColor="{DynamicResource WebMuted}" MaxLines="2" LineBreakMode="TailTruncation" />
+                                                            <Label Grid.Row="2" Text="{Binding CostText}" FontFamily="BeVietnamExtraBold" FontSize="15"
+                                                                   TextColor="#D97706" VerticalOptions="Center" />
+                                                            <Button Grid.Row="2" Grid.Column="1" Text="Đổi" Style="{StaticResource BtnBrassSm}"
+                                                                    Command="{Binding Source={RelativeSource AncestorType={x:Type vm:ExploreViewModel}}, Path=RedeemCommand}"
+                                                                    CommandParameter="{Binding .}" />
+                                                        </Grid>
+                                                    </Grid>
+                                                </Border>
+                                            </DataTemplate>
+                                        </BindableLayout.ItemTemplate>
+                                    </VerticalStackLayout>
+
+                                    <!-- Voucher của tôi -->
+                                    <VerticalStackLayout IsVisible="{Binding HasMyVouchers}" Spacing="8" Margin="0,8,0,0">
+                                        <Label Text="Voucher của tôi" FontFamily="BeVietnamBold" FontSize="15"
+                                               TextColor="{DynamicResource WebText}" Margin="4,0" />
+                                        <VerticalStackLayout BindableLayout.ItemsSource="{Binding MyVouchers}" Spacing="8">
+                                            <BindableLayout.ItemTemplate>
+                                                <DataTemplate x:DataType="models:MyVoucher">
+                                                    <Border Padding="12,10" StrokeThickness="1" StrokeDashArray="4,3"
+                                                            Stroke="{DynamicResource WebBorder}" BackgroundColor="{DynamicResource WebBg}">
+                                                        <Border.StrokeShape>
+                                                            <RoundRectangle CornerRadius="12" />
+                                                        </Border.StrokeShape>
+                                                        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                                                            <VerticalStackLayout Spacing="2">
+                                                                <Label FontFamily="BeVietnamBold" FontSize="14" TextColor="{DynamicResource WebText}">
+                                                                    <Label.FormattedText>
+                                                                        <FormattedString>
+                                                                            <Span Text="{Binding DiscountText}" />
+                                                                            <Span Text=" · " />
+                                                                            <Span Text="{Binding Name}" />
+                                                                        </FormattedString>
+                                                                    </Label.FormattedText>
+                                                                </Label>
+                                                                <Label Text="{Binding ConditionText}" Style="{StaticResource LblCardMeta}" />
+                                                            </VerticalStackLayout>
+                                                            <Label Grid.Column="1" Text="{Binding StatusText}" TextColor="{Binding StatusColor}"
+                                                                   FontSize="12" FontFamily="BeVietnamBold" VerticalOptions="Center" />
+                                                        </Grid>
+                                                    </Border>
+                                                </DataTemplate>
+                                            </BindableLayout.ItemTemplate>
+                                        </VerticalStackLayout>
+                                        <Label Text="Chọn voucher khi mua trọn bộ truyện để được giảm giá." Style="{StaticResource LblCardMeta}" Margin="4,2" />
+                                    </VerticalStackLayout>
+                                </VerticalStackLayout>
                             </VerticalStackLayout>
                         </Border>
                     </VerticalStackLayout>
-                </VerticalStackLayout>
+
+                </Grid>
             </ScrollView>
         </RefreshView>
+
+                    <!-- Hiệu ứng "+10 xu" bay lên khi nhận thưởng -->
+                    <Border x:Name="Toast" Grid.Row="1" IsVisible="False" InputTransparent="True" HorizontalOptions="Center"
+                            VerticalOptions="Start" Margin="0,24,0,0" Padding="18,10" StrokeThickness="0" BackgroundColor="#F217112C">
+                        <Border.StrokeShape>
+                            <RoundRectangle CornerRadius="22" />
+                        </Border.StrokeShape>
+                        <Border.Shadow>
+                            <Shadow Brush="#000000" Offset="0,8" Radius="16" Opacity="0.35" />
+                        </Border.Shadow>
+                        <Label x:Name="ToastLabel" TextColor="White" FontFamily="BeVietnamBold" FontSize="15" />
+                    </Border>
     </Grid>
 </ContentPage>

@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:ReadManager.Mobile.ViewModels"
+             xmlns:models="clr-namespace:ReadManager.Mobile.Models"
+             xmlns:fx="clr-namespace:ReadManager.Mobile.Behaviors"
+             x:DataType="vm:NewReleasesViewModel"
+             x:Class="ReadManager.Mobile.Views.NewReleasesPage"
+             Title="🎉 Mới ra mắt"
+             BackgroundColor="{DynamicResource WebBg}">
+
+    <Shell.BackButtonBehavior>
+        <BackButtonBehavior IconOverride="ic_back.png" />
+    </Shell.BackButtonBehavior>
+
+    <RefreshView IsRefreshing="{Binding IsRefreshing}" Command="{Binding RefreshCommand}"
+                 RefreshColor="{DynamicResource WebRoyal}">
+        <CollectionView ItemsSource="{Binding Stories}" SelectionMode="None"
+                        RemainingItemsThreshold="4" RemainingItemsThresholdReachedCommand="{Binding LoadMoreCommand}">
+            <CollectionView.Header>
+                <VerticalStackLayout Padding="0,8,0,0">
+                    <ActivityIndicator IsRunning="{Binding IsBusy}" IsVisible="{Binding IsBusy}" Color="{DynamicResource WebRoyal}" />
+                    <Label Text="{Binding ErrorMessage}" TextColor="{DynamicResource WebCrimson}" Padding="16,8"
+                           IsVisible="{Binding ErrorMessage, Converter={StaticResource StringToBoolConverter}}" />
+                    <Label Text="Chưa có truyện nào." Style="{StaticResource LblMuted}" HorizontalTextAlignment="Center"
+                           Margin="0,40" IsVisible="{Binding ShowEmpty}" />
+                </VerticalStackLayout>
+            </CollectionView.Header>
+            <CollectionView.Footer>
+                <VerticalStackLayout Padding="0,8,0,24">
+                    <ActivityIndicator IsRunning="{Binding IsLoadingMore}" IsVisible="{Binding IsLoadingMore}"
+                                       Color="{DynamicResource WebRoyal}" />
+                </VerticalStackLayout>
+            </CollectionView.Footer>
+            <CollectionView.ItemTemplate>
+                <!-- Bìa + "N CHƯƠNG" + tên + tác giả (giống ảnh tham khảo) -->
+                <DataTemplate x:DataType="models:StorySummary">
+                    <Grid Padding="16,8" ColumnDefinitions="96,*" ColumnSpacing="14" fx:Motion.Press="True">
+                        <Grid.GestureRecognizers>
+                            <TapGestureRecognizer
+                                Command="{Binding Source={RelativeSource AncestorType={x:Type vm:NewReleasesViewModel}}, Path=GoToDetailCommand}"
+                                CommandParameter="{Binding .}" />
+                        </Grid.GestureRecognizers>
+                        <Border Grid.Column="0" HeightRequest="134" Style="{StaticResource CoverFrame}">
+                            <Grid>
+                                <Grid.Background>
+                                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                        <GradientStop Color="#3F3A55" Offset="0.0" />
+                                        <GradientStop Color="#1E1B2E" Offset="1.0" />
+                                    </LinearGradientBrush>
+                                </Grid.Background>
+                                <Label Text="{Binding Title}" IsVisible="{Binding HasNoCover}" FontFamily="{StaticResource SerifFont}"
+                                       FontSize="12" TextColor="White" HorizontalTextAlignment="Center" VerticalOptions="Center" Margin="6" />
+                                <Image Source="{Binding CoverUrl}" IsVisible="{Binding HasCover}" Aspect="AspectFill" />
+                                <Border HorizontalOptions="Start" VerticalOptions="End" Margin="0,0,0,8" Padding="8,3"
+                                        StrokeThickness="0" BackgroundColor="{Binding AccessColor}">
+                                    <Border.StrokeShape>
+                                        <RoundRectangle CornerRadius="0,8,0,8" />
+                                    </Border.StrokeShape>
+                                    <Label Text="{Binding AccessLabel}" TextColor="White" FontSize="10" FontFamily="BeVietnamBold" />
+                                </Border>
+                            </Grid>
+                        </Border>
+                        <VerticalStackLayout Grid.Column="1" Spacing="7" VerticalOptions="Center">
+                            <Border Style="{StaticResource ChapterBadge}">
+                                <Label Text="{Binding ChapterBadge}" FontSize="11.5" FontFamily="BeVietnamBold"
+                                       TextColor="{DynamicResource WebMuted}" />
+                            </Border>
+                            <Label Text="{Binding Title}" FontFamily="BeVietnamBold" FontSize="16"
+                                   TextColor="{DynamicResource WebText}" MaxLines="2" LineBreakMode="TailTruncation" />
+                            <Label Text="{Binding AuthorText}" FontSize="13.5" TextColor="{DynamicResource WebMuted}"
+                                   MaxLines="1" LineBreakMode="TailTruncation" />
+                            <Label Text="{Binding GenreLine}" FontSize="12" TextColor="{DynamicResource WebRoyal2}"
+                                   MaxLines="1" LineBreakMode="TailTruncation" />
+                        </VerticalStackLayout>
+                    </Grid>
+                </DataTemplate>
+            </CollectionView.ItemTemplate>
+        </CollectionView>
+    </RefreshView>
+</ContentPage>

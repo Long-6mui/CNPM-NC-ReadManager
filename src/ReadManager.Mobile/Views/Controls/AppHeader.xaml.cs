@@ -47,13 +47,31 @@ public partial class AppHeader : ContentView
         ApplyLook();
 
         // Nghe đổi chế độ sáng/tối khi header đang hiển thị
-        Loaded += (_, _) => { ThemeService.ThemeChanged -= OnThemeChanged; ThemeService.ThemeChanged += OnThemeChanged; ApplyLook(); };
-        Unloaded += (_, _) => ThemeService.ThemeChanged -= OnThemeChanged;
+        Loaded += (_, _) =>
+        {
+            ThemeService.ThemeChanged -= OnThemeChanged;
+            ThemeService.ThemeChanged += OnThemeChanged;
+            // Có chương mới / vừa nhận xu -> cập nhật chuông và chuỗi
+            NewChapterWatcher.NotificationsChanged -= OnDataChanged;
+            NewChapterWatcher.NotificationsChanged += OnDataChanged;
+            RewardsService.CoinsChanged -= OnDataChanged;
+            RewardsService.CoinsChanged += OnDataChanged;
+            ApplyLook();
+        };
+        Unloaded += (_, _) =>
+        {
+            ThemeService.ThemeChanged -= OnThemeChanged;
+            NewChapterWatcher.NotificationsChanged -= OnDataChanged;
+            RewardsService.CoinsChanged -= OnDataChanged;
+        };
     }
 
     private static IServiceProvider? Services => IPlatformApplication.Current?.Services;
 
     private void OnThemeChanged(object? sender, EventArgs e) => ApplyLook();
+
+    private void OnDataChanged(object? sender, EventArgs e)
+        => Dispatcher.Dispatch(() => { if (_loggedIn) _ = Task.WhenAll(RefreshStreakAsync(), RefreshBellAsync()); });
 
     // ===================== MÀU SẮC =====================
     private void ApplyLook()
