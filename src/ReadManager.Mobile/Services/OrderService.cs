@@ -32,6 +32,11 @@ public class OrderService : IOrderService
                new CreateOrderRequest { OrderType = "Plan", PlanId = planId, PlanVersionId = planVersionId, CouponId = couponId })
            ?? throw new ApiException(500, "Không tạo được đơn hàng.");
 
+    // POST api/orders/{id}/cancel — chỉ hủy được đơn đang chờ thanh toán của chính mình
+    public async Task<Order> CancelOrderAsync(int orderId)
+        => await _api.PostAsync<object, Order>($"orders/{orderId}/cancel", new { })
+           ?? throw new ApiException(500, "Không hủy được đơn hàng.");
+
     public async Task<Order> GetOrderAsync(int orderId)
         => await _api.GetAsync<Order>($"orders/{orderId}")
            ?? throw new ApiException(404, "Không tìm thấy đơn hàng.");

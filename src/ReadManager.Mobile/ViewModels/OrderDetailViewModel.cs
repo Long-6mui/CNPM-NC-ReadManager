@@ -79,6 +79,24 @@ public partial class OrderDetailViewModel : BaseViewModel
         });
     }
 
+    // Hủy đơn đang chờ: voucher / mã giảm giá gắn với đơn được trả lại để dùng cho đơn khác
+    [RelayCommand]
+    private async Task CancelAsync()
+    {
+        if (Order is null || !Order.IsPending) return;
+        var hasDiscount = Order.HasDiscount;
+        var ok = await Shell.Current.DisplayAlert("Hủy đơn hàng",
+            hasDiscount ? "Hủy đơn này? Mã giảm giá đã áp sẽ được trả lại vào Kho mã." : "Hủy đơn hàng này?",
+            "Hủy đơn", "Không");
+        if (!ok) return;
+
+        await RunSafeAsync(async () =>
+        {
+            Order = await _orders.CancelOrderAsync(Order.OrderId);
+            InfoMessage = hasDiscount ? "Đã hủy đơn. Mã giảm giá đã được trả lại." : "Đã hủy đơn.";
+        });
+    }
+
     [RelayCommand]
     private async Task OpenStoryAsync()
     {

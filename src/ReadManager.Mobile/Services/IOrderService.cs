@@ -14,5 +14,6 @@ public interface IOrderService
     Task<Order> CreatePlanOrderAsync(int planId, int? planVersionId, int? couponId = null);
 
     Task<Order> GetOrderAsync(int orderId);
+    Task<Order> CancelOrderAsync(int orderId);   // hủy đơn chờ, trả lại voucher / mã giảm đang giữ
     Task<PagedResult<Order>> GetMyOrdersAsync(string? status, int page, int pageSize);
 }
