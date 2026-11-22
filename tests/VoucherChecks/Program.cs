@@ -319,6 +319,53 @@ try
     Check(ordGuard.Ok && (await storiesAlice.GetOrderAsync(ordGuard.Id!.Value, aliceToken))!.Amount > 0m,
         "Discount never drops order Amount to <= 0");
 
+    // 9b. [Po] Tiền về TRỄ không được làm 1 voucher dùng cho 2 đơn
+    //   Đơn A giữ voucher → bắt đầu thanh toán → A hết hạn (voucher được trả)
+    //   → đơn B giữ lại voucher → callback thành công của A mới tới
+    //   Kỳ vọng: A = Paid, voucher = Used, đơn B (chưa trả tiền) bị hủy, voucher không dùng lại được.
+    var lateVoucher = new Voucher
+    {
+        UserId = aliceUser.UserId,
+        OfferId = 3,
+        RequestId = Guid.NewGuid(),
+        Name = "Test tiền về trễ",
+        DiscountType = VoucherDiscountTypes.Amount,
+        Value = 10000m,
+        CoinCost = 40,
+        Status = VoucherStatuses.Available,
+        ExpiresAt = DateTime.UtcNow.AddDays(10)
+    };
+    db.Vouchers.Add(lateVoucher);
+    await db.SaveChangesAsync();
+
+    var lateA = await storiesAlice.CreateStoryOrderAsync(s200k.StoryId, aliceToken, lateVoucher.VoucherId);
+    Check(lateA.Ok && lateA.Id.HasValue, "Late-payment: order A reserves the voucher");
+    var lateAId = lateA.Id!.Value;
+    (await aliceHttp.PostAsJsonAsync("api/payments/start", new { orderId = lateAId })).EnsureSuccessStatusCode();
+
+    // A quá 30 phút → Expired, voucher được trả lại
+    await db.Orders.Where(o => o.OrderId == lateAId)
+        .ExecuteUpdateAsync(s => s.SetProperty(o => o.CreatedAt, DateTime.UtcNow.AddMinutes(-35)));
+    Check((await rewardsAlice.MyVouchersAsync("Available", aliceToken)).Data!.Any(v => v.VoucherId == lateVoucher.VoucherId) &&
+          await db.Orders.AnyAsync(o => o.OrderId == lateAId && o.Status == "Expired"),
+        "Late-payment: order A expires and releases the voucher");
+
+    var lateB = await storiesAlice.CreateStoryOrderAsync(s200k.StoryId, aliceToken, lateVoucher.VoucherId);
+    Check(lateB.Ok && lateB.Id.HasValue && lateB.Id != lateAId, "Late-payment: order B reserves the same voucher again");
+    var lateBId = lateB.Id!.Value;
+
+    // Callback thành công của A tới trễ
+    var latePay = await paymentsAlice.SimulateAsync(lateAId, "Success", aliceToken);
+    Check(latePay.Ok && await db.Orders.AnyAsync(o => o.OrderId == lateAId && o.Status == "Paid"),
+        "Late-payment: late success callback still marks order A Paid");
+    Check(await db.Orders.AnyAsync(o => o.OrderId == lateBId && o.Status == "Cancelled"),
+        "Late-payment: pending order B holding the same voucher is cancelled");
+    Check(await db.Vouchers.AnyAsync(v => v.VoucherId == lateVoucher.VoucherId && v.Status == VoucherStatuses.Used && v.UsedAt != null) &&
+          await db.Orders.CountAsync(o => o.VoucherId == lateVoucher.VoucherId && (o.Status == "Paid" || o.Status == "Pending")) == 1,
+        "Late-payment: voucher is Used by exactly one order");
+    var lateReuse = await storiesAlice.CreateStoryOrderAsync(s20k.StoryId, aliceToken, lateVoucher.VoucherId);
+    Check(!lateReuse.Ok, "Late-payment: used voucher cannot be applied to another order");
+
     // 10. Start actual ReadManager.Web MVC app to verify Rewards + Checkout + Details pages
     var webPort = FreePort();
     var webUrl = $"http://127.0.0.1:{webPort}";

@@ -426,11 +426,9 @@ public class OrderService : IOrderService
                 .FirstOrDefaultAsync();
             if (voucherId.HasValue)
             {
-                await _db.Vouchers
-                    .Where(v => v.VoucherId == voucherId.Value && v.Status != VoucherStatuses.Used)
-                    .ExecuteUpdateAsync(s => s
-                        .SetProperty(v => v.Status, VoucherStatuses.Used)
-                        .SetProperty(v => v.UsedAt, usedAt));
+                // [Po] Voucher → Used; hủy đơn chờ khác đang giữ cùng voucher (tiền về trễ)
+                await VoucherService.MarkUsedAsync(_db, orderId, voucherId.Value, usedAt);
+                await _db.SaveChangesAsync();
             }
         }
         return changed > 0;
