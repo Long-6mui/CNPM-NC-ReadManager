@@ -297,6 +297,8 @@
                                         </VerticalStackLayout>
                                         <Label Text="Chọn voucher khi mua trọn bộ truyện để được giảm giá." Style="{StaticResource LblCardMeta}" Margin="4,2" />
                                     </VerticalStackLayout>
+                                    <Button Text="🎟 Mở kho mã giảm giá của tôi" Style="{StaticResource BtnOutlineSm}" HeightRequest="46"
+                                            Command="{Binding OpenWalletCommand}" IsVisible="{Binding IsLoggedIn}" />
                                 </VerticalStackLayout>
                             </VerticalStackLayout>
                         </Border>

@@ -202,6 +202,19 @@
 
                             <Grid Style="{StaticResource MenuRow}" ColumnDefinitions="Auto,*,Auto">
                                 <Grid.GestureRecognizers>
+                                    <TapGestureRecognizer Command="{Binding OpenWalletCommand}" />
+                                </Grid.GestureRecognizers>
+                                <Label Text="🎟" FontSize="19" VerticalOptions="Center" />
+                                <VerticalStackLayout Grid.Column="1" Spacing="1" VerticalOptions="Center">
+                                    <Label Text="Kho mã giảm giá" FontSize="15" FontFamily="BeVietnamSemiBold" TextColor="{DynamicResource WebText}" />
+                                    <Label Text="Voucher mua truyện &amp; mã giảm gói đọc từ chuỗi" Style="{StaticResource LblCardMeta}" />
+                                </VerticalStackLayout>
+                                <Label Grid.Column="2" Text="›" FontSize="22" TextColor="{DynamicResource WebMuted}" VerticalOptions="Center" />
+                            </Grid>
+                            <BoxView HeightRequest="1" Color="{DynamicResource WebBorder}" Margin="52,0,0,0" />
+
+                            <Grid Style="{StaticResource MenuRow}" ColumnDefinitions="Auto,*,Auto">
+                                <Grid.GestureRecognizers>
                                     <TapGestureRecognizer Command="{Binding GoToPlansCommand}" />
                                 </Grid.GestureRecognizers>
                                 <Label Text="💎" FontSize="19" VerticalOptions="Center" />

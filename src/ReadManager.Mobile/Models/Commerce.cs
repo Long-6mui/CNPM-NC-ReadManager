@@ -61,7 +61,13 @@ public class OrderQuote
     public int? PendingOrderId { get; set; }
     public string? Message { get; set; }
 
+    // Báo giá khi áp voucher mua truyện (GET api/orders/quote/story/{id}?voucherId=)
+    public decimal? OriginalAmount { get; set; }
+    public decimal DiscountAmount { get; set; }
+    public int? VoucherId { get; set; }
+
     public string AmountText => Fmt.Money(Amount);
+    public decimal BaseAmount => OriginalAmount ?? Amount + DiscountAmount;   // giá gốc trước giảm
 }
 
 // Body của POST api/orders — chỉ gửi "mua cái gì", KHÔNG gửi giá (giá lấy từ database)
@@ -71,7 +77,8 @@ public class CreateOrderRequest
     public int? StoryId { get; set; }
     public int? PlanId { get; set; }
     public int? PlanVersionId { get; set; }
-    public int? CouponId { get; set; }      // Sprint 5 — mã giảm giá từ chuỗi đọc
+    public int? CouponId { get; set; }      // Sprint 5 — mã giảm giá từ chuỗi đọc (chỉ cho GÓI)
+    public int? VoucherId { get; set; }     // Sprint 5 — voucher đổi bằng xu (chỉ cho mua TRUYỆN)
 }
 
 public class Order

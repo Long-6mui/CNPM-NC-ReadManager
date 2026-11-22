@@ -139,6 +139,10 @@ public class StreakCoupon
     public DateTime ExpiresAt { get; set; }
 
     public string Display => $"{Name} · hạn {Fmt.Local(ExpiresAt):dd/MM/yyyy}";
+    public string BadgeText => $"-{Percent}%";
+    public string ExpiresText => Fmt.Local(ExpiresAt).ToString("dd/MM/yyyy");
+    public string MonthsText => DurationMonths.Count == 0 ? "Mọi gói đọc"
+        : "Áp dụng gói " + string.Join(", ", DurationMonths.Select(m => m == 12 ? "1 năm" : $"{m} tháng"));
 }
 
 // GET api/me/streak/notices
