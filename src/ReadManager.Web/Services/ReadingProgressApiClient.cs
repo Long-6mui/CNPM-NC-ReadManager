@@ -29,10 +29,11 @@ public class ReadingProgressApiClient(HttpClient http)
     }
     public record DirectoryMember(int UserId, string DisplayName, string Email, string Role, DateTime CreatedAt, string AccountStatus);
 
-    public async Task<List<DirectoryMember>> FindMembersAsync(string? keyword, string? role, string? token)
+    public async Task<List<DirectoryMember>> FindMembersAsync(string? keyword, string? role, string? token, string? status = null)
     {
         var result = new List<DirectoryMember>();
         var query = $"keyword={Uri.EscapeDataString(keyword ?? "")}&role={Uri.EscapeDataString(role == "User" ? "Member" : role ?? "all")}";
+        if (!string.IsNullOrWhiteSpace(status)) query += $"&status={Uri.EscapeDataString(status)}";
         for (var page = 1; ; page++)
         {
             using var response = await SendAsync(HttpMethod.Get, $"api/admin/users?{query}&page={page}&pageSize=50", token);
@@ -42,6 +43,39 @@ public class ReadingProgressApiClient(HttpClient http)
             result.AddRange(batch.Items);
             if (result.Count >= batch.TotalCount || batch.Items.Count == 0) return result;
         }
+    }
+
+    // PB35 — chi tiết thành viên (khớp MemberDetailDto của API)
+    public record MemberDetail(int UserId, string DisplayName, string Email, string Role, string AccountStatus,
+        string? StatusReason, DateTime? StatusChangedAt, DateTime CreatedAt, int ChapterReadCount, DateTime? LastReadAt,
+        int ReadingStoryCount, int FollowCount, int CommentCount, int PaidOrderCount, decimal TotalPaid,
+        bool HasActivePlan, DateTime? PlanEndsAt);
+
+    public async Task<MemberDetail?> GetMemberAsync(int userId, string? token)
+    {
+        using var response = await SendAsync(HttpMethod.Get, $"api/admin/users/{userId}", token);
+        if (response.StatusCode == HttpStatusCode.NotFound) return null;
+        response.EnsureSuccessStatusCode();
+        return await response.Content.ReadFromJsonAsync<MemberDetail>();
+    }
+
+    // PB36 — đổi trạng thái trong DB: status = Active | Restricted | Suspended. Trả null nếu thành công, ngược lại là thông báo lỗi.
+    public async Task<string?> ChangeStatusAsync(int userId, string status, string? reason, string? token)
+    {
+        using var response = await SendAsync(HttpMethod.Put, $"api/admin/users/{userId}/status", token, new { status, reason });
+        if (response.IsSuccessStatusCode) return null;
+        if (response.StatusCode is HttpStatusCode.NotFound or HttpStatusCode.BadRequest or HttpStatusCode.Forbidden)
+        {
+            try
+            {
+                var error = await response.Content.ReadFromJsonAsync<PurchaseError>();
+                if (!string.IsNullOrWhiteSpace(error?.Message)) return error.Message;
+            }
+            catch (System.Text.Json.JsonException) { }
+            return response.StatusCode == HttpStatusCode.NotFound ? "Không tìm thấy thành viên." : "Yêu cầu không hợp lệ.";
+        }
+        response.EnsureSuccessStatusCode();
+        return null;
     }
 
     public async Task<string> GrantAsync(

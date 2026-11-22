@@ -6,7 +6,7 @@ using ReadManager.Web.ViewModels;
 
 namespace ReadManager.Web.Controllers;
 
-public class StoriesController(StoriesApiClient api, ReadingProgressApiClient progress, DemoMemberStore members) : Controller
+public class StoriesController(StoriesApiClient api, ReadingProgressApiClient progress, AuthApiClient auth) : Controller
 {
     public async Task<IActionResult> Browse(string? q, int? genre, AccessPolicy? access,
         StoryStatus? status, string sort = "updated", int page = 1)
@@ -153,8 +153,16 @@ public class StoriesController(StoriesApiClient api, ReadingProgressApiClient pr
             }
 
             // PB36 — tài khoản đang bị hạn chế thì ẩn ô bình luận và báo lý do
-            if (readerId != "" && members.StateOf(readerId) is (MemberState.Restricted, { } restr))
-                vm.RestrictionNote = $"Tài khoản của bạn đang bị hạn chế bình luận {(restr.Until is { } u ? "đến " + u.ToLocalTime().ToString("dd/MM/yyyy") : "cho đến khi quản trị viên khôi phục")}. Lý do: {restr.Reason}";
+            if (readerId != "")
+            {
+                try
+                {
+                    var account = await auth.StateAsync(token);
+                    if (account?.AccountStatus == "Restricted")
+                        vm.RestrictionNote = $"Tài khoản của bạn đang bị hạn chế bình luận cho đến khi quản trị viên khôi phục. Lý do: {account.StatusReason}";
+                }
+                catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException or System.Text.Json.JsonException) { }
+            }
 
             // PB32 + PB33 — chương đã ra mắt thì tải bình luận + danh sách lý do báo cáo
             if (!c.IsUpcoming)
@@ -197,13 +205,6 @@ public class StoriesController(StoriesApiClient api, ReadingProgressApiClient pr
     [HttpPost, ValidateAntiForgeryToken]
     public async Task<IActionResult> PostComment(int storyId, int no, int chapterId, string? content)
     {
-        // PB36 — chặn bình luận khi tài khoản đang bị hạn chế (kiểm tra cả phía server, không chỉ ẩn ô nhập)
-        var uid = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "";
-        if (members.StateOf(uid).State != MemberState.Active)
-        {
-            TempData["Toast"] = "Tài khoản của bạn đang bị hạn chế, không thể bình luận.";
-            return BackToRead(storyId, no);
-        }
         if (string.IsNullOrWhiteSpace(content))
         {
             TempData["Toast"] = "Vui lòng nhập nội dung bình luận.";
@@ -212,6 +213,12 @@ public class StoriesController(StoriesApiClient api, ReadingProgressApiClient pr
         try
         {
             var token = await HttpContext.GetTokenAsync("access_token");
+            // PB36 — API cũng chặn (403) tài khoản bị hạn chế; kiểm tra trước chỉ để báo thông điệp rõ ràng hơn
+            if ((await auth.StateAsync(token)) is { AccountStatus: not "Active" })
+            {
+                TempData["Toast"] = "Tài khoản của bạn đang bị hạn chế, không thể bình luận.";
+                return BackToRead(storyId, no);
+            }
             TempData["Toast"] = (await api.PostCommentAsync(storyId, chapterId, content, token)).Message;
         }
         catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException)
