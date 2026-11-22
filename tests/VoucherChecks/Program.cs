@@ -433,6 +433,24 @@ try
           detailsHtml.Contains("Voucher:"),
         "Web Order Details renders voucher name, original price, discount, and total");
 
+    // Daily rewards share the same wallet; concurrent requests must credit once.
+    Check((await anonHttp.PostAsync("api/me/daily-rewards/check-in", null)).StatusCode == HttpStatusCode.Unauthorized,
+        "Guests cannot claim daily coins");
+    Check((await bobHttp.PostAsync("api/me/daily-rewards/missions/read1/claim", null)).StatusCode == HttpStatusCode.BadRequest,
+        "Reading mission cannot be claimed without qualified reading");
+    var bobId = await db.Users.Where(u => u.Email == "bob@example.test").Select(u => u.UserId).SingleAsync();
+    var beforeDaily = await ReadManager.Api.Services.CoinLedger.BalanceAsync(db, bobId);
+    var dailyClaims = await Task.WhenAll(bobHttp.PostAsync("api/me/daily-rewards/check-in", null),
+        bobHttp.PostAsync("api/me/daily-rewards/check-in", null));
+    Check(dailyClaims.Count(r => r.IsSuccessStatusCode) == 1 && dailyClaims.Count(r => r.StatusCode == HttpStatusCode.Conflict) == 1,
+        "Concurrent daily check-in credits exactly once");
+    var todayDaily = ReadManager.Api.Services.StreakService.TodayVn(DateTime.UtcNow);
+    var expectedDaily = todayDaily.DayOfWeek == DayOfWeek.Sunday ? 30 : 10;
+    Check(await ReadManager.Api.Services.CoinLedger.BalanceAsync(db, bobId) == beforeDaily + expectedDaily,
+        "Check-in amount matches Vietnam calendar day");
+    var dailyState = await bobHttp.GetFromJsonAsync<JsonElement>("api/me/daily-rewards");
+    Check(dailyState.GetProperty("checkedInToday").GetBoolean() && dailyState.GetProperty("days").GetArrayLength() == 7,
+        "Daily status exposes claimed check-in and seven-day calendar");
     Console.WriteLine($"ALL {passed} SPRINT 5 VOUCHER & ORDER CHECKS PASSED!");
 }
 finally
