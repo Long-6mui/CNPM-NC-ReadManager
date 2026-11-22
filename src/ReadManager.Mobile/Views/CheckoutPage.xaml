@@ -6,7 +6,7 @@
              x:DataType="vm:CheckoutViewModel"
              x:Class="ReadManager.Mobile.Views.CheckoutPage"
              Title="Thanh toán"
-             BackgroundColor="{StaticResource WebBg}">
+             BackgroundColor="{DynamicResource WebBg}">
 
     <Shell.BackButtonBehavior>
         <BackButtonBehavior IconOverride="ic_back.png" />
@@ -15,8 +15,8 @@
     <ScrollView>
         <VerticalStackLayout Padding="16,16,16,32" Spacing="14">
 
-            <ActivityIndicator IsRunning="{Binding IsBusy}" IsVisible="{Binding IsBusy}" Color="{StaticResource WebRoyal}" />
-            <Label Text="{Binding ErrorMessage}" TextColor="{StaticResource WebCrimson}"
+            <ActivityIndicator IsRunning="{Binding IsBusy}" IsVisible="{Binding IsBusy}" Color="{DynamicResource WebRoyal}" />
+            <Label Text="{Binding ErrorMessage}" TextColor="{DynamicResource WebCrimson}"
                    IsVisible="{Binding ErrorMessage, Converter={StaticResource StringToBoolConverter}}" />
 
             <VerticalStackLayout IsVisible="{Binding ShowContent}" Spacing="14">
@@ -27,7 +27,7 @@
 
                         <!-- Bìa (chỉ khi mua truyện) -->
                         <Border HeightRequest="150" WidthRequest="100" HorizontalOptions="Start" StrokeThickness="1"
-                                Stroke="{StaticResource WebBorder}" IsVisible="{Binding HasCover}">
+                                Stroke="{DynamicResource WebBorder}" IsVisible="{Binding HasCover}">
                             <Border.StrokeShape>
                                 <RoundRectangle CornerRadius="12" />
                             </Border.StrokeShape>
@@ -39,31 +39,31 @@
                                IsVisible="{Binding Subtitle, Converter={StaticResource StringToBoolConverter}}" />
 
                         <Label Text="{Binding AmountText}" FontSize="30"
-                               FontFamily="{StaticResource SerifFont}" TextColor="{StaticResource WebCrimson}" />
+                               FontFamily="{StaticResource SerifFont}" TextColor="{DynamicResource WebCrimson}" />
 
                         <VerticalStackLayout BindableLayout.ItemsSource="{Binding Benefits}" Spacing="6">
                             <BindableLayout.ItemTemplate>
                                 <DataTemplate x:DataType="x:String">
-                                    <Label Text="{Binding .}" FontSize="13.5" TextColor="{StaticResource WebText}" />
+                                    <Label Text="{Binding .}" FontSize="13.5" TextColor="{DynamicResource WebText}" />
                                 </DataTemplate>
                             </BindableLayout.ItemTemplate>
                         </VerticalStackLayout>
 
                         <!-- Mã giảm giá từ chuỗi đọc (Sprint 5) -->
                         <VerticalStackLayout IsVisible="{Binding HasCoupons}" Spacing="4">
-                            <Label Text="🎟 Bạn có mã giảm giá từ chuỗi đọc" FontFamily="BeVietnamBold" FontSize="13.5" TextColor="{StaticResource WebText}" />
+                            <Label Text="🎟 Bạn có mã giảm giá từ chuỗi đọc" FontFamily="BeVietnamBold" FontSize="13.5" TextColor="{DynamicResource WebText}" />
                             <Border Style="{StaticResource FieldBorder}">
                                 <Picker Title="Chọn mã giảm giá (không bắt buộc)" ItemsSource="{Binding Coupons}"
                                         ItemDisplayBinding="{Binding Display, x:DataType=models:StreakCoupon}"
-                                        SelectedItem="{Binding SelectedCoupon}" TextColor="{StaticResource WebText}" />
+                                        SelectedItem="{Binding SelectedCoupon}" TextColor="{DynamicResource WebText}" />
                             </Border>
-                            <Label Text="{Binding DiscountText}" Style="{StaticResource LblMuted}" TextColor="{StaticResource WebSage}"
+                            <Label Text="{Binding DiscountText}" Style="{StaticResource LblMuted}" TextColor="{DynamicResource WebSage}"
                                    IsVisible="{Binding DiscountText, Converter={StaticResource StringToBoolConverter}}" />
                         </VerticalStackLayout>
 
                         <Label Text="{Binding Notice}" Style="{StaticResource LblMuted}" TextColor="#B7791F"
                                IsVisible="{Binding Notice, Converter={StaticResource StringToBoolConverter}}" />
-                        <Label Text="{Binding CannotBuyMessage}" TextColor="{StaticResource WebCrimson}" FontFamily="BeVietnamBold"
+                        <Label Text="{Binding CannotBuyMessage}" TextColor="{DynamicResource WebCrimson}" FontFamily="BeVietnamBold"
                                IsVisible="{Binding CannotBuyMessage, Converter={StaticResource StringToBoolConverter}}" />
 
                         <Button Text="{Binding ConfirmText}" Style="{StaticResource BtnBrass}" Margin="0,6,0,0"

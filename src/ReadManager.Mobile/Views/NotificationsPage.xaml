@@ -6,7 +6,7 @@
              x:DataType="vm:NotificationsViewModel"
              x:Class="ReadManager.Mobile.Views.NotificationsPage"
              Title="Thông báo"
-             BackgroundColor="{StaticResource WebBg}">
+             BackgroundColor="{DynamicResource WebBg}">
 
     <Shell.BackButtonBehavior>
         <BackButtonBehavior IconOverride="ic_back.png" />
@@ -20,9 +20,9 @@
                 <Button Grid.Column="1" Text="Đánh dấu đã đọc hết" Style="{StaticResource BtnLink}"
                         Command="{Binding MarkAllReadCommand}" IsVisible="{Binding HasUnread}" />
             </Grid>
-            <Label Text="{Binding ErrorMessage}" TextColor="{StaticResource WebCrimson}"
+            <Label Text="{Binding ErrorMessage}" TextColor="{DynamicResource WebCrimson}"
                    IsVisible="{Binding ErrorMessage, Converter={StaticResource StringToBoolConverter}}" />
-            <ActivityIndicator IsRunning="{Binding IsBusy}" IsVisible="{Binding IsBusy}" Color="{StaticResource WebRoyal}" />
+            <ActivityIndicator IsRunning="{Binding IsBusy}" IsVisible="{Binding IsBusy}" Color="{DynamicResource WebRoyal}" />
         </VerticalStackLayout>
 
         <CollectionView Grid.Row="1" ItemsSource="{Binding Items}" SelectionMode="None" Margin="16,6,16,0">
@@ -42,10 +42,10 @@
                         </Border.GestureRecognizers>
                         <Grid ColumnDefinitions="Auto,*" ColumnSpacing="10">
                             <BoxView WidthRequest="10" HeightRequest="10" CornerRadius="5" VerticalOptions="Start" Margin="0,5,0,0"
-                                     Color="{StaticResource WebAmber}" IsVisible="{Binding IsUnread}" />
+                                     Color="{DynamicResource WebAmber}" IsVisible="{Binding IsUnread}" />
                             <VerticalStackLayout Grid.Column="1" Spacing="3">
-                                <Label Text="{Binding Message}" FontSize="14" TextColor="{StaticResource WebText}" />
-                                <Label Text="{Binding TargetText}" FontSize="12" FontFamily="BeVietnamBold" TextColor="{StaticResource WebRoyal}" />
+                                <Label Text="{Binding Message}" FontSize="14" TextColor="{DynamicResource WebText}" />
+                                <Label Text="{Binding TargetText}" FontSize="12" FontFamily="BeVietnamBold" TextColor="{DynamicResource WebRoyal}" />
                                 <Label Text="{Binding TimeText}" Style="{StaticResource LblCardMeta}" />
                             </VerticalStackLayout>
                         </Grid>

@@ -6,7 +6,7 @@
              x:DataType="vm:FollowedStoriesViewModel"
              x:Class="ReadManager.Mobile.Views.FollowedStoriesPage"
              Title="Truyện đang theo dõi"
-             BackgroundColor="{StaticResource WebBg}">
+             BackgroundColor="{DynamicResource WebBg}">
 
     <Shell.BackButtonBehavior>
         <BackButtonBehavior IconOverride="ic_back.png" />
@@ -16,9 +16,9 @@
 
         <VerticalStackLayout Grid.Row="0" Padding="16,12,16,4" Spacing="6">
             <Label Text="{Binding CountText}" Style="{StaticResource LblMuted}" />
-            <Label Text="{Binding ErrorMessage}" TextColor="{StaticResource WebCrimson}"
+            <Label Text="{Binding ErrorMessage}" TextColor="{DynamicResource WebCrimson}"
                    IsVisible="{Binding ErrorMessage, Converter={StaticResource StringToBoolConverter}}" />
-            <ActivityIndicator IsRunning="{Binding IsBusy}" IsVisible="{Binding IsBusy}" Color="{StaticResource WebRoyal}" />
+            <ActivityIndicator IsRunning="{Binding IsBusy}" IsVisible="{Binding IsBusy}" Color="{DynamicResource WebRoyal}" />
         </VerticalStackLayout>
 
         <CollectionView Grid.Row="1" ItemsSource="{Binding Items}" SelectionMode="None" Margin="16,6,16,0">
@@ -29,7 +29,7 @@
                 <DataTemplate x:DataType="models:FollowedStory">
                     <Border Style="{StaticResource Panel}" Padding="12" Margin="0,0,0,10">
                         <Grid ColumnDefinitions="68,*" ColumnSpacing="12">
-                            <Border HeightRequest="100" StrokeThickness="1" Stroke="{StaticResource WebBorder}" VerticalOptions="Start">
+                            <Border HeightRequest="100" StrokeThickness="1" Stroke="{DynamicResource WebBorder}" VerticalOptions="Start">
                                 <Border.StrokeShape>
                                     <RoundRectangle CornerRadius="12" />
                                 </Border.StrokeShape>
@@ -59,7 +59,7 @@
                                     <Button Text="Xem truyện" Style="{StaticResource BtnBrassSm}"
                                             Command="{Binding Source={RelativeSource AncestorType={x:Type vm:FollowedStoriesViewModel}}, Path=OpenCommand}"
                                             CommandParameter="{Binding .}" />
-                                    <Button Text="Bỏ theo dõi" Style="{StaticResource BtnLink}" TextColor="{StaticResource WebCrimson}"
+                                    <Button Text="Bỏ theo dõi" Style="{StaticResource BtnLink}" TextColor="{DynamicResource WebCrimson}"
                                             Command="{Binding Source={RelativeSource AncestorType={x:Type vm:FollowedStoriesViewModel}}, Path=UnfollowCommand}"
                                             CommandParameter="{Binding .}" />
                                 </HorizontalStackLayout>

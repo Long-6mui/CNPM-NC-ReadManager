@@ -1,6 +1,7 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using ReadManager.Mobile.Models.Auth;
+using ReadManager.Mobile.Services;
 using ReadManager.Mobile.Services.Auth;
 
 namespace ReadManager.Mobile.ViewModels;
@@ -55,10 +56,28 @@ public partial class RegisterViewModel : BaseViewModel
                 Password = Password
             });
 
+            // Đăng ký xong -> tự đăng nhập luôn rồi mở màn chọn sở thích đọc.
+            // Chọn xong, mục "Đề xuất cho bạn" ở trang chủ hiện ngay truyện theo sở thích.
+            var loginName = Email.Trim();
+            var password = Password;
             Password = string.Empty;
             ConfirmPassword = string.Empty;
-            await Shell.Current.DisplayAlert("Đăng ký thành công", "Bạn có thể đăng nhập bằng tài khoản vừa tạo.", "OK");
-            await Shell.Current.GoToAsync("//LoginPage");
+
+            try
+            {
+                await _authService.LoginAsync(new LoginRequest { UsernameOrEmail = loginName, Password = password });
+            }
+            catch (ApiException)
+            {
+                // Máy chủ chưa cho đăng nhập ngay (vd cần xác nhận email) -> về màn đăng nhập như cũ
+                await Shell.Current.DisplayAlert("Đăng ký thành công", "Bạn có thể đăng nhập bằng tài khoản vừa tạo.", "OK");
+                await Shell.Current.GoToAsync("//LoginPage");
+                return;
+            }
+
+            SessionFlags.AccountRestricted = false;
+            await Shell.Current.GoToAsync("//StoryListPage");
+            await Shell.Current.GoToAsync(nameof(Views.ReaderGenresPage));
         });
     }
 

@@ -6,11 +6,15 @@ using ReadManager.Mobile.Models;
 namespace ReadManager.Mobile.Views.Controls;
 
 // Hero "sách bay" cho trang chủ (giống hero 3D của web):
-//  - 1 cuốn sách bìa cứng ở giữa, tự đổi sang truyện kế tiếp mỗi vài giây (lật sách).
+//  - 1 cuốn sách bìa cứng LỚN ở giữa (có gáy, ruột giấy, dải đánh dấu trang), tự đổi sang truyện kế tiếp mỗi vài giây.
+//  - Vuốt trái -> lật sang cuốn sau, vuốt phải -> quay lại cuốn trước (hướng lật theo hướng vuốt).
 //  - 4 bìa truyện vệ tinh bay lơ lửng tự động (sóng sin 3 trục như marvel-3d-engine.js), bấm vào để chuyển sang truyện đó.
 public partial class FloatingHeroView : ContentView
 {
-    private const double StageHeight = 310;
+    private const double StageHeight = 360;
+    private const double BookWidth = 188;   // sách to hơn bản cũ (150 x 222)
+    private const double BookHeight = 280;
+    private const double BookTop = 30;
     private const double AutoSwitchSeconds = 5.5;
     private const int MaxSlides = 5;
 
@@ -19,10 +23,10 @@ public partial class FloatingHeroView : ContentView
 
     private static readonly Orbit[] Orbits =
     {
-        new(0.03, 0.05, 82, 120, -22,  7, 1.05, 0.0),
-        new(0.78, 0.02, 76, 112,  20, -6, 0.92, 1.7),
-        new(0.00, 0.58, 74, 108,  22,  9, 1.15, 3.3),
-        new(0.80, 0.60, 80, 116, -19, -8, 0.98, 4.9),
+        new(0.00, 0.06, 74, 108, -22,  7, 1.05, 0.0),
+        new(0.80, 0.03, 70, 102,  20, -6, 0.92, 1.7),
+        new(-0.02, 0.58, 68, 100, 22,  9, 1.15, 3.3),
+        new(0.82, 0.60, 72, 106, -19, -8, 0.98, 4.9),
     };
 
     // 5 bảng màu bìa chữ (giống art-cover-1..5 của web)
@@ -95,8 +99,9 @@ public partial class FloatingHeroView : ContentView
                 Shadow = new Shadow { Brush = new SolidColorBrush(Colors.Black), Offset = new Point(0, 10), Radius = 16, Opacity = 0.6f }
             };
             var tap = new TapGestureRecognizer();
-            tap.Tapped += async (_, _) => await ShowAsync(SatelliteStoryIndex(idx));
+            tap.Tapped += async (_, _) => await ShowAsync(SatelliteStoryIndex(idx), +1);
             card.GestureRecognizers.Add(tap);
+            AttachSwipe(card);
             _satellites.Add(card);
             Stage.Children.Add(card);
         }
@@ -110,54 +115,98 @@ public partial class FloatingHeroView : ContentView
         LayoutStage();
     }
 
+    // Cuốn sách bìa cứng: ruột giấy (cạnh phải + cạnh dưới), bìa, gáy, vệt bóng, dải đánh dấu trang
     private Grid BuildBook()
     {
         _bookCover = new Border
         {
             StrokeThickness = 0,
-            Margin = new Thickness(0, 0, 5, 0),
-            StrokeShape = new RoundRectangle { CornerRadius = new CornerRadius(3, 9, 9, 3) },
-            Shadow = new Shadow { Brush = new SolidColorBrush(Colors.Black), Offset = new Point(0, 18), Radius = 26, Opacity = 0.75f }
+            Margin = new Thickness(0, 0, 9, 7),
+            StrokeShape = new RoundRectangle { CornerRadius = new CornerRadius(4, 12, 12, 4) },
+            Shadow = new Shadow { Brush = new SolidColorBrush(Colors.Black), Offset = new Point(0, 22), Radius = 30, Opacity = 0.8f }
         };
 
-        var pages = new BoxView
+        // Ruột giấy: khối màu kem lệch sang phải/xuống dưới + vài đường kẻ trang
+        var pages = new Grid
         {
-            Color = Color.FromArgb("#E9E2D0"),
-            WidthRequest = 8,
-            HorizontalOptions = LayoutOptions.End,
-            Margin = new Thickness(0, 5, 0, 5)
+            Margin = new Thickness(10, 6, 0, 0),
+            BackgroundColor = Color.FromArgb("#EDE6D3")
         };
+        for (var i = 1; i <= 3; i++)
+        {
+            pages.Children.Add(new BoxView
+            {
+                Color = Color.FromArgb("#D6CDB6"),
+                WidthRequest = 1,
+                HorizontalOptions = LayoutOptions.End,
+                Margin = new Thickness(0, 8, i * 2.5, 8)
+            });
+            pages.Children.Add(new BoxView
+            {
+                Color = Color.FromArgb("#D6CDB6"),
+                HeightRequest = 1,
+                VerticalOptions = LayoutOptions.End,
+                Margin = new Thickness(8, 0, 8, i * 2)
+            });
+        }
+
+        // Gáy sách: dải tối bên trái + vệt sáng mảnh
         var spine = new BoxView
         {
-            Color = Color.FromArgb("#40000000"),
-            WidthRequest = 9,
+            WidthRequest = 13,
             HorizontalOptions = LayoutOptions.Start,
-            Margin = new Thickness(0, 0, 0, 0),
-            InputTransparent = true
-        };
-        var sheen = new BoxView
-        {
+            Margin = new Thickness(0, 0, 0, 7),
             InputTransparent = true,
-            Margin = new Thickness(0, 0, 5, 0),
             Background = new LinearGradientBrush(
                 new GradientStopCollection
                 {
-                    new GradientStop(Color.FromArgb("#30FFFFFF"), 0f),
-                    new GradientStop(Color.FromArgb("#00FFFFFF"), 0.45f),
-                    new GradientStop(Color.FromArgb("#22000000"), 1f)
+                    new GradientStop(Color.FromArgb("#66000000"), 0f),
+                    new GradientStop(Color.FromArgb("#22FFFFFF"), 0.55f),
+                    new GradientStop(Color.FromArgb("#33000000"), 1f)
+                },
+                new Point(0, 0), new Point(1, 0))
+        };
+
+        var sheen = new BoxView
+        {
+            InputTransparent = true,
+            Margin = new Thickness(0, 0, 9, 7),
+            Background = new LinearGradientBrush(
+                new GradientStopCollection
+                {
+                    new GradientStop(Color.FromArgb("#38FFFFFF"), 0f),
+                    new GradientStop(Color.FromArgb("#00FFFFFF"), 0.42f),
+                    new GradientStop(Color.FromArgb("#26000000"), 1f)
                 },
                 new Point(0, 0), new Point(1, 1))
         };
 
-        var book = new Grid { WidthRequest = 150, HeightRequest = 222, AnchorX = 0.5, AnchorY = 0.5 };
+        // Dải ruy-băng đánh dấu trang thò ra ở mép trên
+        var ribbon = new Border
+        {
+            WidthRequest = 14,
+            HeightRequest = 46,
+            StrokeThickness = 0,
+            BackgroundColor = Color.FromArgb("#E11D48"),
+            HorizontalOptions = LayoutOptions.End,
+            VerticalOptions = LayoutOptions.Start,
+            Margin = new Thickness(0, -6, 34, 0),
+            InputTransparent = true,
+            StrokeShape = new RoundRectangle { CornerRadius = new CornerRadius(2, 2, 0, 0) },
+            Shadow = new Shadow { Brush = new SolidColorBrush(Colors.Black), Offset = new Point(0, 3), Radius = 6, Opacity = 0.5f }
+        };
+
+        var book = new Grid { WidthRequest = BookWidth, HeightRequest = BookHeight, AnchorX = 0.5, AnchorY = 0.5 };
         book.Children.Add(pages);
         book.Children.Add(_bookCover);
         book.Children.Add(spine);
         book.Children.Add(sheen);
+        book.Children.Add(ribbon);
 
         var tap = new TapGestureRecognizer();
         tap.Tapped += (_, _) => { if (_stories.Count > 0) StoryTapped?.Invoke(this, _stories[_index]); };
         book.GestureRecognizers.Add(tap);
+        AttachSwipe(book);   // vuốt ngay trên cuốn sách cũng lật được
         return book;
     }
 
@@ -166,7 +215,7 @@ public partial class FloatingHeroView : ContentView
         var w = Stage.Width;
         if (w <= 0 || !_built || _book is null) return;
 
-        AbsoluteLayout.SetLayoutBounds(_book, new Rect(w / 2 - 75, 40, 150, 222));
+        AbsoluteLayout.SetLayoutBounds(_book, new Rect(w / 2 - BookWidth / 2, BookTop, BookWidth, BookHeight));
         AbsoluteLayout.SetLayoutFlags(_book, AbsoluteLayoutFlags.None);
 
         for (var i = 0; i < _satellites.Count; i++)
@@ -185,7 +234,7 @@ public partial class FloatingHeroView : ContentView
         if (_stories.Count == 0) return;
         var s = _stories[_index];
 
-        if (_bookCover is not null) _bookCover.Content = BuildCover(s, 150);
+        if (_bookCover is not null) _bookCover.Content = BuildCover(s, BookWidth);
         for (var i = 0; i < _satellites.Count; i++)
             _satellites[i].Content = BuildCover(_stories[SatelliteStoryIndex(i)], Orbits[i].W);
 
@@ -213,7 +262,7 @@ public partial class FloatingHeroView : ContentView
                 StrokeShape = new RoundRectangle { CornerRadius = new CornerRadius(3) }
             };
             var tap = new TapGestureRecognizer();
-            tap.Tapped += async (_, _) => await ShowAsync(idx);
+            tap.Tapped += async (_, _) => await ShowAsync(idx, idx > _index ? +1 : -1);
             dot.GestureRecognizers.Add(tap);
             DotsRow.Children.Add(dot);
         }
@@ -254,7 +303,7 @@ public partial class FloatingHeroView : ContentView
             {
                 Text = s.Title,
                 TextColor = Colors.White,
-                FontSize = big ? 19 : 11.5,
+                FontSize = big ? 21 : 11.5,
                 FontAttributes = FontAttributes.Bold,
                 FontFamily = SerifFont,
                 HorizontalTextAlignment = TextAlignment.Center,
@@ -293,17 +342,31 @@ public partial class FloatingHeroView : ContentView
     }
 
     // ===================== CHUYỂN SÁCH =====================
-    private async Task ShowAsync(int newIndex)
+    // dir = +1: sang cuốn sau (sách lật về bên trái); dir = -1: về cuốn trước (lật về bên phải)
+    private async Task ShowAsync(int newIndex, int dir)
     {
         if (_switching || _book is null || _stories.Count < 2 || newIndex == _index) return;
         _switching = true;
         try
         {
-            await Task.WhenAll(_book.RotateYTo(90, 200, Easing.CubicIn), TextPanel.FadeTo(0, 170));
+            var outAngle = dir > 0 ? -90 : 90;
+            var shift = dir > 0 ? -36 : 36;
+            await Task.WhenAll(
+                _book.RotateYTo(outAngle, 210, Easing.CubicIn),
+                _book.TranslateTo(shift, _book.TranslationY, 210, Easing.CubicIn),
+                _book.ScaleTo(0.92, 210, Easing.CubicIn),
+                TextPanel.FadeTo(0, 170));
+
             _index = newIndex;
             Apply();
-            _book.RotationY = -90;
-            await Task.WhenAll(_book.RotateYTo(0, 280, Easing.CubicOut), TextPanel.FadeTo(1, 230));
+
+            _book.RotationY = -outAngle;
+            _book.TranslationX = -shift;
+            await Task.WhenAll(
+                _book.RotateYTo(0, 320, Easing.CubicOut),
+                _book.TranslateTo(0, _book.TranslationY, 320, Easing.CubicOut),
+                _book.ScaleTo(1, 380, Easing.SpringOut),
+                TextPanel.FadeTo(1, 240));
         }
         catch { /* trang đang đóng giữa chừng */ }
         finally
@@ -312,7 +375,32 @@ public partial class FloatingHeroView : ContentView
             _lastSwitch = _clock.Elapsed.TotalSeconds;
             _swayStart = _lastSwitch;
             TextPanel.Opacity = 1;
+            if (_book is not null) { _book.TranslationX = 0; _book.Scale = 1; }
         }
+    }
+
+    // Gắn cử chỉ vuốt trái/phải cho một view trên sân khấu (sách chính, thẻ vệ tinh).
+    // Cần gắn riêng vì view con có TapGesture sẽ "giữ" lượt chạm, sân khấu phía sau không nhận được.
+    private void AttachSwipe(View view)
+    {
+        var left = new SwipeGestureRecognizer { Direction = SwipeDirection.Left, Threshold = 40 };
+        left.Swiped += OnSwiped;
+        var right = new SwipeGestureRecognizer { Direction = SwipeDirection.Right, Threshold = 40 };
+        right.Swiped += OnSwiped;
+        view.GestureRecognizers.Add(left);
+        view.GestureRecognizers.Add(right);
+    }
+
+    // Vuốt trên sân khấu: trái = cuốn sau, phải = cuốn trước
+    private async void OnSwiped(object? sender, SwipedEventArgs e)
+    {
+        if (_stories.Count < 2) return;
+        if (SwipeHint.Opacity > 0) _ = SwipeHint.FadeTo(0, 400);
+
+        if (e.Direction == SwipeDirection.Left)
+            await ShowAsync((_index + 1) % _stories.Count, +1);
+        else if (e.Direction == SwipeDirection.Right)
+            await ShowAsync((_index - 1 + _stories.Count) % _stories.Count, -1);
     }
 
     // ===================== HOẠT ẢNH =====================
@@ -363,13 +451,13 @@ public partial class FloatingHeroView : ContentView
         if (!_switching)
         {
             var ramp = Math.Clamp((t - _swayStart) / 1.0, 0, 1);
-            _book.TranslationY = Math.Sin(t * 1.6) * 6;
+            _book.TranslationY = Math.Sin(t * 1.6) * 7;
             _book.RotationY = Math.Sin(t * 0.9) * 9 * ramp;
             _book.Rotation = Math.Sin(t * 0.7) * 1.6;
 
             // Tự đổi truyện
             if (_stories.Count > 1 && t - _lastSwitch > AutoSwitchSeconds)
-                _ = ShowAsync((_index + 1) % _stories.Count);
+                _ = ShowAsync((_index + 1) % _stories.Count, +1);
         }
     }
 

@@ -3,7 +3,7 @@ using ReadManager.Mobile.Services.Auth;
 
 namespace ReadManager.Mobile.Services;
 
-public record ReaderProfile(long Coins, bool Prompted, int[] Genres);
+public record ReaderProfile(long Coins, bool Prompted, int[] Genres, int FreezeCards = 0);
 public record RankedStory(int StoryId, string Title, int Hearts);
 public record RewardResult(bool Granted, long CoinsAdded = 0, long Coins = 0, int CurrentStreak = 0);
 public record ReadingTicket(string Ticket);
@@ -14,6 +14,8 @@ public class ReaderActivityService(ApiClient api, ILibraryService library, IAuth
     public Task<List<RankedStory>?> Ranking() => api.GetAsync<List<RankedStory>>("reader/ranking");
     public Task<List<RankedStory>?> Recommendations() => api.GetAsync<List<RankedStory>>("reader/recommendations");
     public Task<List<Genre>?> Genres() => api.GetAsync<List<Genre>>("genres");
+    // Lịch sử xu (trang Khám phá)
+    public Task<CoinHistoryPage?> CoinHistory(int pageSize = 10) => api.GetAsync<CoinHistoryPage>($"reader/coin-history?page=1&pageSize={pageSize}");
     public Task SaveGenres(int[] ids) => api.PutAsync<int[], object>("reader/genres", ids);
     public Task<ReadingTicket?> Start(int id) => api.PostAsync<object, ReadingTicket>($"reader/chapters/{id}/start", new {});
     public Task<RewardResult?> Finish(int id, string ticket, decimal percent) =>

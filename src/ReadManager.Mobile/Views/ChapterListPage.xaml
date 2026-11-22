@@ -5,7 +5,8 @@
              xmlns:models="clr-namespace:ReadManager.Mobile.Models"
              x:DataType="vm:ChapterListViewModel"
              x:Class="ReadManager.Mobile.Views.ChapterListPage"
-             Title="{Binding StoryTitle}">
+             Title="{Binding StoryTitle}"
+             BackgroundColor="{DynamicResource WebBg}">
 
     <Shell.BackButtonBehavior>
         <BackButtonBehavior IconOverride="ic_back.png" />
@@ -14,9 +15,9 @@
     <Grid RowDefinitions="Auto,*" Padding="16,12,16,0">
 
         <VerticalStackLayout Grid.Row="0">
-            <Label Text="{Binding ErrorMessage}" TextColor="{StaticResource WebCrimson}"
+            <Label Text="{Binding ErrorMessage}" TextColor="{DynamicResource WebCrimson}"
                    IsVisible="{Binding ErrorMessage, Converter={StaticResource StringToBoolConverter}}" />
-            <ActivityIndicator IsRunning="{Binding IsBusy}" IsVisible="{Binding IsBusy}" Color="{StaticResource WebRoyal}" />
+            <ActivityIndicator IsRunning="{Binding IsBusy}" IsVisible="{Binding IsBusy}" Color="{DynamicResource WebRoyal}" />
         </VerticalStackLayout>
 
         <CollectionView Grid.Row="1" ItemsSource="{Binding Chapters}" SelectionMode="None">
@@ -45,8 +46,8 @@
 
                             <VerticalStackLayout Grid.Column="0" Spacing="2">
                                 <Label Text="{Binding ChapterNumber, StringFormat='Chương {0}'}" FontFamily="BeVietnamBold"
-                                       FontSize="15" TextColor="{StaticResource WebText}" />
-                                <Label Text="{Binding Title}" FontSize="13" TextColor="{StaticResource WebMuted}"
+                                       FontSize="15" TextColor="{DynamicResource WebText}" />
+                                <Label Text="{Binding Title}" FontSize="13" TextColor="{DynamicResource WebMuted}"
                                        LineBreakMode="TailTruncation" MaxLines="1" />
                             </VerticalStackLayout>
 

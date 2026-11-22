@@ -1,4 +1,3 @@
-using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Maui.Storage;
@@ -9,13 +8,12 @@ using ReadManager.Mobile.Services.Auth;
 namespace ReadManager.Mobile.ViewModels;
 
 // Tab "Tài khoản" — theo trang Views/Account/Profile.cshtml của web:
-// thẻ thông tin + ảnh đại diện, gói đọc, truyện đã xem, truyện đã thích, thông tin cá nhân, đổi mật khẩu.
+// thẻ thông tin + ảnh đại diện, menu (thông báo, sở thích đọc, gói đọc, lịch sử thanh toán), thông tin cá nhân,
+// đổi mật khẩu và nút Đăng xuất ở cuối trang.
+// (Xu + chuỗi đọc đã chuyển sang tab Khám phá; truyện theo dõi / đã thích / đã xem nằm ở tab Tủ sách.)
 public partial class AccountViewModel : BaseViewModel
 {
-    private const int PreviewCount = 3;
-
     private readonly IAuthService _authService;
-    private readonly ILibraryService _library;
     private readonly ICommunityService _community;
 
     [ObservableProperty]
@@ -35,12 +33,9 @@ public partial class AccountViewModel : BaseViewModel
     [ObservableProperty] private bool hasAvatar;
 
     // Sprint 3: thông báo chưa đọc + trạng thái tài khoản (bị hạn chế / khóa)
-    [ObservableProperty] private string notificationsText = "Thông báo";
+    [ObservableProperty] private string notificationsText = string.Empty;   // "3 mới" cạnh dòng Thông báo
     [ObservableProperty] private string statusBanner = string.Empty;
     [ObservableProperty] private bool hasStatusBanner;
-
-    [ObservableProperty] private bool hasHistory;
-    [ObservableProperty] private bool hasFavorites;
 
     // Đổi mật khẩu
     [ObservableProperty] private string currentPassword = string.Empty;
@@ -50,26 +45,15 @@ public partial class AccountViewModel : BaseViewModel
 
     public bool IsGuest => !IsLoggedIn;
     public bool HasNoAvatar => !HasAvatar;
-    public bool HasNoHistory => !HasHistory;
-    public bool HasNoFavorites => !HasFavorites;
-
-    public ObservableCollection<LibraryEntry> HistoryPreview { get; } = new();
-    public ObservableCollection<LibraryEntry> FavoritePreview { get; } = new();
-
-    [ObservableProperty] private string coinText = string.Empty;
-    private readonly ReaderActivityService _reader;
     [RelayCommand] private Task EditGenresAsync() => Shell.Current.GoToAsync(nameof(Views.ReaderGenresPage));
-    public AccountViewModel(ReaderActivityService reader, IAuthService authService, ILibraryService library, ICommunityService community)
+
+    public AccountViewModel(IAuthService authService, ICommunityService community)
     {
-        _reader = reader;
         _authService = authService;
-        _library = library;
         _community = community;
     }
 
     partial void OnHasAvatarChanged(bool value) => OnPropertyChanged(nameof(HasNoAvatar));
-    partial void OnHasHistoryChanged(bool value) => OnPropertyChanged(nameof(HasNoHistory));
-    partial void OnHasFavoritesChanged(bool value) => OnPropertyChanged(nameof(HasNoFavorites));
 
     // Gọi mỗi lần tab hiện ra để cập nhật sau khi đăng nhập/đăng xuất/xem truyện
     [RelayCommand]
@@ -79,14 +63,7 @@ public partial class AccountViewModel : BaseViewModel
         catch { IsLoggedIn = _authService.CurrentUser is not null; } // mất mạng
 
         var user = _authService.CurrentUser;
-        if (!IsLoggedIn || user is null)
-        {
-            HistoryPreview.Clear();
-            FavoritePreview.Clear();
-            HasHistory = false;
-            HasFavorites = false;
-            return;
-        }
+        if (!IsLoggedIn || user is null) return;
 
         var name = string.IsNullOrWhiteSpace(user.DisplayName) ? user.Email : user.DisplayName;
         DisplayName = name;
@@ -97,22 +74,6 @@ public partial class AccountViewModel : BaseViewModel
 
         LoadAvatar(user.UserId);
 
-        Fill(HistoryPreview, _library.GetHistory());
-        FavoritePreview.Clear();
-        CoinText = string.Empty;
-        try
-        {
-            var profile = await _reader.Profile();
-            if (profile is not null)
-            {
-                CoinText = $"Số dư: {profile.Coins:N0} xu";
-            }
-            Fill(FavoritePreview, await _reader.Favorites());
-        }
-        catch (Exception ex) { CoinText = ex.Message; }
-        HasHistory = HistoryPreview.Count > 0;
-        HasFavorites = FavoritePreview.Count > 0;
-
         var restricted = user.IsRestricted || SessionFlags.AccountRestricted;
         StatusBanner = user.IsRestricted
             ? user.StatusMessage
@@ -122,9 +83,9 @@ public partial class AccountViewModel : BaseViewModel
         try
         {
             var unread = await _community.GetUnreadCountAsync();
-            NotificationsText = unread > 0 ? $"🔔 Thông báo ({unread} mới)" : "🔔 Thông báo";
+            NotificationsText = unread > 0 ? $"{unread} mới" : string.Empty;
         }
-        catch { NotificationsText = "🔔 Thông báo"; }
+        catch { NotificationsText = string.Empty; }
     }
 
     // "Đổi ảnh đại diện" — ảnh lưu trên thiết bị này (giống web: lưu trên trình duyệt)
@@ -181,25 +142,12 @@ public partial class AccountViewModel : BaseViewModel
         }
     }
 
-    [RelayCommand]
-    private async Task OpenStoryAsync(LibraryEntry? entry)
-    {
-        if (entry is null) return;
-        await Shell.Current.GoToAsync(nameof(Views.StoryDetailPage), new Dictionary<string, object>
-        {
-            { "id", entry.StoryId }
-        });
-    }
-
-    [RelayCommand]
-    private async Task GoToLibraryAsync() => await Shell.Current.GoToAsync("//LibraryPage");
-
     // Sprint 2: gói đọc, mua truyện, lịch sử thanh toán
     [RelayCommand]
     private async Task GoToPlansAsync() => await Shell.Current.GoToAsync(nameof(Views.PlansPage));
 
     [RelayCommand]
-    private async Task GoToPaidStoriesAsync() => await Shell.Current.GoToAsync("//BrowsePage");
+    private async Task GoToPaidStoriesAsync() => await Shell.Current.GoToAsync(nameof(Views.SearchPage));
 
     [RelayCommand]
     private async Task GoToOrderHistoryAsync() => await Shell.Current.GoToAsync(nameof(Views.OrderHistoryPage));
@@ -209,11 +157,6 @@ public partial class AccountViewModel : BaseViewModel
     [RelayCommand]
     private async Task GoToNotificationsAsync() => await Shell.Current.GoToAsync(nameof(Views.NotificationsPage));
 
-    [RelayCommand]
-    private async Task GoToFollowedAsync() => await Shell.Current.GoToAsync(nameof(Views.FollowedStoriesPage));
-
-    [RelayCommand]
-    private async Task GoToStreakAsync() => await Shell.Current.GoToAsync(nameof(Views.StreakPage));
 
     [RelayCommand]
     private Task OpenServerSettingsAsync() => ServerSettings.PromptAsync();
@@ -227,6 +170,7 @@ public partial class AccountViewModel : BaseViewModel
     [RelayCommand]
     private async Task LogoutAsync()
     {
+        if (!await Shell.Current.DisplayAlert("Đăng xuất", "Bạn muốn đăng xuất khỏi tài khoản này?", "Đăng xuất", "Ở lại")) return;
         await _authService.LogoutAsync();
         SessionFlags.AccountRestricted = false;
         CurrentPassword = NewPassword = ConfirmPassword = PasswordMessage = string.Empty;
@@ -250,11 +194,5 @@ public partial class AccountViewModel : BaseViewModel
             AvatarSource = null;
             HasAvatar = false;
         }
-    }
-
-    private static void Fill(ObservableCollection<LibraryEntry> target, IReadOnlyList<LibraryEntry> source)
-    {
-        target.Clear();
-        foreach (var entry in source.Take(PreviewCount)) target.Add(entry);
     }
 }

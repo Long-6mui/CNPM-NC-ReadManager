@@ -4,7 +4,8 @@
              xmlns:vm="clr-namespace:ReadManager.Mobile.ViewModels"
              x:DataType="vm:ChapterReaderViewModel"
              x:Class="ReadManager.Mobile.Views.ChapterReaderPage"
-             Title="{Binding Chapter.Title}">
+             Title="{Binding Chapter.Title}"
+             BackgroundColor="{DynamicResource WebBg}">
 
     <Shell.BackButtonBehavior>
         <BackButtonBehavior IconOverride="ic_back.png" />
@@ -17,12 +18,12 @@
                 <ActivityIndicator IsRunning="{Binding IsBusy}" IsVisible="{Binding IsBusy}" />
 
                 <Label Text="{Binding Chapter.Title, StringFormat='Chương {0}'}"
-                       FontSize="22" FontFamily="BeVietnamExtraBold" TextColor="{StaticResource WebText}" Margin="0,4,0,2" />
+                       FontSize="22" FontFamily="BeVietnamExtraBold" TextColor="{DynamicResource WebText}" Margin="0,4,0,2" />
 
-                <Label Text="{Binding ErrorMessage}" TextColor="{StaticResource WebCrimson}" />
-                <Label Text="{Binding ProgressMessage}" FontSize="12" TextColor="{StaticResource WebMuted}" />
+                <Label Text="{Binding ErrorMessage}" TextColor="{DynamicResource WebCrimson}" />
+                <Label Text="{Binding ProgressMessage}" FontSize="12" TextColor="{DynamicResource WebMuted}" />
                 <Label IsVisible="{Binding IsReadable}" Text="{Binding Chapter.Content}"
-                       FontSize="17" TextColor="{StaticResource WebText}"
+                       FontSize="17" TextColor="{DynamicResource WebText}"
                        LineHeight="1.65" />
 
                 <!-- Chương trả phí chưa mở khóa (giống web: Stories/Read.cshtml) -->
@@ -42,12 +43,12 @@
                 <Button Text="💬 Bình luận chương này" Style="{StaticResource BtnOutlineSm}" HeightRequest="44"
                         Command="{Binding OpenCommentsCommand}" IsVisible="{Binding IsReadable}" Margin="0,12,0,0" />
                 <Button Text="⚑ Báo cáo chương" Style="{StaticResource BtnLink}" HorizontalOptions="Start"
-                        TextColor="{StaticResource WebCrimson}" Command="{Binding ReportChapterCommand}"
+                        TextColor="{DynamicResource WebCrimson}" Command="{Binding ReportChapterCommand}"
                         IsVisible="{Binding IsReadable}" />
             </VerticalStackLayout>
         </ScrollView>
 
-        <Grid Grid.Row="1" ColumnDefinitions="*,*" Padding="16,12" ColumnSpacing="12" BackgroundColor="White">
+        <Grid Grid.Row="1" ColumnDefinitions="*,*" Padding="16,12" ColumnSpacing="12" BackgroundColor="{DynamicResource WebSurface}">
             <Button Grid.Column="0" Style="{StaticResource BtnOutlineSm}" HeightRequest="46"
                     Text="◀ Chương trước"
                     Command="{Binding GoToPreviousCommand}"

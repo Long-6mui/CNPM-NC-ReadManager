@@ -35,7 +35,8 @@ public class StreakDay
     public bool IsToday { get; set; }
 
     public string Mark => Read ? "🔥" : (IsToday ? "·" : "○");
-    public Color BgColor => Read ? Color.FromArgb("#FFF1E0") : Color.FromArgb("#EFEDE7");
+    // Màu theo chế độ sáng/tối đang chọn (Services/ThemeService)
+    public Color BgColor => ReadManager.Mobile.Services.ThemeService.Get(Read ? "WebStreakDayOn" : "WebStreakDay");
     public Color BorderColor => IsToday ? Color.FromArgb("#E11D48") : Colors.Transparent;
 }
 

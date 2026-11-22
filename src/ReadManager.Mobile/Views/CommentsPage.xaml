@@ -6,7 +6,7 @@
              x:DataType="vm:CommentsViewModel"
              x:Class="ReadManager.Mobile.Views.CommentsPage"
              Title="{Binding Heading}"
-             BackgroundColor="{StaticResource WebBg}">
+             BackgroundColor="{DynamicResource WebBg}">
 
     <Shell.BackButtonBehavior>
         <BackButtonBehavior IconOverride="ic_back.png" />
@@ -17,7 +17,7 @@
         <Grid Grid.Row="0" RowDefinitions="Auto,*">
             <VerticalStackLayout Grid.Row="0" Padding="16,12,16,4" Spacing="6">
                 <Label Text="{Binding CountText}" Style="{StaticResource LblMuted}" />
-                <ActivityIndicator IsRunning="{Binding IsBusy}" IsVisible="{Binding IsBusy}" Color="{StaticResource WebRoyal}" />
+                <ActivityIndicator IsRunning="{Binding IsBusy}" IsVisible="{Binding IsBusy}" Color="{DynamicResource WebRoyal}" />
             </VerticalStackLayout>
 
             <CollectionView Grid.Row="1" ItemsSource="{Binding Items}" SelectionMode="None" Margin="16,6,16,0">
@@ -32,7 +32,7 @@
                         <Border Style="{StaticResource Panel}" Padding="14" Margin="0,0,0,10">
                             <Grid ColumnDefinitions="40,*" ColumnSpacing="12">
                                 <Border WidthRequest="40" HeightRequest="40" StrokeThickness="{Binding FrameThickness}" Stroke="{Binding FrameColor}"
-                                        BackgroundColor="{StaticResource WebNavy}" VerticalOptions="Start">
+                                        BackgroundColor="{DynamicResource WebNavy}" VerticalOptions="Start">
                                     <Border.StrokeShape>
                                         <RoundRectangle CornerRadius="20" />
                                     </Border.StrokeShape>
@@ -41,8 +41,8 @@
                                 </Border>
                                 <VerticalStackLayout Grid.Column="1" Spacing="3">
                                     <HorizontalStackLayout Spacing="6">
-                                        <Label Text="{Binding DisplayName}" FontSize="14" FontFamily="BeVietnamBold" TextColor="{StaticResource WebText}" VerticalOptions="Center" />
-                                        <Border IsVisible="{Binding HasTitle}" StrokeThickness="0" BackgroundColor="#FFF1E0" Padding="6,1" VerticalOptions="Center">
+                                        <Label Text="{Binding DisplayName}" FontSize="14" FontFamily="BeVietnamBold" TextColor="{DynamicResource WebText}" VerticalOptions="Center" />
+                                        <Border IsVisible="{Binding HasTitle}" StrokeThickness="0" BackgroundColor="{DynamicResource WebStreakDayOn}" Padding="6,1" VerticalOptions="Center">
                                             <Border.StrokeShape>
                                                 <RoundRectangle CornerRadius="8" />
                                             </Border.StrokeShape>
@@ -58,12 +58,12 @@
                                             </FormattedString>
                                         </Label.FormattedText>
                                     </Label>
-                                    <Label Text="{Binding Content}" FontSize="14" TextColor="{StaticResource WebText}" Margin="0,4,0,0" />
+                                    <Label Text="{Binding Content}" FontSize="14" TextColor="{DynamicResource WebText}" Margin="0,4,0,0" />
                                     <HorizontalStackLayout Spacing="12" Margin="0,4,0,0">
                                         <Button Text="Báo cáo" Style="{StaticResource BtnLink}" Padding="0"
                                                 Command="{Binding Source={RelativeSource AncestorType={x:Type vm:CommentsViewModel}}, Path=ReportCommand}"
                                                 CommandParameter="{Binding .}" />
-                                        <Button Text="Xóa" Style="{StaticResource BtnLink}" Padding="0" TextColor="{StaticResource WebCrimson}"
+                                        <Button Text="Xóa" Style="{StaticResource BtnLink}" Padding="0" TextColor="{DynamicResource WebCrimson}"
                                                 IsVisible="{Binding CanDelete}"
                                                 Command="{Binding Source={RelativeSource AncestorType={x:Type vm:CommentsViewModel}}, Path=DeleteCommand}"
                                                 CommandParameter="{Binding .}" />
@@ -85,14 +85,14 @@
         <!-- Ô viết bình luận -->
         <Border Grid.Row="1" Style="{StaticResource Panel}" Padding="12" Margin="0" StrokeThickness="1">
             <VerticalStackLayout Spacing="8">
-                <Label Text="{Binding ErrorMessage}" TextColor="{StaticResource WebCrimson}" FontSize="13"
+                <Label Text="{Binding ErrorMessage}" TextColor="{DynamicResource WebCrimson}" FontSize="13"
                        IsVisible="{Binding ErrorMessage, Converter={StaticResource StringToBoolConverter}}" />
 
                 <VerticalStackLayout Spacing="8" IsVisible="{Binding IsLoggedIn}">
                     <Border Style="{StaticResource FieldBorder}">
                         <Editor Text="{Binding NewComment}" Placeholder="Viết bình luận..." MaxLength="1000"
                                 AutoSize="TextChanges" HeightRequest="80" BackgroundColor="Transparent"
-                                TextColor="{StaticResource WebText}" FontSize="14" />
+                                TextColor="{DynamicResource WebText}" FontSize="14" />
                     </Border>
                     <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
                         <Label Text="{Binding LengthText}" Style="{StaticResource LblCardMeta}" VerticalOptions="Center" />

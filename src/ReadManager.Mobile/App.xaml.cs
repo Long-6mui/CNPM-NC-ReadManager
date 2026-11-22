@@ -1,3 +1,5 @@
+using ReadManager.Mobile.Services;
+
 namespace ReadManager.Mobile
 {
     public partial class App : Application
@@ -5,7 +7,10 @@ namespace ReadManager.Mobile
         public App()
         {
             InitializeComponent();
-            UserAppTheme = AppTheme.Light; // web dùng nền sáng; tránh chữ trắng trên nền trắng khi máy bật chế độ tối
+
+            // Chế độ sáng/tối: đọc lựa chọn đã lưu (mặc định sáng như web) và nạp bảng màu tương ứng.
+            // Đổi bằng nút 🌙/☀️ trên thanh header.
+            ThemeService.Init(this);
         }
 
         protected override Window CreateWindow(IActivationState? activationState)

@@ -3,136 +3,171 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:vm="clr-namespace:ReadManager.Mobile.ViewModels"
              xmlns:models="clr-namespace:ReadManager.Mobile.Models"
-             x:DataType="vm:BrowseViewModel"
+             xmlns:ctl="clr-namespace:ReadManager.Mobile.Views.Controls"
+             xmlns:fx="clr-namespace:ReadManager.Mobile.Behaviors"
+             x:DataType="vm:ExploreViewModel"
              x:Class="ReadManager.Mobile.Views.BrowsePage"
              Title="Khám phá"
-             BackgroundColor="{StaticResource WebBg}">
+             Shell.NavBarIsVisible="False"
+             BackgroundColor="{DynamicResource WebBg}">
 
-    <Grid RowDefinitions="Auto,Auto,*">
+    <!-- TAB "KHÁM PHÁ": chuỗi đọc theo từng ngày + số xu (tìm truyện đã chuyển sang nút 🔍 trên header) -->
+    <Grid RowDefinitions="Auto,*" RowSpacing="0">
+        <ctl:AppHeader x:Name="Header" Grid.Row="0" Title="Khám phá" Subtitle="Chuỗi đọc &amp; xu thưởng" />
 
-        <!-- Ô tìm kiếm (nav-search của web) -->
-        <Grid Grid.Row="0" BackgroundColor="#F6F5F2" Padding="16,12,16,6">
-            <Border Style="{StaticResource FieldBorder}" HeightRequest="40">
-                <Entry Style="{StaticResource WebEntry}" HeightRequest="40"
-                       Placeholder="🔍  Tìm truyện, tác giả..."
-                       Text="{Binding SearchText}"
-                       ReturnType="Search"
-                       ReturnCommand="{Binding SearchCommand}" />
-            </Border>
-        </Grid>
+        <RefreshView Grid.Row="1" IsRefreshing="{Binding IsRefreshing}" Command="{Binding RefreshCommand}"
+                     RefreshColor="{DynamicResource WebRoyal}">
+            <ScrollView>
+                <VerticalStackLayout x:Name="Body" Padding="16,16,16,32" Spacing="16">
 
-        <!-- Tiêu đề + bộ lọc (filter-row của web) -->
-        <VerticalStackLayout Grid.Row="1" Padding="16,14,16,6" Spacing="10">
-            <Grid ColumnDefinitions="*,Auto">
-                <Label Grid.Column="0" Text="{Binding HeadingText}" Style="{StaticResource LblH2}"
-                       FontSize="18" LineBreakMode="TailTruncation" VerticalOptions="Center" />
-                <Label Grid.Column="1" Text="{Binding CountText}" Style="{StaticResource LblMuted}"
-                       VerticalOptions="Center" />
-            </Grid>
+                    <Label Text="{Binding ErrorMessage}" TextColor="{DynamicResource WebCrimson}"
+                           IsVisible="{Binding ErrorMessage, Converter={StaticResource StringToBoolConverter}}" />
 
-            <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto" ColumnSpacing="8" RowSpacing="8">
-                <Border Grid.Row="0" Grid.Column="0" Style="{StaticResource FieldBorder}" HeightRequest="42">
-                    <Picker ItemsSource="{Binding GenreOptions}" SelectedIndex="{Binding SelectedGenreIndex}"
-                            FontSize="13" TextColor="{StaticResource WebText}" BackgroundColor="Transparent" />
-                </Border>
-                <Border Grid.Row="0" Grid.Column="1" Style="{StaticResource FieldBorder}" HeightRequest="42">
-                    <Picker ItemsSource="{Binding AccessOptions}" SelectedIndex="{Binding SelectedAccessIndex}"
-                            FontSize="13" TextColor="{StaticResource WebText}" BackgroundColor="Transparent" />
-                </Border>
-                <Border Grid.Row="1" Grid.Column="0" Style="{StaticResource FieldBorder}" HeightRequest="42">
-                    <Picker ItemsSource="{Binding StatusOptions}" SelectedIndex="{Binding SelectedStatusIndex}"
-                            FontSize="13" TextColor="{StaticResource WebText}" BackgroundColor="Transparent" />
-                </Border>
-                <Border Grid.Row="1" Grid.Column="1" Style="{StaticResource FieldBorder}" HeightRequest="42">
-                    <Picker ItemsSource="{Binding SortOptions}" SelectedIndex="{Binding SelectedSortIndex}"
-                            FontSize="13" TextColor="{StaticResource WebText}" BackgroundColor="Transparent" />
-                </Border>
-            </Grid>
-
-            <Button Text="Xóa lọc" Style="{StaticResource BtnLink}" HorizontalOptions="End"
-                    Command="{Binding ClearFilterCommand}" />
-
-            <Label Text="{Binding ErrorMessage}" TextColor="{StaticResource WebCrimson}" FontSize="13"
-                   IsVisible="{Binding ErrorMessage, Converter={StaticResource StringToBoolConverter}}" />
-        </VerticalStackLayout>
-
-        <!-- Lưới thẻ truyện (grid-cards của web) -->
-        <RefreshView Grid.Row="2" IsRefreshing="{Binding IsRefreshing}" Command="{Binding RefreshCommand}">
-            <CollectionView ItemsSource="{Binding Stories}" SelectionMode="None" Margin="16,0">
-                <CollectionView.ItemsLayout>
-                    <GridItemsLayout Orientation="Vertical" Span="2" VerticalItemSpacing="14" HorizontalItemSpacing="12" />
-                </CollectionView.ItemsLayout>
-                <CollectionView.Footer>
-                    <BoxView HeightRequest="16" Color="Transparent" />
-                </CollectionView.Footer>
-                <CollectionView.ItemTemplate>
-                    <DataTemplate x:DataType="models:StorySummary">
-                        <VerticalStackLayout Spacing="0">
-                            <VerticalStackLayout.GestureRecognizers>
-                                <TapGestureRecognizer
-                                    Command="{Binding Source={RelativeSource AncestorType={x:Type vm:BrowseViewModel}}, Path=GoToDetailCommand}"
-                                    CommandParameter="{Binding .}" />
-                            </VerticalStackLayout.GestureRecognizers>
-
-                            <Border HeightRequest="220" StrokeThickness="1" Stroke="{StaticResource WebBorder}"
-                                    BackgroundColor="{StaticResource WebSurface2}">
-                                <Border.StrokeShape>
-                                    <RoundRectangle CornerRadius="12" />
-                                </Border.StrokeShape>
-<Border.Shadow>
-                        <Shadow Brush="#18181B" Offset="0,8" Radius="14" Opacity="0.20" />
-                    </Border.Shadow>
-
-                                <Grid>
-                                    <Grid.Background>
-                                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
-                                            <GradientStop Color="#3F3A55" Offset="0.0" />
-                                            <GradientStop Color="#1E1B2E" Offset="1.0" />
-                                        </LinearGradientBrush>
-                                    </Grid.Background>
-
-                                    <Label Text="{Binding Title}" IsVisible="{Binding HasNoCover}"
-                                           FontFamily="{StaticResource SerifFont}" FontSize="15"
-                                           TextColor="White" HorizontalTextAlignment="Center"
-                                           VerticalOptions="Center" Margin="10" />
-                                    <Image Source="{Binding CoverUrl}" IsVisible="{Binding HasCover}" Aspect="AspectFill" />
-
-                                    <Border HorizontalOptions="Start" VerticalOptions="Start" Margin="7"
-                                            Padding="7,3" StrokeThickness="0" BackgroundColor="{Binding AccessColor}">
-                                        <Border.StrokeShape>
-                                            <RoundRectangle CornerRadius="8" />
-                                        </Border.StrokeShape>
-                                        <Label Text="{Binding AccessLabel}" TextColor="White" FontSize="10" FontFamily="BeVietnamBold" />
-                                    </Border>
-
-                                    <Border HorizontalOptions="End" VerticalOptions="End" Margin="7"
-                                            Padding="6,2" StrokeThickness="0" BackgroundColor="#8C000000">
-                                        <Border.StrokeShape>
-                                            <RoundRectangle CornerRadius="8" />
-                                        </Border.StrokeShape>
-                                        <Label Text="{Binding StatusLabel}" TextColor="White" FontSize="9.5" FontFamily="BeVietnamBold" />
-                                    </Border>
-                                </Grid>
-                            </Border>
-
-                            <Label Text="{Binding Title}" Style="{StaticResource LblCardTitle}" Margin="0,9,0,0" />
-                            <Label Text="{Binding MetaText}" Style="{StaticResource LblCardMeta}" Margin="0,3,0,0" />
+                    <!-- ============ KHÁCH ============ -->
+                    <Border Style="{StaticResource Panel}" IsVisible="{Binding IsGuest}" fx:Motion.Reveal="True">
+                        <VerticalStackLayout Spacing="10">
+                            <Label Text="🔥 Chuỗi đọc sách &amp; xu thưởng" Style="{StaticResource LblH2}" />
+                            <Label Text="Đăng nhập để giữ chuỗi đọc mỗi ngày: đọc hết 1 chương được +10 xu, từ ngày thứ hai của chuỗi được cộng thêm xu, đổi xu lấy thẻ bảo vệ chuỗi và quà tặng."
+                                   Style="{StaticResource LblMuted}" />
+                            <Button Text="Đăng nhập" Style="{StaticResource BtnBrass}" Command="{Binding GoToLoginCommand}" />
+                            <Button Text="Tạo tài khoản" Style="{StaticResource BtnOutlineSm}" HeightRequest="44"
+                                    Command="{Binding GoToRegisterCommand}" />
                         </VerticalStackLayout>
-                    </DataTemplate>
-                </CollectionView.ItemTemplate>
-            </CollectionView>
+                    </Border>
+
+                    <VerticalStackLayout IsVisible="{Binding IsLoggedIn}" Spacing="16">
+
+                        <ActivityIndicator IsRunning="{Binding IsBusy}" IsVisible="{Binding IsBusy}" Color="{DynamicResource WebRoyal}" />
+
+                        <!-- ============ CHUỖI ĐỌC THEO TỪNG NGÀY ============ -->
+                        <Border StrokeThickness="0" Padding="18" fx:Motion.Reveal="True">
+                            <Border.StrokeShape>
+                                <RoundRectangle CornerRadius="20" />
+                            </Border.StrokeShape>
+                            <Border.Background>
+                                <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                    <GradientStop Color="#17112C" Offset="0.0" />
+                                    <GradientStop Color="#2A1B3D" Offset="0.6" />
+                                    <GradientStop Color="#4A1730" Offset="1.0" />
+                                </LinearGradientBrush>
+                            </Border.Background>
+                            <Border.Shadow>
+                                <Shadow Brush="#17112C" Offset="0,10" Radius="22" Opacity="0.35" />
+                            </Border.Shadow>
+                            <VerticalStackLayout Spacing="14">
+                                <Grid ColumnDefinitions="*,Auto">
+                                    <VerticalStackLayout Spacing="2">
+                                        <Label Text="CHUỖI ĐỌC SÁCH" TextColor="#FDA4AF" FontSize="11" FontFamily="BeVietnamBold"
+                                               CharacterSpacing="1.2" />
+                                        <HorizontalStackLayout Spacing="8">
+                                            <Label x:Name="Flame" Text="🔥" FontSize="40" VerticalOptions="Center"
+                                                   TextColor="{Binding Info.FlameColor}" />
+                                            <Label Text="{Binding Info.CurrentStreak}" FontSize="44" TextColor="White"
+                                                   FontFamily="BeVietnamExtraBold" VerticalOptions="Center" />
+                                            <Label Text="ngày" FontSize="16" TextColor="#CBD5E1" VerticalOptions="End" Margin="0,0,0,10" />
+                                        </HorizontalStackLayout>
+                                    </VerticalStackLayout>
+                                    <VerticalStackLayout Grid.Column="1" Spacing="2" VerticalOptions="Center" HorizontalOptions="End">
+                                        <Label Text="Dài nhất" TextColor="#B7C0D6" FontSize="11.5" HorizontalTextAlignment="End" />
+                                        <Label TextColor="#FBBF24" FontSize="16" FontFamily="BeVietnamBold" HorizontalTextAlignment="End">
+                                            <Label.FormattedText>
+                                                <FormattedString>
+                                                    <Span Text="{Binding Info.LongestStreak}" />
+                                                    <Span Text=" ngày" />
+                                                </FormattedString>
+                                            </Label.FormattedText>
+                                        </Label>
+                                    </VerticalStackLayout>
+                                </Grid>
+
+                                <Label Text="{Binding Info.StatusText}" TextColor="#E2E8F0" FontSize="13.5" />
+
+                                <!-- 7 ngày gần nhất (giống trang Chuỗi) -->
+                                <Grid ColumnDefinitions="*,*,*,*,*,*,*" ColumnSpacing="6" x:Name="DaysRow" />
+
+                                <!-- Tiến độ tới mốc tiếp theo -->
+                                <VerticalStackLayout Spacing="6">
+                                    <ProgressBar Progress="{Binding MilestoneProgress}" ProgressColor="#FB7185" HeightRequest="6" />
+                                    <Label Text="{Binding Info.NextText}" TextColor="#B7C0D6" FontSize="12.5" />
+                                </VerticalStackLayout>
+
+                                <Button Text="Xem chi tiết chuỗi  →" BackgroundColor="White" TextColor="#17112C"
+                                        FontFamily="BeVietnamBold" FontSize="14.5" CornerRadius="12" HeightRequest="46"
+                                        fx:Motion.Press="True" Command="{Binding GoToStreakCommand}" />
+                            </VerticalStackLayout>
+                        </Border>
+
+                        <!-- ============ SỐ XU ============ -->
+                        <Border Style="{StaticResource Panel}" fx:Motion.Reveal="True">
+                            <VerticalStackLayout Spacing="12">
+                                <Grid ColumnDefinitions="Auto,*" ColumnSpacing="14">
+                                    <Border WidthRequest="56" HeightRequest="56" StrokeThickness="0" VerticalOptions="Center">
+                                        <Border.StrokeShape>
+                                            <RoundRectangle CornerRadius="28" />
+                                        </Border.StrokeShape>
+                                        <Border.Background>
+                                            <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                                <GradientStop Color="#FDE68A" Offset="0.0" />
+                                                <GradientStop Color="#F59E0B" Offset="1.0" />
+                                            </LinearGradientBrush>
+                                        </Border.Background>
+                                        <Label Text="🪙" FontSize="26" HorizontalOptions="Center" VerticalOptions="Center" />
+                                    </Border>
+                                    <VerticalStackLayout Grid.Column="1" Spacing="0" VerticalOptions="Center">
+                                        <Label Text="Số xu của bạn" Style="{StaticResource LblMuted}" />
+                                        <Label FontFamily="BeVietnamExtraBold" FontSize="30" TextColor="{DynamicResource WebText}">
+                                            <Label.FormattedText>
+                                                <FormattedString>
+                                                    <Span Text="{Binding CoinsText}" />
+                                                    <Span Text=" xu" FontSize="16" TextColor="{DynamicResource WebMuted}" />
+                                                </FormattedString>
+                                            </Label.FormattedText>
+                                        </Label>
+                                    </VerticalStackLayout>
+                                </Grid>
+
+                                <Border Style="{StaticResource Pill}" HorizontalOptions="Start" Padding="12,5">
+                                    <Label Text="{Binding FreezeText}" FontSize="12.5" FontFamily="BeVietnamBold"
+                                           TextColor="{DynamicResource WebPillText}" />
+                                </Border>
+
+                                <BoxView HeightRequest="1" Color="{DynamicResource WebBorder}" />
+                                <Label Text="Cách nhận xu" FontFamily="BeVietnamBold" FontSize="14" TextColor="{DynamicResource WebText}" />
+                                <Label Text="📖  Đọc hết một chương: +10 xu (mỗi chương một lần)" Style="{StaticResource LblMuted}" />
+                                <Label Text="🔥  Giữ chuỗi từ ngày thứ hai: cộng thêm xu mỗi ngày" Style="{StaticResource LblMuted}" />
+                                <Label Text="🧊  Đổi 50 xu lấy 1 thẻ bảo vệ chuỗi (ở trang Chuỗi)" Style="{StaticResource LblMuted}" />
+
+                                <Button Text="Đọc truyện kiếm xu" Style="{StaticResource BtnBrass}" Margin="0,4,0,0"
+                                        Command="{Binding GoToSearchCommand}" />
+                            </VerticalStackLayout>
+                        </Border>
+
+                        <!-- ============ LỊCH SỬ XU ============ -->
+                        <Border Style="{StaticResource Panel}" Padding="0" IsVisible="{Binding HasHistory}" fx:Motion.Reveal="True">
+                            <VerticalStackLayout>
+                                <Label Text="Lịch sử xu gần đây" Style="{StaticResource LblH2}" FontSize="17" Padding="18,16,18,6" />
+                                <VerticalStackLayout BindableLayout.ItemsSource="{Binding History}">
+                                    <BindableLayout.ItemTemplate>
+                                        <DataTemplate x:DataType="models:CoinTransaction">
+                                            <Grid Padding="18,10" ColumnDefinitions="36,*,Auto" ColumnSpacing="10">
+                                                <Label Grid.Column="0" Text="{Binding Icon}" FontSize="20" VerticalOptions="Center" />
+                                                <VerticalStackLayout Grid.Column="1" Spacing="1" VerticalOptions="Center">
+                                                    <Label Text="{Binding Description}" FontSize="13.5" TextColor="{DynamicResource WebText}"
+                                                           MaxLines="1" LineBreakMode="TailTruncation" />
+                                                    <Label Text="{Binding TimeText}" Style="{StaticResource LblCardMeta}" />
+                                                </VerticalStackLayout>
+                                                <Label Grid.Column="2" Text="{Binding AmountText}" TextColor="{Binding AmountColor}"
+                                                       FontFamily="BeVietnamBold" FontSize="15" VerticalOptions="Center" />
+                                            </Grid>
+                                        </DataTemplate>
+                                    </BindableLayout.ItemTemplate>
+                                </VerticalStackLayout>
+                                <BoxView HeightRequest="8" Color="Transparent" />
+                            </VerticalStackLayout>
+                        </Border>
+                    </VerticalStackLayout>
+                </VerticalStackLayout>
+            </ScrollView>
         </RefreshView>
-
-        <!-- Không có kết quả (empty-state của web) -->
-        <VerticalStackLayout Grid.Row="2" IsVisible="{Binding ShowEmpty}" VerticalOptions="Start"
-                             Padding="20,50" Spacing="6" InputTransparent="True">
-            <Label Text="Không tìm thấy truyện phù hợp" Style="{StaticResource LblH2}"
-                   FontSize="18" HorizontalTextAlignment="Center" />
-            <Label Text="Thử đổi từ khóa hoặc bộ lọc khác." Style="{StaticResource LblMuted}"
-                   HorizontalTextAlignment="Center" />
-        </VerticalStackLayout>
-
-        <ActivityIndicator Grid.Row="2" IsRunning="{Binding IsBusy}" IsVisible="{Binding IsBusy}"
-                           Color="{StaticResource WebRoyal}" VerticalOptions="Start" Margin="0,20" />
     </Grid>
 </ContentPage>

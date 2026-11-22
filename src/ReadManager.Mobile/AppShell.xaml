@@ -4,18 +4,14 @@
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
     xmlns:views="clr-namespace:ReadManager.Mobile.Views"
-    Shell.BackgroundColor="White"
-    Shell.ForegroundColor="#14101F"
-    Shell.TitleColor="#14101F"
     Shell.NavBarHasShadow="False"
-    Shell.TabBarBackgroundColor="White"
-    Shell.TabBarForegroundColor="#E11D48"
-    Shell.TabBarTitleColor="#E11D48"
-    Shell.TabBarUnselectedColor="#52525B"
     FlyoutBehavior="Disabled"
     Title="Chữ &amp; Đêm">
 
-    <!-- Thanh điều hướng dưới cùng: Trang chủ | Khám phá | Tủ sách | Tài khoản (giống menu của web) -->
+    <!-- Màu thanh trên / menu dưới được gán trong AppShell.xaml.cs (ApplyTheme) để đổi theo chế độ sáng/tối. -->
+
+    <!-- Menu dưới: Trang chủ | Khám phá | Tủ sách | Tài khoản
+         (Trang "Xếp hạng" đã bỏ — bảng xếp hạng nay nằm ngay ở Trang chủ) -->
     <TabBar>
         <ShellContent
             Title="Trang chủ"
@@ -35,7 +31,6 @@
             ContentTemplate="{DataTemplate views:LibraryPage}"
             Route="LibraryPage" />
 
-        <ShellContent Title="Xếp hạng" Route="HeartRanking" ContentTemplate="{DataTemplate views:HeartRankingPage}" />
         <ShellContent
             Title="Tài khoản"
             Icon="tab_account.png"

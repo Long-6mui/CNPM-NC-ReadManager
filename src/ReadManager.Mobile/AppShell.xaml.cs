@@ -1,3 +1,4 @@
+using ReadManager.Mobile.Services;
 using ReadManager.Mobile.Views;
 
 namespace ReadManager.Mobile
@@ -34,6 +35,37 @@ namespace ReadManager.Mobile
             // Sprint 5: chuỗi đọc sách
             Routing.RegisterRoute(nameof(StreakPage), typeof(StreakPage));
 
+            // Giao diện mới: trang tìm kiếm (nút 🔍 trên header) + trang "Đề xuất cho bạn"
+            Routing.RegisterRoute(nameof(SearchPage), typeof(SearchPage));
+            Routing.RegisterRoute(nameof(RecommendedPage), typeof(RecommendedPage));
+
+            ApplyTheme();
+            ThemeService.ThemeChanged += (_, _) => ApplyTheme();
+        }
+
+        // Màu thanh trên (các trang con) và menu dưới theo chế độ sáng/tối
+        private void ApplyTheme()
+        {
+            var header = ThemeService.Get("WebHeader");
+            var text = ThemeService.Get("WebText");
+            var accent = ThemeService.Get("WebRoyal");
+
+            Shell.SetBackgroundColor(this, header);
+            Shell.SetForegroundColor(this, text);
+            Shell.SetTitleColor(this, text);
+            Shell.SetTabBarBackgroundColor(this, ThemeService.Get("WebTabBar"));
+            Shell.SetTabBarForegroundColor(this, accent);
+            Shell.SetTabBarTitleColor(this, accent);
+            Shell.SetTabBarUnselectedColor(this, ThemeService.Get("WebMuted"));
+
+            UpdateStatusBar();
+        }
+
+        // Trang chủ có header tối liền màu với hero "sách bay"; các trang khác theo màu header
+        private void UpdateStatusBar()
+        {
+            if (CurrentPage is StoryListPage) StatusBarHelper.UseHero();
+            else StatusBarHelper.UseDefault();
         }
 
         // Bấm menu dưới để sang mục khác: mục vừa rời đi được đưa về TRANG ĐẦU của nó
@@ -41,6 +73,7 @@ namespace ReadManager.Mobile
         protected override void OnNavigated(ShellNavigatedEventArgs args)
         {
             base.OnNavigated(args);
+            UpdateStatusBar();
 
             var current = CurrentItem?.CurrentItem;
             var previous = _lastSection;

@@ -135,5 +135,5 @@ public partial class StreakViewModel : BaseViewModel
     private async Task GoToLoginAsync() => await Shell.Current.GoToAsync("//LoginPage");
 
     [RelayCommand]
-    private async Task GoToBrowseAsync() => await Shell.Current.GoToAsync("//BrowsePage");
+    private async Task GoToBrowseAsync() => await Shell.Current.GoToAsync(nameof(Views.SearchPage));
 }

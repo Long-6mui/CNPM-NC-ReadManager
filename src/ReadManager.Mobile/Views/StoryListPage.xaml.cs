@@ -1,6 +1,6 @@
-using Microsoft.Extensions.DependencyInjection;
+using System.ComponentModel;
+using ReadManager.Mobile.Behaviors;
 using ReadManager.Mobile.Services;
-using ReadManager.Mobile.Services.Auth;
 using ReadManager.Mobile.ViewModels;
 
 namespace ReadManager.Mobile.Views;
@@ -8,6 +8,8 @@ namespace ReadManager.Mobile.Views;
 public partial class StoryListPage : ContentPage
 {
     private readonly StoryListViewModel _viewModel;
+    private bool _firstAppear = true;
+    private bool _preferencesDirty;
 
     public StoryListPage(StoryListViewModel viewModel)
     {
@@ -15,13 +17,32 @@ public partial class StoryListPage : ContentPage
         _viewModel = viewModel;
         BindingContext = viewModel;
 
-        // Hero "sách bay": lấy tối đa 5 truyện mới cập nhật; bấm sách -> mở truyện, bấm "Khám phá" -> sang thư viện
+        // Hero "sách bay": lấy tối đa 5 truyện mới cập nhật; bấm sách -> mở truyện, bấm "Tìm truyện" -> trang tìm kiếm
         _viewModel.Updated.CollectionChanged += (_, _) => RefreshHero();
         Hero.StoryTapped += (_, story) => _viewModel.GoToDetailCommand.Execute(story);
-        Hero.BrowseTapped += (_, _) => _viewModel.GoToBrowseCommand.Execute(null);
+        Hero.BrowseTapped += (_, _) => _viewModel.GoToSearchCommand.Execute(null);
+
+        // Bảng xếp hạng tải xong -> hiện dần (giống hiệu ứng chuyển tab của web)
+        _viewModel.PropertyChanged += OnViewModelChanged;
+
+        // Vừa lưu sở thích (sau khi đăng ký / ở trang Tài khoản) -> mục "Đề xuất cho bạn" cập nhật ngay
+        RecommendationService.PreferencesChanged += (_, _) => _preferencesDirty = true;
     }
 
     private void RefreshHero() => Dispatcher.Dispatch(() => Hero.SetStories(_viewModel.Updated));
+
+    private void OnViewModelChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == nameof(StoryListViewModel.IsRankingBusy) && !_viewModel.IsRankingBusy && _viewModel.HasRanking)
+            _ = FadeInAsync(RankingBlock);
+    }
+
+    private static async Task FadeInAsync(VisualElement view)
+    {
+        view.Opacity = 0.2;
+        view.TranslationY = 10;
+        await Task.WhenAll(view.FadeTo(1, 320, Easing.CubicOut), view.TranslateTo(0, 0, 360, Easing.CubicOut));
+    }
 
     protected override void OnDisappearing()
     {
@@ -29,76 +50,27 @@ public partial class StoryListPage : ContentPage
         Hero.Stop();
     }
 
-    protected override void OnAppearing()
+    protected override async void OnAppearing()
     {
         base.OnAppearing();
-        _viewModel.LoadCommand.Execute(null);
         RefreshHero();
         Hero.Start();
-        _ = RefreshBellAsync();
-        _ = RefreshFlameAsync();
-        _ = LoadRecommendationsAsync();
-    }
+        _ = Header.RefreshAsync();
 
-    private int _recommendationLoad;
-    private async Task LoadRecommendationsAsync()
-    {
-        var load = ++_recommendationLoad;
-        Recommendations.Clear();
-        Recommendations.IsVisible = false;
-        var services = Handler?.MauiContext?.Services;
-        var auth = services?.GetService<IAuthService>();
-        if (services is null || auth is null) return;
-        try
+        if (_firstAppear)
         {
-            if (auth.CurrentUser is null && !await auth.IsLoggedInAsync()) return;
-            var userId = auth.CurrentUser?.UserId;
-            var stories = await services.GetRequiredService<ReaderActivityService>().Recommendations();
-            if (load != _recommendationLoad || userId != auth.CurrentUser?.UserId) return;
-            if (stories is not { Count: > 0 }) return;
-            Recommendations.Add(new Label { Text = "Dành cho bạn", FontSize = 20, FontAttributes = FontAttributes.Bold });
-            foreach (var story in stories)
-                Recommendations.Add(HeartRankingPage.StoryButton(story, story.Title));
-            Recommendations.IsVisible = true;
+            _firstAppear = false;
+            _ = Motion.PageEnterAsync(Body);
         }
-        catch (Exception ex) { System.Diagnostics.Debug.WriteLine(ex.Message); }
-    }
 
-    // Chuông thông báo (Sprint 3): hiện số thông báo chưa đọc nếu đã đăng nhập
-    private async Task RefreshBellAsync()
-    {
-        try
+        _preferencesDirty = false;
+        await _viewModel.LoadCommand.ExecuteAsync(null);
+
+        // Sở thích được lưu trong lúc trang đang tải -> tải lại mục đề xuất một lần nữa
+        if (_preferencesDirty)
         {
-            var services = Handler?.MauiContext?.Services;
-            var auth = services?.GetService<IAuthService>();
-            var community = services?.GetService<ICommunityService>();
-            if (auth is null || community is null || auth.CurrentUser is null) { BellItem.Text = "🔔"; return; }
-            var unread = await community.GetUnreadCountAsync();
-            BellItem.Text = unread > 0 ? $"🔔 {unread}" : "🔔";
+            _preferencesDirty = false;
+            await _viewModel.LoadRecommendationsAsync();
         }
-        catch { BellItem.Text = "🔔"; }
     }
-
-    // Sprint 5: chip 🔥 số ngày chuỗi (cam; từ mốc 90 ngày đổi sang đỏ đậm — ToolbarItem không đổi màu được nên thêm biểu tượng ❤️‍🔥)
-    private async Task RefreshFlameAsync()
-    {
-        try
-        {
-            var services = Handler?.MauiContext?.Services;
-            var auth = services?.GetService<IAuthService>();
-            var streak = services?.GetService<IStreakService>();
-            if (auth is null || streak is null || auth.CurrentUser is null) { FlameItem.Text = "🔥"; return; }
-            var info = await streak.GetAsync();
-            var icon = info.IconTier == "darkred" ? "❤️‍🔥" : "🔥";
-            var warn = info.CurrentStreak > 0 && !info.ReadToday ? "!" : string.Empty;
-            FlameItem.Text = $"{icon} {info.CurrentStreak}{warn}";
-        }
-        catch { FlameItem.Text = "🔥"; }
-    }
-
-    private async void OnFlameClicked(object? sender, EventArgs e)
-        => await Shell.Current.GoToAsync(nameof(StreakPage));
-
-    private async void OnBellClicked(object? sender, EventArgs e)
-        => await Shell.Current.GoToAsync(nameof(NotificationsPage));
 }

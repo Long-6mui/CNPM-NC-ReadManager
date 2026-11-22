@@ -6,7 +6,7 @@
              x:DataType="vm:PlansViewModel"
              x:Class="ReadManager.Mobile.Views.PlansPage"
              Title="Gói đọc"
-             BackgroundColor="{StaticResource WebBg}">
+             BackgroundColor="{DynamicResource WebBg}">
 
     <Shell.BackButtonBehavior>
         <BackButtonBehavior IconOverride="ic_back.png" />
@@ -19,12 +19,12 @@
             <Label Text="Chọn gói để mở khóa truyện trả phí. Mua lại khi còn hạn sẽ được cộng dồn thời gian."
                    Style="{StaticResource LblMuted}" />
 
-            <ActivityIndicator IsRunning="{Binding IsBusy}" IsVisible="{Binding IsBusy}" Color="{StaticResource WebRoyal}" />
-            <Label Text="{Binding ErrorMessage}" TextColor="{StaticResource WebCrimson}"
+            <ActivityIndicator IsRunning="{Binding IsBusy}" IsVisible="{Binding IsBusy}" Color="{DynamicResource WebRoyal}" />
+            <Label Text="{Binding ErrorMessage}" TextColor="{DynamicResource WebCrimson}"
                    IsVisible="{Binding ErrorMessage, Converter={StaticResource StringToBoolConverter}}" />
 
             <!-- Nhắc gia hạn khi gói sắp hết hạn -->
-            <Border Padding="14" StrokeThickness="0" BackgroundColor="#FFF4DC" IsVisible="{Binding HasAlert}">
+            <Border Padding="14" StrokeThickness="0" BackgroundColor="{DynamicResource WebAlertBg}" IsVisible="{Binding HasAlert}">
                 <Border.StrokeShape>
                     <RoundRectangle CornerRadius="8" />
                 </Border.StrokeShape>
@@ -34,17 +34,17 @@
             <!-- Gói đang dùng -->
             <Border Style="{StaticResource Panel}" IsVisible="{Binding HasMyPlans}">
                 <VerticalStackLayout Spacing="8">
-                    <Label Text="Gói của tôi" FontSize="15" FontFamily="BeVietnamBold" TextColor="{StaticResource WebText}" />
+                    <Label Text="Gói của tôi" FontSize="15" FontFamily="BeVietnamBold" TextColor="{DynamicResource WebText}" />
                     <VerticalStackLayout BindableLayout.ItemsSource="{Binding MyPlans}" Spacing="8">
                         <BindableLayout.ItemTemplate>
                             <DataTemplate x:DataType="models:PlanEntitlement">
                                 <Grid ColumnDefinitions="*,Auto">
                                     <VerticalStackLayout Spacing="2">
-                                        <Label Text="{Binding PlanName}" FontSize="14" FontFamily="BeVietnamBold" TextColor="{StaticResource WebText}" />
+                                        <Label Text="{Binding PlanName}" FontSize="14" FontFamily="BeVietnamBold" TextColor="{DynamicResource WebText}" />
                                         <Label Text="{Binding ExpiresText}" Style="{StaticResource LblCardMeta}" />
                                     </VerticalStackLayout>
                                     <Label Grid.Column="1" Text="{Binding RemainingText}" FontSize="12" FontFamily="BeVietnamBold"
-                                           TextColor="{StaticResource WebSage}" VerticalOptions="Center" />
+                                           TextColor="{DynamicResource WebSage}" VerticalOptions="Center" />
                                 </Grid>
                             </DataTemplate>
                         </BindableLayout.ItemTemplate>
@@ -60,7 +60,7 @@
                             <VerticalStackLayout Spacing="8">
                                 <Label Text="{Binding Name}" Style="{StaticResource LblH2}" FontSize="18" />
                                 <Label Text="{Binding PriceText}" FontSize="28"
-                                       FontFamily="{StaticResource SerifFont}" TextColor="{StaticResource WebCrimson}" />
+                                       FontFamily="{StaticResource SerifFont}" TextColor="{DynamicResource WebCrimson}" />
                                 <Label Text="{Binding DurationText, StringFormat='• {0}'}" Style="{StaticResource LblMuted}" />
                                 <Label Text="{Binding ScopeText, StringFormat='• {0}'}" Style="{StaticResource LblMuted}" />
                                 <Button Text="Mua / gia hạn" Style="{StaticResource BtnBrass}" Margin="0,6,0,0"
