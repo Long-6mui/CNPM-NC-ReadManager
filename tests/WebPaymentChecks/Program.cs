@@ -170,7 +170,11 @@ try
         "Web reader renders saved scroll percent from API");
     Check((await browser.GetStringAsync("Library")).Contains("42%"),"Web library renders actual API progress");
     var saveForm=new Dictionary<string,string> { ["storyId"]=story.StoryId.ToString(), ["chapterId"]=chapter.ChapterId.ToString(), ["scrollPercent"]="71.5", ["__RequestVerificationToken"]=Csrf(readHtml) };
-    Check((await browser.GetStringAsync("Account/Profile")).Contains("10 xu"), "Web displays balance already earned through reader API");
+    var profileHtml = WebUtility.HtmlDecode(await browser.GetStringAsync("Account/Profile"));
+    Check(profileHtml.Contains("10 xu"), "Web displays balance already earned through reader API");
+    var aliceStreak = (await new ReadManager.Web.Services.RewardsApiClient(http).StreakAsync(alice)).Data;
+    Check(aliceStreak is not null && profileHtml.Contains($"{aliceStreak.CurrentStreak} ngày liên tiếp")
+        && profileHtml.Contains($"Kỷ lục {aliceStreak.LongestStreak} ngày"), "Web profile mirrors shared reading streak");
     var rewardForm = new Dictionary<string, string>(saveForm) { ["ticket"] = claimedTicket, ["percent"] = "100" };
     var sessionStart = await browser.PostAsync("Library/StartReward", new FormUrlEncodedContent(rewardForm));
     sessionStart.EnsureSuccessStatusCode();

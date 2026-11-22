@@ -29,6 +29,15 @@
     </aside>
     <div>
         <section class="pf-card">
+            <h2 class="pf-title">Chuỗi đọc của tôi</h2>
+            @if (ViewBag.Streak is ReadManager.Web.Services.StreakApi streak)
+            {
+                <p><strong>@streak.CurrentStreak ngày liên tiếp</strong> · Kỷ lục @streak.LongestStreak ngày</p>
+                <p>@(streak.ReadToday ? "Đã ghi nhận lượt đọc hôm nay." : "Hôm nay bạn chưa có lượt đọc đủ điều kiện.")</p>
+            }
+            else { <p role="status">Chưa tải được chuỗi đọc. Hãy tải lại trang.</p> }
+        </section>
+        <section class="pf-card">
             <h2 class="pf-title">Hạng thành viên và gói đọc</h2>
             <div class="pf-plans">
                 <div class="pf-plan">

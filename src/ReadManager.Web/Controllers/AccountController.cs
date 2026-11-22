@@ -95,7 +95,7 @@ public class AccountController(AuthApiClient api, DemoMemberStore members) : Con
     }
 
     // Trang thông tin tài khoản (cần đăng nhập)
-    [Authorize] public async Task<IActionResult> Profile([FromServices] ReadingProgressApiClient reader)
+    [Authorize] public async Task<IActionResult> Profile([FromServices] ReadingProgressApiClient reader, [FromServices] RewardsApiClient rewards)
     {
         try
         {
@@ -105,6 +105,8 @@ public class AccountController(AuthApiClient api, DemoMemberStore members) : Con
         }
         catch (HttpRequestException) { ViewBag.Coins = null; }
         catch (TaskCanceledException) { ViewBag.Coins = null; }
+        var streak = await rewards.StreakAsync(await HttpContext.GetTokenAsync("access_token"));
+        ViewBag.Streak = streak.Ok ? streak.Data : null;
         return View();
     }
 
