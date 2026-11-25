@@ -38,6 +38,10 @@ public class UserDto
     public string Email { get; set; } = string.Empty;
     public string DisplayName { get; set; } = string.Empty;
     public string Role { get; set; } = "Member";
+
+    // Chỉ điền ở GET api/auth/me (Web dùng để báo cho người dùng biết đang bị hạn chế)
+    public string? AccountStatus { get; set; }
+    public string? StatusReason { get; set; }
 }
 
 // DTO kết quả Đăng nhập khớp 100% với LoginResult của Web

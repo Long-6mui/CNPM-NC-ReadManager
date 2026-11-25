@@ -1,4 +1,3 @@
-using System.Security.Claims;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -8,8 +7,7 @@ namespace ReadManager.Web.Areas.Admin.Controllers;
 
 public class MembersIndexVm
 {
-    public List<MemberItem> Items { get; set; } = [];
-    public Dictionary<string, (MemberState State, MemberRestriction? Info)> States { get; set; } = [];
+    public List<ReadingProgressApiClient.DirectoryMember> Items { get; set; } = [];
     public string? Q { get; set; }
     public string? State { get; set; }
     public string? Role { get; set; }
@@ -18,49 +16,25 @@ public class MembersIndexVm
     public int Total { get; set; }
 }
 
-public class MemberDetailVm
-{
-    public MemberItem Member { get; set; } = null!;
-    public MemberState State { get; set; }
-    public MemberRestriction? Restriction { get; set; }
-    public List<MemberLog> History { get; set; } = [];
-    public string PlanText { get; set; } = "";
-    public int OwnedStories { get; set; }
-    public int ReadingStories { get; set; }
-    public int OrderCount { get; set; }
-    public int? CommentCount { get; set; }
-}
-
-// PB35 + PB36 — quản lý thành viên: xem danh sách, thông tin sử dụng, hạn chế / tạm ngừng / khôi phục
+// PB35 + PB36 — quản lý thành viên: xem danh sách, thông tin sử dụng, hạn chế / tạm ngừng / khôi phục.
+// Toàn bộ dữ liệu và thao tác đổi trạng thái đi qua API (api/admin/users...) và được lưu trong DB.
 [Area("Admin")]
-public class MembersController(IWebHostEnvironment environment, DemoMemberStore members, DemoPlanStore orders, DemoReadingProgressStore progress)
-    : PreviewController(environment)
+public class MembersController(IWebHostEnvironment environment) : PreviewController(environment)
 {
     private const int PageSize = 10;
-    private string AdminId => User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "";
-    private string AdminName => User.Identity?.Name ?? "Admin";
+    private const string ApiDown = "Không kết nối được API. Hãy kiểm tra kết nối và phiên đăng nhập admin.";
+    private Task<string?> Token() => HttpContext.GetTokenAsync("access_token");
 
     public async Task<IActionResult> Index([FromServices] ReadingProgressApiClient reader, string? q, string? state, string? role, int page = 1)
     {
         var vm = new MembersIndexVm { Q = q, State = state, Role = role };
         try
         {
-            var rows = await reader.FindMembersAsync(q, role, await HttpContext.GetTokenAsync("access_token"));
-            var filtered = new List<MemberItem>();
-            foreach (var row in rows)
-            {
-                var member = members.Remember(row);
-                var status = members.StateOf(member.Id);
-                if (status.State == MemberState.Active && Enum.TryParse<MemberState>(row.AccountStatus, true, out var persisted))
-                    status.State = persisted;
-                if (!string.IsNullOrEmpty(state) && status.State.ToString() != state) continue;
-                vm.States[member.Id] = status;
-                filtered.Add(member);
-            }
-            vm.Total = filtered.Count;
+            var rows = await reader.FindMembersAsync(q, role, await Token(), state);
+            vm.Total = rows.Count;
             vm.PageCount = Math.Max(1, (vm.Total + PageSize - 1) / PageSize);
             vm.Page = Math.Clamp(page, 1, vm.PageCount);
-            vm.Items = filtered.Skip((vm.Page - 1) * PageSize).Take(PageSize).ToList();
+            vm.Items = rows.Skip((vm.Page - 1) * PageSize).Take(PageSize).ToList();
         }
         catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException)
         {
@@ -80,7 +54,7 @@ public class MembersController(IWebHostEnvironment environment, DemoMemberStore 
             try
             {
                 TempData["GrantMessage"] = await reader.GrantAsync(requestId, email, kind == "coins" ? amount : 0,
-                    kind == "days" ? amount : 0, await HttpContext.GetTokenAsync("access_token"));
+                    kind == "days" ? amount : 0, await Token());
             }
             catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException)
             { TempData["GrantMessage"] = "Chưa xác nhận được kết quả. Hãy kiểm tra tài khoản trước khi thử lại."; }
@@ -88,42 +62,36 @@ public class MembersController(IWebHostEnvironment environment, DemoMemberStore 
         return RedirectToAction(nameof(Index));
     }
 
-    public IActionResult Detail(string id)
+    public async Task<IActionResult> Detail(int id, [FromServices] ReadingProgressApiClient reader)
     {
-        var m = members.Get(id);
-        if (m is null) { TempData["Toast"] = "Không tìm thấy thành viên."; return RedirectToAction(nameof(Index)); }
-        var (state, info) = members.StateOf(id);
-        var vm = new MemberDetailVm { Member = m, State = state, Restriction = info, History = members.History(id) };
-        if (m.IsSample)
+        try
         {
-            vm.PlanText = m.SamplePlan ?? "Chưa đăng ký gói";
-            vm.OwnedStories = m.SampleOwned; vm.ReadingStories = m.SampleReading; vm.CommentCount = m.SampleComments;
-            vm.OrderCount = m.SampleOwned + (m.SamplePlan is null ? 0 : 1);
+            var member = await reader.GetMemberAsync(id, await Token());
+            if (member is not null) return View(member);
+            TempData["Toast"] = "Không tìm thấy thành viên.";
         }
-        else
-        {
-            var plans = orders.PlanEntitlements(id);
-            vm.PlanText = plans.Count == 0 ? "Chưa đăng ký gói" : string.Join(", ", plans.Select(p => $"{p.PlanName} (hết hạn {p.ExpiresAt.ToLocalTime():dd/MM/yyyy})"));
-            vm.OwnedStories = orders.OwnedStories(id).Count;
-            vm.OrderCount = orders.Orders(id).Count;
-            vm.ReadingStories = progress.Count(id);
-        }
-        return View(vm);
+        catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException)
+        { TempData["Toast"] = ApiDown; }
+        return RedirectToAction(nameof(Index));
     }
 
     [HttpPost, ValidateAntiForgeryToken]
-    public IActionResult Restrict(string id, string kind, string? reason, int? days)
+    public Task<IActionResult> Restrict(int id, string kind, string? reason, [FromServices] ReadingProgressApiClient reader)
     {
-        var k = kind == "Suspended" ? MemberState.Suspended : MemberState.Restricted;
-        var error = members.Apply(id, AdminId, AdminName, k, reason, days);
-        TempData["Toast"] = error ?? (k == MemberState.Suspended ? "Đã tạm ngừng tài khoản." : "Đã hạn chế bình luận của tài khoản.");
-        return RedirectToAction(nameof(Detail), new { id });
+        var status = kind == "Suspended" ? "Suspended" : "Restricted";
+        return ChangeStatus(reader, id, status, reason,
+            status == "Suspended" ? "Đã tạm ngừng tài khoản." : "Đã hạn chế bình luận của tài khoản.");
     }
 
     [HttpPost, ValidateAntiForgeryToken]
-    public IActionResult Restore(string id)
+    public Task<IActionResult> Restore(int id, [FromServices] ReadingProgressApiClient reader)
+        => ChangeStatus(reader, id, "Active", null, "Đã khôi phục tài khoản.");
+
+    private async Task<IActionResult> ChangeStatus(ReadingProgressApiClient reader, int id, string status, string? reason, string okMessage)
     {
-        TempData["Toast"] = members.Restore(id, AdminName) ?? "Đã khôi phục tài khoản.";
+        try { TempData["Toast"] = await reader.ChangeStatusAsync(id, status, reason, await Token()) ?? okMessage; }
+        catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException)
+        { TempData["Toast"] = "Chưa xác nhận được kết quả. Hãy tải lại trang để kiểm tra trạng thái tài khoản."; }
         return RedirectToAction(nameof(Detail), new { id });
     }
 }

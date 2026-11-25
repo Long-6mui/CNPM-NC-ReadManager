@@ -171,7 +171,9 @@ public class AuthService : IAuthService
             UserId = user.UserId,
             Email = user.Email,
             DisplayName = user.DisplayName,
-            Role = user.Role
+            Role = user.Role,
+            AccountStatus = user.AccountStatus,
+            StatusReason = user.StatusReason
         };
     }
 }

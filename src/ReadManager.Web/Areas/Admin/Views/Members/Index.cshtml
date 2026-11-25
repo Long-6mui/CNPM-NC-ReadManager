@@ -1,9 +1,8 @@
 @model ReadManager.Web.Areas.Admin.Controllers.MembersIndexVm
-@using ReadManager.Web.Services
 @{
     ViewData["Title"] = "Thành viên";
-    string StLabel(MemberState s) => s == MemberState.Suspended ? "Tạm ngừng" : s == MemberState.Restricted ? "Bị hạn chế" : "Hoạt động";
-    string StCss(MemberState s) => s == MemberState.Active ? "Paid" : s == MemberState.Restricted ? "Pending" : "Failed";
+    string StLabel(string s) => s == "Suspended" ? "Tạm ngừng" : s == "Restricted" ? "Bị hạn chế" : "Hoạt động";
+    string StCss(string s) => s == "Active" ? "Paid" : s == "Restricted" ? "Pending" : "Failed";
 }
 <link rel="stylesheet" href="~/css/plans.css" asp-append-version="true" />
 <link rel="stylesheet" href="~/css/community.css" asp-append-version="true" />
@@ -48,15 +47,13 @@
                     <tbody>
                     @foreach (var m in Model.Items)
                     {
-                        var st = Model.States[m.Id];
                         <tr>
-                            <td>@m.Name @if (m.IsSample) { <span class="mem-tag">mẫu</span> }</td>
+                            <td>@m.DisplayName</td>
                             <td>@m.Email</td>
                             <td>@(m.Role == "Admin" ? "Quản trị" : "Thành viên")</td>
-                            <td>@m.JoinedAt.ToLocalTime().ToString("dd/MM/yyyy")</td>
-                            <td><span class="pl-st @StCss(st.State)">@StLabel(st.State)</span>
-                                @if (st.Info?.Until is { } until) { <br /><small>đến @until.ToLocalTime().ToString("dd/MM/yyyy")</small> }</td>
-                            <td><a class="btn btn-outline btn-sm" asp-action="Detail" asp-route-id="@m.Id">Chi tiết</a></td>
+                            <td>@m.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy")</td>
+                            <td><span class="pl-st @StCss(m.AccountStatus)">@StLabel(m.AccountStatus)</span></td>
+                            <td><a class="btn btn-outline btn-sm" asp-action="Detail" asp-route-id="@m.UserId">Chi tiết</a></td>
                         </tr>
                     }
                     </tbody>

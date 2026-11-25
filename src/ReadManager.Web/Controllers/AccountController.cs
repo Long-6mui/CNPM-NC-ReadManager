@@ -7,7 +7,7 @@ using ReadManager.Web.Services;
 using ReadManager.Web.ViewModels;
 
 namespace ReadManager.Web.Controllers;
-public class AccountController(AuthApiClient api, DemoMemberStore members) : Controller
+public class AccountController(AuthApiClient api) : Controller
 {
     [HttpGet] public IActionResult Login(string? returnUrl = null) => View(new LoginVm { ReturnUrl = returnUrl });
     [HttpGet] public IActionResult Register() => View(new RegisterVm());
@@ -141,17 +141,6 @@ public class AccountController(AuthApiClient api, DemoMemberStore members) : Con
                     return View(vm);
                 }
 
-                // PB35/36 — ghi nhận tài khoản vào danh sách thành viên; tạm ngừng thì không cho đăng nhập
-                var uid = result.User.UserId.ToString();
-                members.Touch(uid, result.User.DisplayName ?? result.User.Email, result.User.Email, result.User.Role ?? "User");
-                var (mState, mInfo) = members.StateOf(uid);
-                if (mState == MemberState.Suspended)
-                {
-                    ModelState.AddModelError("", $"Tài khoản đang bị tạm ngừng {(mInfo?.Until is { } until ? "đến " + until.ToLocalTime().ToString("dd/MM/yyyy") : "cho đến khi quản trị viên khôi phục")}. Lý do: {mInfo?.Reason}");
-                    vm.Password = ""; ModelState.Remove(nameof(vm.Password));
-                    return View(vm);
-                }
-
                 var claims = new[]
                 {
                     new Claim(ClaimTypes.NameIdentifier, result.User.UserId.ToString()),
@@ -187,7 +176,7 @@ public class AccountController(AuthApiClient api, DemoMemberStore members) : Con
             {
                 System.Net.HttpStatusCode.TooManyRequests => "Bạn thử đăng nhập quá nhiều lần. Vui lòng chờ một phút.",
                 System.Net.HttpStatusCode.Unauthorized => "Email hoặc mật khẩu không đúng, hoặc tài khoản không hoạt động.",
-                System.Net.HttpStatusCode.Forbidden => "Tài khoản của bạn đã bị khóa.",
+                System.Net.HttpStatusCode.Forbidden => "Tài khoản của bạn đang bị tạm ngừng. Vui lòng liên hệ quản trị viên.",
                 _ => $"API trả về lỗi (Mã: {(int)response.StatusCode}). Vui lòng thử lại."
             };
 
