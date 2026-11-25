@@ -37,7 +37,20 @@ public class MyVoucher
     public DateTime? UsedAt { get; set; }
 
     public string DiscountText => VoucherText.Discount(DiscountType, Value);
-    public string ConditionText => VoucherText.Conditions(MaxDiscount, MinOrderAmount, $"HSD {ExpiresAt.ToLocalTime():dd/MM/yyyy}");
+    public string ConditionText => VoucherText.Conditions(MaxDiscount, MinOrderAmount, $"HSD {ExpiresText}");
+    public string ExpiresText => Fmt.Local(ExpiresAt).ToString("dd/MM/yyyy");
+    public string BadgeText => VoucherText.Badge(DiscountType, Value);
+
+    // Còn dùng được: đang "Available" và chưa quá hạn
+    public bool IsUsable => Status == "Available" && ExpiresAt > DateTime.UtcNow;
+    // Nhóm hiển thị trong Kho mã: usable | used | expired (Reserved = đang giữ cho một đơn chờ → xếp vào "Có thể dùng")
+    public string Group => Status switch
+    {
+        "Used" => "used",
+        "Expired" => "expired",
+        _ when ExpiresAt <= DateTime.UtcNow => "expired",
+        _ => "usable"
+    };
     public string StatusText => Status switch
     {
         "Available" => "Có thể dùng",
@@ -58,6 +71,10 @@ public static class VoucherText
 {
     public static string Discount(string type, decimal value)
         => type == "Amount" ? $"Giảm {Fmt.Money(value)}" : $"Giảm {value:0.##}%";
+
+    // Chữ to trên cuống vé: "-10%" hoặc "-25K"
+    public static string Badge(string type, decimal value)
+        => type == "Amount" ? $"-{value / 1000m:0.#}K" : $"-{value:0.##}%";
 
     public static string Conditions(decimal? maxDiscount, decimal? minOrder, string tail)
     {

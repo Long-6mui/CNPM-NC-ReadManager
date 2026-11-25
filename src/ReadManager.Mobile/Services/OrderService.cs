@@ -9,7 +9,9 @@ public class OrderService : IOrderService
 
     public OrderService(ApiClient api) => _api = api;
 
-    public Task<OrderQuote?> QuoteStoryAsync(int storyId) => QuoteAsync($"orders/quote/story/{storyId}");
+    // voucherId: xem giá sau khi áp voucher (server tự kiểm tra điều kiện và tính số tiền giảm)
+    public Task<OrderQuote?> QuoteStoryAsync(int storyId, int? voucherId = null)
+        => QuoteAsync(voucherId.HasValue ? $"orders/quote/story/{storyId}?voucherId={voucherId}" : $"orders/quote/story/{storyId}");
 
     public Task<OrderQuote?> QuotePlanAsync(int planId) => QuoteAsync($"orders/quote/plan/{planId}");
 
@@ -20,15 +22,20 @@ public class OrderService : IOrderService
         catch (ApiException ex) when (ex.StatusCode == 404) { return null; }
     }
 
-    public async Task<Order> CreateStoryOrderAsync(int storyId)
+    public async Task<Order> CreateStoryOrderAsync(int storyId, int? voucherId = null)
         => await _api.PostAsync<CreateOrderRequest, Order>("orders",
-               new CreateOrderRequest { OrderType = "Story", StoryId = storyId })
+               new CreateOrderRequest { OrderType = "Story", StoryId = storyId, VoucherId = voucherId })
            ?? throw new ApiException(500, "Không tạo được đơn hàng.");
 
     public async Task<Order> CreatePlanOrderAsync(int planId, int? planVersionId, int? couponId = null)
         => await _api.PostAsync<CreateOrderRequest, Order>("orders",
                new CreateOrderRequest { OrderType = "Plan", PlanId = planId, PlanVersionId = planVersionId, CouponId = couponId })
            ?? throw new ApiException(500, "Không tạo được đơn hàng.");
+
+    // POST api/orders/{id}/cancel — chỉ hủy được đơn đang chờ thanh toán của chính mình
+    public async Task<Order> CancelOrderAsync(int orderId)
+        => await _api.PostAsync<object, Order>($"orders/{orderId}/cancel", new { })
+           ?? throw new ApiException(500, "Không hủy được đơn hàng.");
 
     public async Task<Order> GetOrderAsync(int orderId)
         => await _api.GetAsync<Order>($"orders/{orderId}")

@@ -39,6 +39,7 @@ namespace ReadManager.Mobile
             Routing.RegisterRoute(nameof(SearchPage), typeof(SearchPage));
             Routing.RegisterRoute(nameof(RecommendedPage), typeof(RecommendedPage));
             Routing.RegisterRoute(nameof(NewReleasesPage), typeof(NewReleasesPage));
+            Routing.RegisterRoute(nameof(VoucherWalletPage), typeof(VoucherWalletPage));   // kho mã giảm giá
 
             ApplyTheme();
             ThemeService.ThemeChanged += (_, _) => ApplyTheme();

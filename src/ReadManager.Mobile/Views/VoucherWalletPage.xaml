@@ -1,0 +1,186 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:ReadManager.Mobile.ViewModels"
+             xmlns:models="clr-namespace:ReadManager.Mobile.Models"
+             xmlns:fx="clr-namespace:ReadManager.Mobile.Behaviors"
+             x:DataType="vm:VoucherWalletViewModel"
+             x:Class="ReadManager.Mobile.Views.VoucherWalletPage"
+             Title="🎟 Kho mã giảm giá"
+             BackgroundColor="{DynamicResource WebBg}">
+
+    <Shell.BackButtonBehavior>
+        <BackButtonBehavior IconOverride="ic_back.png" />
+    </Shell.BackButtonBehavior>
+
+    <Grid RowDefinitions="Auto,*">
+        <!-- Tab: Voucher mua truyện | Mã gói đọc -->
+        <Grid Grid.Row="0" BackgroundColor="{DynamicResource WebHeader}" ColumnDefinitions="*,*" RowDefinitions="Auto,1">
+            <VerticalStackLayout Grid.Column="0" Padding="8,14,8,0" Spacing="10" fx:Motion.Press="True">
+                <VerticalStackLayout.GestureRecognizers>
+                    <TapGestureRecognizer Command="{Binding SelectTabCommand}" CommandParameter="{Binding Tabs[0]}" />
+                </VerticalStackLayout.GestureRecognizers>
+                <Label Text="{Binding Tabs[0].Name}" FontSize="15" FontFamily="{Binding Tabs[0].FontFamily}"
+                       TextColor="{Binding Tabs[0].AccentText}" HorizontalTextAlignment="Center" />
+                <BoxView HeightRequest="3" CornerRadius="2" Color="{Binding Tabs[0].IndicatorColor}" Margin="24,0" />
+            </VerticalStackLayout>
+            <VerticalStackLayout Grid.Column="1" Padding="8,14,8,0" Spacing="10" fx:Motion.Press="True">
+                <VerticalStackLayout.GestureRecognizers>
+                    <TapGestureRecognizer Command="{Binding SelectTabCommand}" CommandParameter="{Binding Tabs[1]}" />
+                </VerticalStackLayout.GestureRecognizers>
+                <Label Text="{Binding Tabs[1].Name}" FontSize="15" FontFamily="{Binding Tabs[1].FontFamily}"
+                       TextColor="{Binding Tabs[1].AccentText}" HorizontalTextAlignment="Center" />
+                <BoxView HeightRequest="3" CornerRadius="2" Color="{Binding Tabs[1].IndicatorColor}" Margin="24,0" />
+            </VerticalStackLayout>
+            <BoxView Grid.Row="1" Grid.ColumnSpan="2" Color="{DynamicResource WebBorder}" />
+        </Grid>
+
+        <RefreshView Grid.Row="1" IsRefreshing="{Binding IsRefreshing}" Command="{Binding RefreshCommand}"
+                     RefreshColor="{DynamicResource WebRoyal}">
+            <ScrollView>
+                <VerticalStackLayout Padding="16,14,16,32" Spacing="12">
+                    <ActivityIndicator IsRunning="{Binding IsBusy}" IsVisible="{Binding IsBusy}" Color="{DynamicResource WebRoyal}" />
+                    <Label Text="{Binding ErrorMessage}" TextColor="{DynamicResource WebCrimson}"
+                           IsVisible="{Binding ErrorMessage, Converter={StaticResource StringToBoolConverter}}" />
+                    <Label Text="{Binding Summary}" Style="{StaticResource LblMuted}" />
+
+                    <!-- ===================== VOUCHER MUA TRUYỆN ===================== -->
+                    <VerticalStackLayout IsVisible="{Binding IsVoucherTab}" Spacing="12">
+                        <Label Text="Dùng khi mua trọn bộ truyện: ở màn Thanh toán chọn voucher, giá được giảm ngay."
+                               Style="{StaticResource LblCardMeta}" />
+
+                        <!-- Lọc trạng thái -->
+                        <HorizontalStackLayout Spacing="8" BindableLayout.ItemsSource="{Binding Filters}">
+                            <BindableLayout.ItemTemplate>
+                                <DataTemplate x:DataType="models:ChipItem">
+                                    <Border Style="{StaticResource Chip}" Padding="12,7" BackgroundColor="{Binding Background}" Stroke="{Binding Stroke}">
+                                        <Border.GestureRecognizers>
+                                            <TapGestureRecognizer
+                                                Command="{Binding Source={RelativeSource AncestorType={x:Type vm:VoucherWalletViewModel}}, Path=SelectFilterCommand}"
+                                                CommandParameter="{Binding .}" />
+                                        </Border.GestureRecognizers>
+                                        <Label Style="{StaticResource ChipText}" TextColor="{Binding Foreground}" FontSize="13">
+                                            <Label.FormattedText>
+                                                <FormattedString>
+                                                    <Span Text="{Binding Name}" />
+                                                    <Span Text=" " />
+                                                    <Span Text="{Binding Badge}" FontFamily="BeVietnamExtraBold" />
+                                                </FormattedString>
+                                            </Label.FormattedText>
+                                        </Label>
+                                    </Border>
+                                </DataTemplate>
+                            </BindableLayout.ItemTemplate>
+                        </HorizontalStackLayout>
+
+                        <VerticalStackLayout BindableLayout.ItemsSource="{Binding Vouchers}" Spacing="12">
+                            <BindableLayout.ItemTemplate>
+                                <DataTemplate x:DataType="models:MyVoucher">
+                                    <Border StrokeThickness="1" Stroke="{DynamicResource WebBorder}" Padding="0"
+                                            BackgroundColor="{DynamicResource WebSurface}" fx:Motion.Reveal="True">
+                                        <Border.StrokeShape>
+                                            <RoundRectangle CornerRadius="16" />
+                                        </Border.StrokeShape>
+                                        <Grid ColumnDefinitions="92,*">
+                                            <Grid Grid.Column="0">
+                                                <Grid.Background>
+                                                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                                        <GradientStop Color="#E11D48" Offset="0.0" />
+                                                        <GradientStop Color="#9F1239" Offset="1.0" />
+                                                    </LinearGradientBrush>
+                                                </Grid.Background>
+                                                <VerticalStackLayout VerticalOptions="Center" Spacing="2">
+                                                    <Label Text="🎟" FontSize="20" HorizontalTextAlignment="Center" />
+                                                    <Label Text="{Binding BadgeText}" TextColor="White" FontFamily="BeVietnamExtraBold"
+                                                           FontSize="18" HorizontalTextAlignment="Center" />
+                                                </VerticalStackLayout>
+                                            </Grid>
+                                            <Grid Grid.Column="1" Padding="14,12" RowDefinitions="Auto,Auto,Auto" ColumnDefinitions="*,Auto"
+                                                  RowSpacing="4" ColumnSpacing="8">
+                                                <Label Grid.ColumnSpan="2" Text="{Binding Name}" FontFamily="BeVietnamBold" FontSize="15"
+                                                       TextColor="{DynamicResource WebText}" MaxLines="2" LineBreakMode="TailTruncation" />
+                                                <Label Grid.Row="1" Grid.ColumnSpan="2" Text="{Binding ConditionText}" FontSize="12"
+                                                       TextColor="{DynamicResource WebMuted}" />
+                                                <Label Grid.Row="2" Text="{Binding StatusText}" TextColor="{Binding StatusColor}" FontSize="12.5"
+                                                       FontFamily="BeVietnamBold" VerticalOptions="Center" />
+                                                <Button Grid.Row="2" Grid.Column="1" Text="Dùng ngay" Style="{StaticResource BtnBrassSm}"
+                                                        IsVisible="{Binding IsUsable}"
+                                                        Command="{Binding Source={RelativeSource AncestorType={x:Type vm:VoucherWalletViewModel}}, Path=UseVoucherCommand}" />
+                                            </Grid>
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </BindableLayout.ItemTemplate>
+                        </VerticalStackLayout>
+
+                        <VerticalStackLayout IsVisible="{Binding ShowVoucherEmpty}" Padding="8,24" Spacing="10">
+                            <Label Text="🎟" FontSize="48" HorizontalTextAlignment="Center" Opacity="0.7" />
+                            <Label Text="{Binding VoucherEmptyText}" Style="{StaticResource LblMuted}" HorizontalTextAlignment="Center" />
+                        </VerticalStackLayout>
+                        <Button Text="🛍 Đổi thêm voucher bằng xu" Style="{StaticResource BtnOutlineSm}" HeightRequest="46"
+                                Command="{Binding OpenShopCommand}" />
+                    </VerticalStackLayout>
+
+                    <!-- ===================== MÃ GIẢM GIÁ GÓI ĐỌC (TỪ CHUỖI) ===================== -->
+                    <VerticalStackLayout IsVisible="{Binding IsCouponTab}" Spacing="12">
+                        <Label Text="Nhận khi giữ chuỗi đọc đủ mốc. Dùng khi mua / gia hạn gói đọc đúng số tháng ghi trên mã."
+                               Style="{StaticResource LblCardMeta}" />
+
+                        <VerticalStackLayout BindableLayout.ItemsSource="{Binding Coupons}" Spacing="12">
+                            <BindableLayout.ItemTemplate>
+                                <DataTemplate x:DataType="models:StreakCoupon">
+                                    <Border StrokeThickness="1" Stroke="{DynamicResource WebBorder}" Padding="0"
+                                            BackgroundColor="{DynamicResource WebSurface}" fx:Motion.Reveal="True">
+                                        <Border.StrokeShape>
+                                            <RoundRectangle CornerRadius="16" />
+                                        </Border.StrokeShape>
+                                        <Grid ColumnDefinitions="92,*">
+                                            <Grid Grid.Column="0">
+                                                <Grid.Background>
+                                                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                                        <GradientStop Color="#A855F7" Offset="0.0" />
+                                                        <GradientStop Color="#6D28D9" Offset="1.0" />
+                                                    </LinearGradientBrush>
+                                                </Grid.Background>
+                                                <VerticalStackLayout VerticalOptions="Center" Spacing="2">
+                                                    <Label Text="🔥" FontSize="20" HorizontalTextAlignment="Center" />
+                                                    <Label Text="{Binding BadgeText}" TextColor="White" FontFamily="BeVietnamExtraBold"
+                                                           FontSize="18" HorizontalTextAlignment="Center" />
+                                                </VerticalStackLayout>
+                                            </Grid>
+                                            <Grid Grid.Column="1" Padding="14,12" RowDefinitions="Auto,Auto,Auto" ColumnDefinitions="*,Auto"
+                                                  RowSpacing="4" ColumnSpacing="8">
+                                                <Label Grid.ColumnSpan="2" Text="{Binding Name}" FontFamily="BeVietnamBold" FontSize="15"
+                                                       TextColor="{DynamicResource WebText}" />
+                                                <Label Grid.Row="1" Grid.ColumnSpan="2" Text="{Binding MonthsText}" FontSize="12"
+                                                       TextColor="{DynamicResource WebMuted}" />
+                                                <Label Grid.Row="2" FontSize="12.5" FontFamily="BeVietnamBold" TextColor="#12A150" VerticalOptions="Center">
+                                                    <Label.FormattedText>
+                                                        <FormattedString>
+                                                            <Span Text="HSD " />
+                                                            <Span Text="{Binding ExpiresText}" />
+                                                        </FormattedString>
+                                                    </Label.FormattedText>
+                                                </Label>
+                                                <Button Grid.Row="2" Grid.Column="1" Text="Dùng ngay" Style="{StaticResource BtnBrassSm}"
+                                                        Command="{Binding Source={RelativeSource AncestorType={x:Type vm:VoucherWalletViewModel}}, Path=UseCouponCommand}" />
+                                            </Grid>
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </BindableLayout.ItemTemplate>
+                        </VerticalStackLayout>
+
+                        <VerticalStackLayout IsVisible="{Binding ShowCouponEmpty}" Padding="8,24" Spacing="10">
+                            <Label Text="🔥" FontSize="48" HorizontalTextAlignment="Center" Opacity="0.7" />
+                            <Label Text="Chưa có mã gói đọc. Giữ chuỗi đọc đủ 7 ngày để nhận mã đầu tiên."
+                                   Style="{StaticResource LblMuted}" HorizontalTextAlignment="Center" />
+                        </VerticalStackLayout>
+                        <Button Text="Xem mốc thưởng chuỗi" Style="{StaticResource BtnOutlineSm}" HeightRequest="46"
+                                Command="{Binding OpenStreakCommand}" />
+                    </VerticalStackLayout>
+                </VerticalStackLayout>
+            </ScrollView>
+        </RefreshView>
+    </Grid>
+</ContentPage>

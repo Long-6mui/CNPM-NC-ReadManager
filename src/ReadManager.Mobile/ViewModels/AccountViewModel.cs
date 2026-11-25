@@ -46,6 +46,7 @@ public partial class AccountViewModel : BaseViewModel
     public bool IsGuest => !IsLoggedIn;
     public bool HasNoAvatar => !HasAvatar;
     [RelayCommand] private Task EditGenresAsync() => Shell.Current.GoToAsync(nameof(Views.ReaderGenresPage));
+    [RelayCommand] private Task OpenWalletAsync() => Shell.Current.GoToAsync(nameof(Views.VoucherWalletPage));
 
     // ----- Khung avatar & danh hiệu (đổi ngay tại trang Tài khoản) -----
     private readonly IStreakService _streak;

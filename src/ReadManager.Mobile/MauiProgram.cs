@@ -86,6 +86,7 @@ namespace ReadManager.Mobile
             builder.Services.AddTransient<RecommendedViewModel>();  // trang Đề xuất cho bạn
             builder.Services.AddTransient<ReaderGenresViewModel>(); // chọn sở thích đọc
             builder.Services.AddTransient<NewReleasesViewModel>();  // trang Mới ra mắt
+            builder.Services.AddTransient<VoucherWalletViewModel>(); // kho mã giảm giá
             builder.Services.AddTransient<AccountViewModel>();
             builder.Services.AddTransient<ChapterListViewModel>();
             builder.Services.AddTransient<ChapterReaderViewModel>();
@@ -122,6 +123,7 @@ namespace ReadManager.Mobile
             builder.Services.AddTransient<SearchPage>();
             builder.Services.AddTransient<RecommendedPage>();
             builder.Services.AddTransient<NewReleasesPage>();
+            builder.Services.AddTransient<VoucherWalletPage>();
 
             return builder.Build();
         }

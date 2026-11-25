@@ -263,6 +263,9 @@ public partial class ExploreViewModel : BaseViewModel
     }
 
     [RelayCommand]
+    private async Task OpenWalletAsync() => await Shell.Current.GoToAsync(nameof(Views.VoucherWalletPage));
+
+    [RelayCommand]
     private async Task GoToStreakAsync() => await Shell.Current.GoToAsync(nameof(Views.StreakPage));
 
     [RelayCommand]

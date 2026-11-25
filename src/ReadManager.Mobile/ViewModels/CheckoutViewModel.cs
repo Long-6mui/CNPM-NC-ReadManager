@@ -7,8 +7,12 @@ using ReadManager.Mobile.Services.Auth;
 
 namespace ReadManager.Mobile.ViewModels;
 
-// Màn "Mua trọn bộ truyện" (PB21) hoặc "Mua / gia hạn gói" (PB19): xem giá -> bấm Thanh toán để tạo đơn.
+// Màn "Mua trọn bộ truyện" (PB21) hoặc "Mua / gia hạn gói" (PB19): xem giá -> chọn mã giảm giá -> Thanh toán.
 // Điều hướng truyền "storyId" (mua truyện) hoặc "planId" (mua gói).
+// Mã giảm giá:
+//  - Mua TRUYỆN: chọn voucher trong kho (đổi bằng xu ở Khám phá). Chọn xong gọi lại báo giá
+//    GET api/orders/quote/story/{id}?voucherId= để server tính giá sau giảm; tạo đơn gửi kèm VoucherId.
+//  - Mua GÓI: chọn mã giảm % nhận từ CHUỖI ĐỌC (api/me/coupons), đúng số tháng của gói; tạo đơn gửi kèm CouponId.
 [QueryProperty(nameof(StoryId), "storyId")]
 [QueryProperty(nameof(PlanId), "planId")]
 public partial class CheckoutViewModel : BaseViewModel
@@ -17,6 +21,9 @@ public partial class CheckoutViewModel : BaseViewModel
     private readonly IStoryService _stories;
     private readonly IAuthService _auth;
     private readonly IStreakService _streak;
+    private readonly RewardsService _rewards;
+    private decimal _baseAmount;      // giá gốc trước giảm
+    private int? _pendingVoucherId;   // voucher của đơn đang chờ (nếu có)
 
     private bool _loaded;
     private OrderQuote? _quote;
@@ -39,38 +46,147 @@ public partial class CheckoutViewModel : BaseViewModel
 
     public ObservableCollection<string> Benefits { get; } = new();
 
-    // Sprint 5 — mã giảm giá từ chuỗi đọc (chỉ khi mua GÓI)
-    public ObservableCollection<StreakCoupon> Coupons { get; } = new();
-    [ObservableProperty] private StreakCoupon? selectedCoupon;
-    [ObservableProperty] private bool hasCoupons;
-    [ObservableProperty] private string discountText = string.Empty;
+    // ----- Mã giảm giá (voucher mua truyện / mã chuỗi cho gói) -----
+    public ObservableCollection<DiscountOption> Discounts { get; } = new();
+    [ObservableProperty] private DiscountOption? selectedDiscount;
+    [ObservableProperty] private bool hasDiscounts;
+    [ObservableProperty] private bool hasNoDiscounts;
+    [ObservableProperty] private string discountTitle = string.Empty;
+    [ObservableProperty] private string discountHint = string.Empty;
+    [ObservableProperty] private string discountText = string.Empty;   // "Giá gốc ... − giảm ..."
+    [ObservableProperty] private string originalText = string.Empty;   // giá gốc gạch ngang
+    [ObservableProperty] private bool hasSaving;
+    [ObservableProperty] private bool isStory;
 
-    public CheckoutViewModel(IOrderService orders, IStoryService stories, IAuthService auth, IStreakService streak)
+    public CheckoutViewModel(IOrderService orders, IStoryService stories, IAuthService auth, IStreakService streak,
+        RewardsService rewards)
     {
         _orders = orders;
         _stories = stories;
         _auth = auth;
         _streak = streak;
+        _rewards = rewards;
     }
 
-    partial void OnSelectedCouponChanged(StreakCoupon? value) => ApplyCouponText();
-
-    private void ApplyCouponText()
+    // Hiện giá sau giảm + nội dung nút thanh toán
+    private void ShowPrice(decimal finalAmount, decimal discount, string label)
     {
-        if (_quote is null) return;
-        if (SelectedCoupon is null)
+        AmountText = Fmt.Money(finalAmount);
+        HasSaving = discount > 0;
+        OriginalText = HasSaving ? Fmt.Money(_baseAmount) : string.Empty;
+        DiscountText = HasSaving ? $"{label}: −{Fmt.Money(discount)}" : string.Empty;
+
+        var continuePending = _quote?.PendingOrderId is not null
+            && (IsStory ? SelectedDiscount?.Id == _pendingVoucherId || (SelectedDiscount?.IsNone != false && _pendingVoucherId is null)
+                        : SelectedDiscount?.IsNone != false);
+        ConfirmText = continuePending ? "Tiếp tục thanh toán" : $"💳 Thanh toán {AmountText}";
+    }
+
+    // Bấm một mã: chưa đủ điều kiện -> báo lý do; còn lại -> chọn và tính lại giá
+    [RelayCommand]
+    private async Task SelectDiscountAsync(DiscountOption? option)
+    {
+        if (option is null || _quote is null || option.IsSelected) return;
+        if (!option.Eligible)
         {
-            AmountText = _quote.AmountText;
-            DiscountText = string.Empty;
+            await Shell.Current.DisplayAlert("Chưa dùng được mã này", option.Reason, "OK");
+            return;
+        }
+
+        var previous = SelectedDiscount;
+        Select(option);
+
+        if (!IsStory)
+        {
+            // Gói đọc: giảm % trên giá gói (server tính lại khi tạo đơn)
+            var off = option.IsNone ? 0 : Math.Round(_baseAmount * option.Percent / 100m, 0);
+            ShowPrice(_baseAmount - off, off, option.IsNone ? string.Empty : $"Mã chuỗi −{option.Percent}%");
+            return;
+        }
+
+        // Truyện: hỏi lại server giá sau khi áp voucher
+        try
+        {
+            var quote = await _orders.QuoteStoryAsync(StoryId, option.IsNone ? null : option.Id);
+            if (quote is null) return;
+            _quote.Amount = quote.Amount;
+            ShowPrice(quote.Amount, quote.DiscountAmount, "Voucher");
+        }
+        catch (Exception ex)
+        {
+            await Shell.Current.DisplayAlert("Không áp được voucher", ex.Message, "OK");
+            if (previous is not null) Select(previous);
+        }
+    }
+
+    private void Select(DiscountOption option)
+    {
+        foreach (var d in Discounts) d.IsSelected = ReferenceEquals(d, option);
+        SelectedDiscount = option;
+    }
+
+    [RelayCommand]
+    private async Task OpenWalletAsync() => await Shell.Current.GoToAsync(nameof(Views.VoucherWalletPage));
+
+    [RelayCommand]
+    private async Task OpenShopAsync() => await Shell.Current.GoToAsync("//BrowsePage");
+
+    // Nạp danh sách mã phù hợp với món đang mua
+    private async Task LoadDiscountsAsync()
+    {
+        Discounts.Clear();
+        SelectedDiscount = null;
+        var none = DiscountOption.None();
+        Discounts.Add(none);
+
+        var loggedIn = false;
+        try { loggedIn = _auth.CurrentUser is not null || await _auth.IsLoggedInAsync(); } catch { }
+
+        if (IsStory)
+        {
+            DiscountTitle = "🎟 Voucher mua truyện";
+            DiscountHint = "Voucher đổi bằng xu ở Khám phá → Shop đổi voucher. Mỗi đơn dùng 1 voucher.";
+            if (loggedIn)
+            {
+                try
+                {
+                    var vouchers = await _rewards.GetMyVouchersAsync();
+                    foreach (var o in vouchers.Where(v => v.Group == "usable")
+                                 .Select(v => DiscountOption.FromVoucher(v, _baseAmount))
+                                 .OrderByDescending(o => o.Eligible))
+                        Discounts.Add(o);
+                }
+                catch { /* lỗi tải kho mã: vẫn mua giá gốc được */ }
+            }
         }
         else
         {
-            var off = Math.Round(_quote.Amount * SelectedCoupon.Percent / 100m, 0);
-            AmountText = Fmt.Money(_quote.Amount - off);
-            DiscountText = $"Giá gốc {_quote.AmountText} − giảm {SelectedCoupon.Percent}% ({Fmt.Money(off)})";
+            DiscountTitle = "🔥 Mã giảm giá gói đọc (từ chuỗi đọc)";
+            DiscountHint = "Giữ chuỗi đọc đủ mốc 7 / 30 / 90 / 180 / 365 ngày để nhận mã giảm % cho gói đọc.";
+            if (loggedIn)
+            {
+                try
+                {
+                    var months = _quote?.DurationMonths ?? 0;
+                    foreach (var o in (await _streak.GetCouponsAsync())
+                                 .Select(c => DiscountOption.FromCoupon(c, months))
+                                 .OrderByDescending(o => o.Eligible))
+                        Discounts.Add(o);
+                }
+                catch { }
+            }
         }
-        if (!(_quote.PendingOrderId.HasValue && SelectedCoupon is null))
-            ConfirmText = $"💳 Thanh toán {AmountText}";
+
+        HasDiscounts = Discounts.Count > 1;
+        HasNoDiscounts = !HasDiscounts;
+
+        // Đơn đang chờ có voucher -> chọn sẵn voucher đó
+        var preselect = IsStory && _pendingVoucherId is int pv
+            ? Discounts.FirstOrDefault(d => d.Kind == "Voucher" && d.Id == pv) ?? none
+            : none;
+        Select(preselect);
+        if (IsStory && _quote is not null) ShowPrice(_quote.Amount, _quote.DiscountAmount, "Voucher");
+        else ShowPrice(_baseAmount, 0, string.Empty);
     }
 
     // Shell gán StoryId / PlanId khi điều hướng tới trang này
@@ -85,6 +201,7 @@ public partial class CheckoutViewModel : BaseViewModel
         await RunSafeAsync(async () =>
         {
             var isStory = StoryId > 0;
+            IsStory = isStory;
             _quote = isStory ? await _orders.QuoteStoryAsync(StoryId) : await _orders.QuotePlanAsync(PlanId);
             if (_quote is null)
             {
@@ -94,6 +211,8 @@ public partial class CheckoutViewModel : BaseViewModel
             }
 
             Heading = isStory ? "🛒 Mua trọn bộ truyện" : "🎟 Mua / gia hạn gói đọc";
+            _baseAmount = _quote.BaseAmount;
+            _pendingVoucherId = _quote.PendingOrderId.HasValue ? _quote.VoucherId : null;
             Title = _quote.ItemName;
             AmountText = _quote.AmountText;
             CanBuy = _quote.CanBuy;
@@ -131,19 +250,9 @@ public partial class CheckoutViewModel : BaseViewModel
                 Benefits.Add("✔ Mở khóa các truyện nằm trong phạm vi của gói");
                 Benefits.Add("✔ Gia hạn khi còn hạn sẽ được cộng dồn thời gian");
                 Benefits.Add("✔ Giá lấy theo phiên bản gói mới nhất đang bán");
-
-                // Mã giảm giá từ chuỗi đọc phù hợp với số tháng của gói
-                Coupons.Clear();
-                SelectedCoupon = null;
-                try
-                {
-                    var months = _quote.DurationMonths ?? 0;
-                    foreach (var c in await _streak.GetCouponsAsync())
-                        if (c.DurationMonths.Contains(months)) Coupons.Add(c);
-                }
-                catch { /* chưa đăng nhập / lỗi → bỏ qua, vẫn mua giá thường */ }
-                HasCoupons = Coupons.Count > 0;
             }
+
+            await LoadDiscountsAsync();
 
             ShowContent = true;
             _loaded = true;
@@ -168,9 +277,11 @@ public partial class CheckoutViewModel : BaseViewModel
         await RunSafeAsync(async () =>
         {
             // Đã có đơn chờ -> mở lại đơn đó (server cũng tự dùng lại đơn chờ, bấm 2 lần không tạo 2 đơn)
+            var picked = SelectedDiscount is { IsNone: false } d ? d.Id : (int?)null;
             var order = StoryId > 0
-                ? await _orders.CreateStoryOrderAsync(StoryId)
-                : await _orders.CreatePlanOrderAsync(PlanId, _quote.PlanVersionId, SelectedCoupon?.CouponId);
+                ? await _orders.CreateStoryOrderAsync(StoryId, picked)
+                : await _orders.CreatePlanOrderAsync(PlanId, _quote.PlanVersionId, picked);
+            RewardsService.NotifyCoinsChanged();
 
             // "../" = đóng màn Thanh toán rồi mở màn Đơn hàng, nên nút Back từ đơn hàng quay về trang trước đó
             await Shell.Current.GoToAsync($"../{nameof(Views.OrderDetailPage)}", new Dictionary<string, object>

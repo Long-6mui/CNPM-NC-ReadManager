@@ -74,6 +74,8 @@
                         Command="{Binding PayCommand}" IsVisible="{Binding Order.ShowPay}" />
                 <Button Text="Tải lại trạng thái" Style="{StaticResource BtnOutlineSm}" HeightRequest="44"
                         Command="{Binding LoadCommand}" />
+                <Button Text="Hủy đơn" Style="{StaticResource BtnLink}" TextColor="{DynamicResource WebCrimson}"
+                        Command="{Binding CancelCommand}" IsVisible="{Binding Order.IsPending}" />
 
                 <Button Text="Xem truyện" Style="{StaticResource BtnOutlineSm}" HeightRequest="44"
                         Command="{Binding OpenStoryCommand}" IsVisible="{Binding Order.HasStory}" />
